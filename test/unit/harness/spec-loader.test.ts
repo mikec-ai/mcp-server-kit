@@ -8,11 +8,12 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import {
 	loadTestSpec,
+	loadTestSuiteSpec,
 	parseTestSpec,
 	serializeTestSpecToYAML,
 	serializeTestSpecToJSON,
 } from "../../../src/harness/spec-loader.js";
-import type { TestSpec } from "../../../src/harness/types/spec.js";
+import type { TestSpec, TestSuiteSpec } from "../../../src/harness/types/spec.js";
 
 describe("loadTestSpec", () => {
 	const tempDir = tmpdir();
@@ -114,6 +115,23 @@ assertions:
 		expect(spec.name).toBe("Test");
 
 		await unlink(ymlPath);
+	});
+
+	it("should include error message in validation failure", async () => {
+		const invalidPath = join(tempDir, "validation-fail.json");
+		await writeFile(invalidPath, JSON.stringify({ name: "Missing required fields" }));
+
+		try {
+			await loadTestSpec(invalidPath);
+			expect.fail("Should have thrown error");
+		} catch (error) {
+			if (error instanceof Error) {
+				expect(error.message).toContain("Invalid test spec");
+				expect(error.message).toContain("validation-fail.json");
+			}
+		}
+
+		await unlink(invalidPath);
 	});
 });
 
@@ -222,5 +240,150 @@ describe("serializeTestSpecToJSON", () => {
 
 		expect(json).not.toContain("\n"); // Compact
 		expect(json).toContain('{"name":"Test"');
+	});
+});
+
+describe("loadTestSuiteSpec", () => {
+	const tempDir = tmpdir();
+	const validSuite: TestSuiteSpec = {
+		name: "Test Suite",
+		tests: [
+			{
+				name: "Test 1",
+				tool: "test_tool",
+				arguments: { param: "value" },
+				assertions: [{ type: "success" }],
+			},
+			{
+				name: "Test 2",
+				tool: "another_tool",
+				arguments: {},
+				assertions: [{ type: "success" }],
+			},
+		],
+	};
+
+	let yamlSuitePath: string;
+	let jsonSuitePath: string;
+	let invalidSuitePath: string;
+	let unsupportedSuitePath: string;
+
+	beforeAll(async () => {
+		yamlSuitePath = join(tempDir, "test-suite.yaml");
+		jsonSuitePath = join(tempDir, "test-suite.json");
+		invalidSuitePath = join(tempDir, "invalid-suite.yaml");
+		unsupportedSuitePath = join(tempDir, "suite.txt");
+
+		await writeFile(
+			yamlSuitePath,
+			`name: "Test Suite"
+tests:
+  - name: "Test 1"
+    tool: "test_tool"
+    arguments:
+      param: "value"
+    assertions:
+      - type: "success"
+  - name: "Test 2"
+    tool: "another_tool"
+    arguments: {}
+    assertions:
+      - type: "success"`,
+		);
+
+		await writeFile(jsonSuitePath, JSON.stringify(validSuite));
+		await writeFile(invalidSuitePath, "invalid: [suite content");
+		await writeFile(unsupportedSuitePath, "Plain text");
+	});
+
+	afterAll(async () => {
+		await Promise.all([
+			unlink(yamlSuitePath).catch(() => {}),
+			unlink(jsonSuitePath).catch(() => {}),
+			unlink(invalidSuitePath).catch(() => {}),
+			unlink(unsupportedSuitePath).catch(() => {}),
+		]);
+	});
+
+	it("should load valid YAML test suite", async () => {
+		const suite = await loadTestSuiteSpec(yamlSuitePath);
+
+		expect(suite.name).toBe("Test Suite");
+		expect(suite.tests).toHaveLength(2);
+		expect(suite.tests[0].name).toBe("Test 1");
+		expect(suite.tests[1].name).toBe("Test 2");
+	});
+
+	it("should load valid JSON test suite", async () => {
+		const suite = await loadTestSuiteSpec(jsonSuitePath);
+
+		expect(suite.name).toBe("Test Suite");
+		expect(suite.tests).toHaveLength(2);
+		expect(suite.tests[0].tool).toBe("test_tool");
+		expect(suite.tests[1].tool).toBe("another_tool");
+	});
+
+	it("should throw error for unsupported file format", async () => {
+		await expect(loadTestSuiteSpec(unsupportedSuitePath)).rejects.toThrow(
+			"Unsupported file format",
+		);
+	});
+
+	it("should throw error for non-existent file", async () => {
+		await expect(
+			loadTestSuiteSpec(join(tempDir, "nonexistent-suite.yaml")),
+		).rejects.toThrow();
+	});
+
+	it("should throw error for invalid test suite spec", async () => {
+		const invalidPath = join(tempDir, "invalid-structure.yaml");
+		await writeFile(
+			invalidPath,
+			`name: "Suite"
+tests: "not an array"`,
+		);
+
+		await expect(loadTestSuiteSpec(invalidPath)).rejects.toThrow(
+			"Invalid test suite spec",
+		);
+
+		await unlink(invalidPath);
+	});
+
+	it("should handle .yml extension for test suites", async () => {
+		const ymlPath = join(tempDir, "suite.yml");
+		await writeFile(
+			ymlPath,
+			`name: "YML Suite"
+tests:
+  - name: "Test"
+    tool: "tool"
+    arguments: {}
+    assertions:
+      - type: "success"`,
+		);
+
+		const suite = await loadTestSuiteSpec(ymlPath);
+		expect(suite.name).toBe("YML Suite");
+		expect(suite.tests).toHaveLength(1);
+
+		await unlink(ymlPath);
+	});
+
+	it("should include error message in validation failure", async () => {
+		const invalidPath = join(tempDir, "validation-error.json");
+		await writeFile(invalidPath, JSON.stringify({ name: "Missing tests field" }));
+
+		try {
+			await loadTestSuiteSpec(invalidPath);
+			expect.fail("Should have thrown error");
+		} catch (error) {
+			if (error instanceof Error) {
+				expect(error.message).toContain("Invalid test suite spec");
+				expect(error.message).toContain("validation-error.json");
+			}
+		}
+
+		await unlink(invalidPath);
 	});
 });

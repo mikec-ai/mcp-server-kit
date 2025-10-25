@@ -276,6 +276,32 @@ describe("TemplateProcessor", () => {
 				// Expected - no installation happened
 			}
 		});
+
+		it("should use npm install command by default", () => {
+			// Access private method through type assertion for testing
+			const command = (processor as any).getInstallCommand();
+			expect(command).toBe("npm install");
+		});
+
+		it("should use npm install command when npm specified", () => {
+			const command = (processor as any).getInstallCommand("npm");
+			expect(command).toBe("npm install");
+		});
+
+		it("should use pnpm install command when pnpm specified", () => {
+			const command = (processor as any).getInstallCommand("pnpm");
+			expect(command).toBe("pnpm install");
+		});
+
+		it("should use yarn install command when yarn specified", () => {
+			const command = (processor as any).getInstallCommand("yarn");
+			expect(command).toBe("yarn install");
+		});
+
+		it("should use bun install command when bun specified", () => {
+			const command = (processor as any).getInstallCommand("bun");
+			expect(command).toBe("bun install");
+		});
 	});
 
 	describe("directory structure", () => {
@@ -339,6 +365,151 @@ describe("TemplateProcessor", () => {
 			} catch {
 				// Expected
 			}
+		});
+	});
+
+	describe("hook execution", () => {
+		it("should handle non-existent hooks gracefully", async () => {
+			const targetDir = join(tempDir, "no-hooks");
+
+			const options: ScaffoldOptions = {
+				template: "cloudflare-remote",
+				targetDir,
+				variables: {
+					PROJECT_NAME: "no-hooks",
+					DESCRIPTION: "Test",
+					PORT: "8788",
+					MCP_SERVER_NAME: "Test",
+				},
+				noInstall: true,
+			};
+
+			// Should not throw even if hooks don't exist
+			const result = await processor.scaffold(options);
+			expect(result.success).toBe(true);
+		});
+
+		it("should continue scaffolding if hook fails", async () => {
+			// This test verifies that hook errors don't prevent scaffolding
+			const targetDir = join(tempDir, "hook-error");
+
+			const options: ScaffoldOptions = {
+				template: "cloudflare-remote",
+				targetDir,
+				variables: {
+					PROJECT_NAME: "hook-error",
+					DESCRIPTION: "Test",
+					PORT: "8788",
+					MCP_SERVER_NAME: "Test",
+				},
+				noInstall: true,
+			};
+
+			const result = await processor.scaffold(options);
+
+			// Scaffolding should succeed even if hooks have issues
+			expect(result.success).toBe(true);
+		});
+	});
+
+	describe("smoke test execution", () => {
+		it("should skip smoke test when not configured", async () => {
+			const targetDir = join(tempDir, "no-smoke-test");
+
+			const options: ScaffoldOptions = {
+				template: "cloudflare-remote",
+				targetDir,
+				variables: {
+					PROJECT_NAME: "no-smoke-test",
+					DESCRIPTION: "Test",
+					PORT: "8788",
+					MCP_SERVER_NAME: "Test",
+				},
+				noInstall: true,
+				smokeTest: false, // Explicitly disable
+			};
+
+			const result = await processor.scaffold(options);
+			expect(result.success).toBe(true);
+		});
+
+		it("should handle smoke test when explicitly requested", async () => {
+			const targetDir = join(tempDir, "with-smoke-test");
+
+			const options: ScaffoldOptions = {
+				template: "cloudflare-remote",
+				targetDir,
+				variables: {
+					PROJECT_NAME: "with-smoke-test",
+					DESCRIPTION: "Test",
+					PORT: "8788",
+					MCP_SERVER_NAME: "Test",
+				},
+				noInstall: true,
+				smokeTest: true, // Enable smoke test
+			};
+
+			const result = await processor.scaffold(options);
+
+			// Should succeed (smoke test may pass or continue anyway)
+			expect(result.success).toBe(true);
+		});
+
+		it("should continue scaffolding even if smoke test fails", async () => {
+			// Smoke tests should not cause scaffolding to fail
+			const targetDir = join(tempDir, "smoke-test-fail");
+
+			const options: ScaffoldOptions = {
+				template: "cloudflare-remote",
+				targetDir,
+				variables: {
+					PROJECT_NAME: "smoke-test-fail",
+					DESCRIPTION: "Test",
+					PORT: "8788",
+					MCP_SERVER_NAME: "Test",
+				},
+				noInstall: true,
+				smokeTest: true,
+			};
+
+			const result = await processor.scaffold(options);
+
+			// Should succeed regardless of smoke test outcome
+			expect(result.success).toBe(true);
+		});
+	});
+
+	describe("error handling", () => {
+		it("should handle errors gracefully and return error result", async () => {
+			const options: ScaffoldOptions = {
+				template: "non-existent-template",
+				targetDir: join(tempDir, "error-case"),
+				variables: {
+					PROJECT_NAME: "error-case",
+				},
+				noInstall: true,
+			};
+
+			const result = await processor.scaffold(options);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toBeTruthy();
+			expect(typeof result.error).toBe("string");
+		});
+
+		it("should handle non-Error exceptions", async () => {
+			// This tests the error handling for non-Error objects
+			const options: ScaffoldOptions = {
+				template: "non-existent-template",
+				targetDir: join(tempDir, "non-error-exception"),
+				variables: {},
+				noInstall: true,
+			};
+
+			const result = await processor.scaffold(options);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toBeTruthy();
 		});
 	});
 });

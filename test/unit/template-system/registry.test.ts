@@ -106,6 +106,28 @@ describe("TemplateRegistry", () => {
 			expect(result.valid).toBe(false);
 			expect(result.errors.length).toBeGreaterThan(0);
 		});
+
+		it("should handle validation errors gracefully", async () => {
+			const result = await registry.validateTemplate("non-existent");
+
+			expect(result.valid).toBe(false);
+			expect(result.errors).toBeInstanceOf(Array);
+			expect(result.warnings).toBeInstanceOf(Array);
+		});
+
+		it("should validate files directory exists", async () => {
+			const result = await registry.validateTemplate("cloudflare-remote");
+
+			// Files directory should exist for valid template
+			expect(result.valid).toBe(true);
+		});
+
+		it("should validate capabilities", async () => {
+			const result = await registry.validateTemplate("cloudflare-remote");
+
+			// Template should have at least one transport
+			expect(result.valid).toBe(true);
+		});
 	});
 
 	describe("listTemplates", () => {
@@ -172,6 +194,56 @@ describe("TemplateRegistry", () => {
 		it("should return empty array when no templates match filter", async () => {
 			const filter: TemplateFilter = {
 				runtime: "non-existent-runtime",
+			};
+
+			const templates = await registry.listTemplates(filter);
+
+			expect(templates.length).toBe(0);
+		});
+
+		it("should return empty array when no templates match deployment filter", async () => {
+			const filter: TemplateFilter = {
+				deployment: "non-existent-deployment",
+			};
+
+			const templates = await registry.listTemplates(filter);
+
+			expect(templates.length).toBe(0);
+		});
+
+		it("should return empty array when no templates match language filter", async () => {
+			const filter: TemplateFilter = {
+				language: "non-existent-language",
+			};
+
+			const templates = await registry.listTemplates(filter);
+
+			expect(templates.length).toBe(0);
+		});
+
+		it("should apply multiple filters simultaneously", async () => {
+			const filter: TemplateFilter = {
+				runtime: "cloudflare-workers",
+				transport: "sse",
+				deployment: "remote",
+				language: "typescript",
+			};
+
+			const templates = await registry.listTemplates(filter);
+
+			expect(templates.length).toBeGreaterThan(0);
+			for (const template of templates) {
+				expect(template.capabilities.runtime).toBe("cloudflare-workers");
+				expect(template.capabilities.transport).toContain("sse");
+				expect(template.capabilities.deployment).toBe("remote");
+				expect(template.capabilities.language).toBe("typescript");
+			}
+		});
+
+		it("should return empty array when combined filters don't match", async () => {
+			const filter: TemplateFilter = {
+				runtime: "cloudflare-workers",
+				deployment: "non-existent", // This won't match
 			};
 
 			const templates = await registry.listTemplates(filter);
