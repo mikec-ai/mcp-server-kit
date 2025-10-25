@@ -1,6 +1,6 @@
 name: "Health Check - Basic"
-description: "Verify that health_check tool returns server status"
-tool: "health_check"
+description: "Verify that health tool returns server status"
+tool: "health"
 arguments: {}
 
 assertions:

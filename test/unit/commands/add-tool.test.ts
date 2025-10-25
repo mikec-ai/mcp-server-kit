@@ -25,50 +25,50 @@ describe("add-tool command", () => {
 
 	describe("tool name validation", () => {
 		it("should validate tool name format", () => {
-			const validNameRegex = /^[a-z][a-z0-9_]*$/;
+			const validNameRegex = /^[a-z][a-z0-9-]*$/;
 
 			// Valid names
-			expect(validNameRegex.test("my_tool")).toBe(true);
+			expect(validNameRegex.test("my-tool")).toBe(true);
 			expect(validNameRegex.test("analyze")).toBe(true);
-			expect(validNameRegex.test("fetch_data")).toBe(true);
+			expect(validNameRegex.test("fetch-data")).toBe(true);
 			expect(validNameRegex.test("tool123")).toBe(true);
 
 			// Invalid names
-			expect(validNameRegex.test("My_Tool")).toBe(false); // Uppercase
-			expect(validNameRegex.test("my-tool")).toBe(false); // Hyphens
+			expect(validNameRegex.test("My-Tool")).toBe(false); // Uppercase
+			expect(validNameRegex.test("my_tool")).toBe(false); // Underscores
 			expect(validNameRegex.test("123tool")).toBe(false); // Starts with number
 			expect(validNameRegex.test("my tool")).toBe(false); // Spaces
 		});
 
 		it("should provide helpful error message for invalid names", () => {
-			const errorMessage = "Tool name must be lowercase with underscores (e.g., my_tool)";
+			const errorMessage = "Tool name must be lowercase with hyphens (e.g., my-tool)";
 
 			expect(errorMessage).toContain("lowercase");
-			expect(errorMessage).toContain("underscores");
-			expect(errorMessage).toContain("my_tool");
+			expect(errorMessage).toContain("hyphens");
+			expect(errorMessage).toContain("my-tool");
 		});
 	});
 
 	describe("string conversion utilities", () => {
-		it("should convert snake_case to PascalCase", () => {
+		it("should convert kebab-case to PascalCase", () => {
 			const toPascalCase = (str: string): string => {
 				return str
-					.split("_")
+					.split("-")
 					.map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
 					.join("");
 			};
 
-			expect(toPascalCase("my_tool")).toBe("MyTool");
-			expect(toPascalCase("analyze_complexity")).toBe("AnalyzeComplexity");
+			expect(toPascalCase("my-tool")).toBe("MyTool");
+			expect(toPascalCase("analyze-complexity")).toBe("AnalyzeComplexity");
 			expect(toPascalCase("simple")).toBe("Simple");
-			expect(toPascalCase("fetch_data")).toBe("FetchData");
-			expect(toPascalCase("health_check")).toBe("HealthCheck");
+			expect(toPascalCase("fetch-data")).toBe("FetchData");
+			expect(toPascalCase("health")).toBe("Health");
 		});
 	});
 
 	describe("template generation", () => {
 		it("should generate tool file with correct structure", () => {
-			const toolName = "my_tool";
+			const toolName = "my-tool";
 			const capitalizedName = "MyTool";
 			const description = "My custom tool";
 

@@ -28,7 +28,7 @@ interface AddToolOptions {
 export function createAddToolCommand(): Command {
 	const command = new Command("tool")
 		.description("Add a new MCP tool to the project")
-		.argument("<name>", "Tool name (lowercase with underscores)")
+		.argument("<name>", "Tool name (lowercase with hyphens)")
 		.option(
 			"--description <desc>",
 			"Tool description",
@@ -46,9 +46,9 @@ export function createAddToolCommand(): Command {
 				console.log(`\n🔧 Adding tool: ${name}\n`);
 
 				// Validate tool name
-				if (!/^[a-z][a-z0-9_]*$/.test(name)) {
+				if (!/^[a-z][a-z0-9-]*$/.test(name)) {
 					throw new Error(
-						"Tool name must be lowercase with underscores (e.g., my_tool)",
+						"Tool name must be lowercase with hyphens (e.g., my-tool)",
 					);
 				}
 
@@ -400,11 +400,11 @@ async function updateTemplateMetadata(
 }
 
 /**
- * Convert snake_case to PascalCase
+ * Convert kebab-case to PascalCase
  */
 function toPascalCase(str: string): string {
 	return str
-		.split("_")
+		.split("-")
 		.map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
 		.join("");
 }

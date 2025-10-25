@@ -12,7 +12,7 @@ import { z } from "zod";
  */
 export function registerHealthTool(server: McpServer): void {
 	server.tool(
-		"health_check",
+		"health",
 		"Returns the health status of the MCP server",
 		{}, // No parameters
 		async () => {

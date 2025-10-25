@@ -57,8 +57,7 @@ export function createNewServerCommand(): Command {
 					PROJECT_NAME: options.name,
 					MCP_SERVER_NAME: options.description || options.name,
 					PORT: options.port,
-					DEV_MODE: String(Boolean(options.dev)),
-				};
+					};
 
 				if (options.description) {
 					variables.DESCRIPTION = options.description;
@@ -72,7 +71,8 @@ export function createNewServerCommand(): Command {
 					// Navigate from dist/ to root (1 level up)
 					// The compiled code is in dist/cli.js, so we go back one level
 					const mcpKitRoot = path.resolve(__dirname, "../");
-					variables.MCP_KIT_PATH = mcpKitRoot;
+					variables.DEV_MODE = "true";
+				variables.MCP_KIT_PATH = mcpKitRoot;
 					console.log(`📦 Development mode: Using local mcp-server-kit at ${mcpKitRoot}\n`);
 				}
 

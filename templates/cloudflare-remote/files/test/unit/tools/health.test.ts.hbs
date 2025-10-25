@@ -15,7 +15,7 @@ describe("Health Check Tool", () => {
 		const server = createMockServer();
 		registerHealthTool(server);
 
-		const response = await expectToolSuccess(server, "health_check", {});
+		const response = await expectToolSuccess(server, "health", {});
 		const data = parseToolResponse<{
 			status: string;
 			timestamp: string;
@@ -33,7 +33,7 @@ describe("Health Check Tool", () => {
 		const server = createMockServer();
 		registerHealthTool(server);
 
-		const response = await expectToolSuccess(server, "health_check", {});
+		const response = await expectToolSuccess(server, "health", {});
 		const data = parseToolResponse<{ timestamp: string }>(response);
 
 		expect(data.timestamp).toBeDefined();
@@ -45,7 +45,7 @@ describe("Health Check Tool", () => {
 		const server = createMockServer();
 		registerHealthTool(server);
 
-		const response = await expectToolSuccess(server, "health_check", {});
+		const response = await expectToolSuccess(server, "health", {});
 		const data = parseToolResponse<{ uptime: number | string }>(response);
 
 		expect(data.uptime).toBeDefined();
@@ -60,7 +60,7 @@ describe("Health Check Tool", () => {
 		registerHealthTool(server);
 
 		// Should work with empty params
-		const response = await expectToolSuccess(server, "health_check", {});
+		const response = await expectToolSuccess(server, "health", {});
 		expect(response).toBeDefined();
 		expect(response.content).toHaveLength(1);
 	});
@@ -69,7 +69,7 @@ describe("Health Check Tool", () => {
 		const server = createMockServer();
 		registerHealthTool(server);
 
-		const response = await expectToolSuccess(server, "health_check", {});
+		const response = await expectToolSuccess(server, "health", {});
 
 		// parseToolResponse will throw if JSON is invalid
 		expect(() => parseToolResponse(response)).not.toThrow();
