@@ -6,7 +6,7 @@
  * Design: Fully portable, projects provide their own config
  */
 
-import type { IMCPTestClient } from "./client.ts";
+import type { IMCPTestClient } from "./client.js";
 
 /**
  * Test harness configuration

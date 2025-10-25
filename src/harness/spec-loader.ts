@@ -9,8 +9,8 @@
 import { readFile } from "node:fs/promises";
 import { extname } from "node:path";
 import { parse as parseYAML, stringify as stringifyYAML } from "yaml";
-import { validateTestSpec, validateTestSuiteSpec } from "./validation/schemas.ts";
-import type { TestSpec, TestSuiteSpec } from "./types/spec.ts";
+import { validateTestSpec, validateTestSuiteSpec } from "./validation/schemas.js";
+import type { TestSpec, TestSuiteSpec } from "./types/spec.js";
 
 /**
  * Load a test specification from a file

@@ -6,7 +6,7 @@
  * Design: Fully portable, structured for agent consumption
  */
 
-import type { Assertion } from "./spec.ts";
+import type { Assertion } from "./spec.js";
 
 /**
  * Result of a single assertion

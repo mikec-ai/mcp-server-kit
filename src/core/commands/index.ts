@@ -1,8 +1,11 @@
 /**
- * Commands - Placeholder
+ * CLI Commands
  *
- * CLI command implementations will go here.
- * TODO: Implement CLI commands (new, template, run, list, manifest, conformance)
+ * Command implementations for mcp-server-kit CLI.
  */
 
-export const VERSION = "1.0.0";
+export { createNewCommand } from "./new-server.js";
+export { createTemplateCommand } from "./template.js";
+export { createAddCommand } from "./add-tool.js";
+export { createValidateCommand } from "./validate.js";
+export { createListCommand } from "./list.js";

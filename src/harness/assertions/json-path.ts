@@ -4,9 +4,9 @@
  * Verifies values at specific JSON paths in the response.
  */
 
-import type { MCPToolResponse } from "../types/client.ts";
-import type { AssertionResult } from "../types/results.ts";
-import { getResponseText } from "./helpers.ts";
+import type { MCPToolResponse } from "../types/client.js";
+import type { AssertionResult } from "../types/results.js";
+import { getResponseText } from "./helpers.js";
 
 /**
  * Simple JSON path evaluator

@@ -10,8 +10,8 @@
 		"language": "typescript"
 	},
 	"dependencies": {
-		"mcp_sdk": "1.19.1",
-		"agents": "0.2.8",
+		"mcp_sdk": "^1.20.2",
+		"agents": "^0.2.17",
 		"runtime_specific": {
 			"wrangler": "^4.44.0",
 			"@cloudflare/vitest-pool-workers": "^0.9.14"

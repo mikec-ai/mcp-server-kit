@@ -6,12 +6,17 @@ export default defineConfig({
 		alias: {
 			"@": resolve(__dirname, "./src"),
 		},
+		extensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
+	},
+	esbuild: {
+		// Handle .ts imports in source files
+		target: "es2022",
 	},
 	test: {
 		globals: true,
 		environment: "node",
 		include: ["test/**/*.test.ts"],
-		exclude: ["node_modules", "dist", "templates/**/*"],
+		exclude: ["node_modules", "dist", "templates/**/*", "**/*.e2e.ts"],
 		coverage: {
 			provider: "v8",
 			reporter: ["text", "json", "html"],

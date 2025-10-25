@@ -6,10 +6,10 @@
  * Design: Fully portable, uses IMCPTestClient interface
  */
 
-import type { IMCPTestClient } from "./types/client.ts";
-import type { TestSpec } from "./types/spec.ts";
-import type { TestResult, TestRunResults, TestSummary } from "./types/results.ts";
-import { runAssertions } from "./assertions/index.ts";
+import type { IMCPTestClient } from "./types/client.js";
+import type { TestSpec } from "./types/spec.js";
+import type { TestResult, TestRunResults, TestSummary } from "./types/results.js";
+import { runAssertions } from "./assertions/index.js";
 
 /**
  * Test Runner

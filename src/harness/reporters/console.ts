@@ -6,7 +6,7 @@
  * Design: Fully portable, colorized console output
  */
 
-import type { TestRunResults, TestResult } from "../types/results.ts";
+import type { TestRunResults, TestResult } from "../types/results.js";
 
 // ANSI color codes
 const colors = {

@@ -7,7 +7,7 @@ import {
 	validateTestSpec,
 	validateTestSuiteSpec,
 	safeValidateTestSpec,
-} from "../../../src/harness/validation/schemas.ts";
+} from "../../../src/harness/validation/schemas.js";
 
 describe("validateTestSpec", () => {
 	it("should validate a valid test spec", () => {

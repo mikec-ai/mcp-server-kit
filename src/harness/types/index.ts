@@ -5,7 +5,7 @@
  * These types are fully portable and have no project-specific dependencies.
  */
 
-export * from "./client.ts";
-export * from "./config.ts";
-export * from "./spec.ts";
-export * from "./results.ts";
+export * from "./client.js";
+export * from "./config.js";
+export * from "./spec.js";
+export * from "./results.js";

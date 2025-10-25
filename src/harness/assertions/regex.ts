@@ -4,9 +4,9 @@
  * Verifies that response matches a regular expression pattern.
  */
 
-import type { MCPToolResponse } from "../types/client.ts";
-import type { AssertionResult } from "../types/results.ts";
-import { getResponseText } from "./helpers.ts";
+import type { MCPToolResponse } from "../types/client.js";
+import type { AssertionResult } from "../types/results.js";
+import { getResponseText } from "./helpers.js";
 
 /**
  * Check if response matches regex pattern

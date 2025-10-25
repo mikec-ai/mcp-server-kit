@@ -14,11 +14,14 @@
 		"declarationMap": true,
 		"sourceMap": true,
 		"outDir": "./dist",
-		"rootDir": "./src",
 		"types": ["node", "vitest/globals"],
 		"noEmit": true,
 		"isolatedModules": true,
-		"allowImportingTsExtensions": true
+		"allowImportingTsExtensions": true,
+		"baseUrl": ".",
+		"paths": {
+			"@/*": ["src/*"]
+		}
 	},
 	"include": ["src/**/*", "test/**/*"],
 	"exclude": ["node_modules", "dist", "templates/**/*"]

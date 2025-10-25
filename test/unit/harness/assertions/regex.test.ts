@@ -3,8 +3,8 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { checkRegexMatch } from "../../../src/harness/assertions/regex.ts";
-import type { MCPToolResponse } from "../../../src/harness/types/client.ts";
+import { checkRegexMatch } from "@/harness/assertions/index";
+import type { MCPToolResponse } from "@/harness/types/client";
 
 describe("checkRegexMatch", () => {
 	it("should pass when pattern matches", () => {

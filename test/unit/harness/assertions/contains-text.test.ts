@@ -6,8 +6,8 @@ import { describe, it, expect } from "vitest";
 import {
 	checkContainsText,
 	checkNotContainsText,
-} from "../../../src/harness/assertions/contains-text.ts";
-import type { MCPToolResponse } from "../../../src/harness/types/client.ts";
+} from "@/harness/assertions/index";
+import type { MCPToolResponse } from "@/harness/types/client";
 
 describe("checkContainsText", () => {
 	it("should pass when text is found", () => {

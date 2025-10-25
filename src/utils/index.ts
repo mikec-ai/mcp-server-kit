@@ -6,14 +6,17 @@
  */
 
 // JSON Schema to Zod conversion
-export { jsonSchemaToZod } from "./json-schema-to-zod.js";
+export { jsonSchemaToZod, getZodErrorMessage } from "./json-schema-to-zod.js";
 
 // Example payload generation
-export { generateExamplePayload } from "./example-generator.js";
+export { ExampleGenerator } from "./example-generator.js";
 
 // Validation error formatting
-export {
-	formatValidationErrors,
-	formatSingleError,
-	type FormattedValidationError,
-} from "./error-formatter.js";
+export { ErrorFormatter } from "./error-formatter.js";
+
+// Types
+export type {
+	ValidationError,
+	ValidationWarning,
+	ValidationResult,
+} from "../types/mcp-tools.js";

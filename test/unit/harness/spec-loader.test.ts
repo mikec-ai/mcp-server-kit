@@ -11,8 +11,8 @@ import {
 	parseTestSpec,
 	serializeTestSpecToYAML,
 	serializeTestSpecToJSON,
-} from "../../../src/harness/spec-loader.ts";
-import type { TestSpec } from "../types/spec.js";
+} from "../../../src/harness/spec-loader.js";
+import type { TestSpec } from "../../../src/harness/types/spec.js";
 
 describe("loadTestSpec", () => {
 	const tempDir = tmpdir();

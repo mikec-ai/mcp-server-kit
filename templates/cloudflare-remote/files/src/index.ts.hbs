@@ -4,8 +4,7 @@
  * Entry point for the MCP server running on Cloudflare Workers.
  */
 
-import { McpAgent } from "agents";
-import type { Env, ExecutionContext } from "agents";
+import { McpAgent } from "agents/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerHealthTool } from "./tools/health.js";
 import { registerEchoTool } from "./tools/echo.js";
@@ -49,12 +48,12 @@ export default {
 
 		// Route: SSE/MCP endpoint
 		if (url.pathname === "/sse" || url.pathname === "/sse/message") {
-			return MCPServerAgent.serveSSE(request, env, ctx);
+			return MCPServerAgent.serveSSE('/sse').fetch(request, env, ctx);
 		}
 
 		// Route: Standard MCP endpoint (JSON-RPC)
 		if (url.pathname === "/mcp") {
-			return MCPServerAgent.serve(request, env, ctx);
+			return MCPServerAgent.serve('/mcp').fetch(request, env, ctx);
 		}
 
 		// 404 for all other routes

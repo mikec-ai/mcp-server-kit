@@ -15,8 +15,23 @@ import type {
 } from "./types.js";
 import { validateTemplateConfig } from "./schemas.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+/**
+ * Get the templates directory path
+ * Works both in development and when installed as a package
+ */
+function getTemplatesDir(): string {
+	const __filename = fileURLToPath(import.meta.url);
+	const __dirname = dirname(__filename);
+
+	// Check if we're running from src/ or dist/
+	if (__dirname.includes("/src/")) {
+		// Running from source (tests): src/core/template-system -> ../../../templates
+		return join(__dirname, "../../../templates");
+	} else {
+		// Running from dist (CLI): dist/ -> ../templates
+		return join(__dirname, "../templates");
+	}
+}
 
 /**
  * Template Registry - discovers and validates templates
@@ -27,7 +42,7 @@ export class TemplateRegistry {
 
 	constructor(templatesDir?: string) {
 		// Default to templates directory in project root
-		this.templatesDir = templatesDir || join(__dirname, "../../../templates");
+		this.templatesDir = templatesDir || getTemplatesDir();
 	}
 
 	/**

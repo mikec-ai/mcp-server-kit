@@ -10,7 +10,7 @@
 
 import { mkdir, readdir, readFile, writeFile, copyFile, stat } from "node:fs/promises";
 import { join, dirname, basename } from "node:path";
-import { compile } from "handlebars";
+import Handlebars from "handlebars";
 import type {
 	ScaffoldOptions,
 	ScaffoldResult,
@@ -199,7 +199,7 @@ export class TemplateProcessor {
 			const templateContent = await readFile(sourcePath, "utf-8");
 
 			// Compile and execute Handlebars template
-			const template = compile(templateContent);
+			const template = Handlebars.compile(templateContent);
 			const processedContent = template(variables);
 
 			// Write processed file
@@ -233,8 +233,15 @@ export class TemplateProcessor {
 				await hook.default(context);
 			}
 		} catch (error) {
-			// Hook doesn't exist or failed - log but don't fail scaffolding
-			console.warn(`Hook ${hookName} not found or failed: ${error}`);
+			// Only warn if hook exists but failed to execute
+			// Don't warn if hook doesn't exist (ENOENT) - hooks are optional
+			const isNotFound = error instanceof Error &&
+				'code' in error &&
+				(error as NodeJS.ErrnoException).code === 'ENOENT';
+
+			if (!isNotFound) {
+				console.warn(`⚠️  Hook ${hookName} failed: ${error instanceof Error ? error.message : String(error)}`);
+			}
 		}
 	}
 

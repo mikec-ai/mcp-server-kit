@@ -3,8 +3,8 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { checkSuccess } from "../../../src/harness/assertions/success.ts";
-import type { MCPToolResponse } from "../../../src/harness/types/client.ts";
+import { checkSuccess } from "@/harness/assertions/index";
+import type { MCPToolResponse } from "@/harness/types/client";
 
 describe("checkSuccess", () => {
 	it("should pass when response is successful", () => {

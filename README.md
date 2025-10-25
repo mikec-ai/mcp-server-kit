@@ -10,7 +10,47 @@ Create production-ready MCP servers in seconds with built-in testing infrastruct
 - 🧪 **Built-in Testing** - Integrated test harness with declarative YAML test specs
 - 🔌 **Extensible Templates** - Plugin architecture for multiple MCP frameworks
 - 📦 **Production Ready** - Includes TypeScript, testing, linting, and deployment config
-- 🤖 **Agent-Friendly** - Designed for AI agents with JSON output and no prompts
+- 🤖 **Agent-Optimized** - Built specifically for AI agents with auto-scaffolding, examples, and validation
+- 🛠️ **Development Tools** - Add tools, validate projects, list tools, all from CLI
+- 📚 **Rich Examples** - Comprehensive example tools and utilities showing best practices
+
+## For AI Agents 🤖
+
+**This toolkit is specifically optimized for AI agent development.** It automates the mechanical tasks agents forget (file creation, registration, imports) while preserving flexibility for creative problem-solving.
+
+### Agent Workflow
+
+1. **Scaffold** - Let the CLI handle boilerplate
+2. **Implement** - Focus on tool logic (the creative part)
+3. **Validate** - Catch issues automatically
+4. **Test** - Use provided test utilities
+
+```bash
+# 1. Create project
+mcp-server-kit new server --template cloudflare-remote --name my-server
+
+# 2. Add tools (auto-scaffolds everything)
+cd my-server
+mcp-server-kit add tool weather --description "Get weather data"
+
+# 3. Implement (TODO markers show what to code)
+# Edit src/tools/weather.ts - implement the actual logic
+
+# 4. Validate (catches missed registrations, tests, etc.)
+mcp-server-kit validate
+
+# 5. Test
+npm run test:unit
+```
+
+**What agents get:**
+- Example tools showing all patterns (_example-simple.ts, _example-validated.ts, _example-async.ts)
+- Optional utility helpers (mcp-helpers.ts, validation.ts, test-utils.ts)
+- Auto-registration (no manual import management)
+- Validation catching common mistakes
+- Comprehensive inline documentation
+
+---
 
 ## Quick Start
 
@@ -53,12 +93,16 @@ npm run test:integration
 Every scaffolded project includes:
 
 - ✅ **MCP Server** - Complete server implementation with example tools
-- ✅ **Unit Tests** - Test infrastructure with Vitest
+- ✅ **Unit Tests** - Test infrastructure with Vitest and test utilities
 - ✅ **Integration Tests** - Declarative YAML test specs using the test harness
 - ✅ **TypeScript** - Strict mode configuration with proper types
 - ✅ **Code Quality** - Biome for formatting and linting
 - ✅ **Deployment** - Ready to deploy (Cloudflare, Vercel, etc.)
-- ✅ **Documentation** - README, development guide, and examples
+- ✅ **Documentation** - README with "For AI Agents" section
+- ✅ **Example Tools** - Three comprehensive example files (_example-simple.ts, _example-validated.ts, _example-async.ts)
+- ✅ **Utility Libraries** - Optional helpers (mcp-helpers.ts, validation.ts)
+- ✅ **Test Utilities** - Testing helpers for Vitest (test-utils.ts)
+- ✅ **Development Scripts** - npm shortcuts for common tasks
 
 ## Architecture
 
@@ -267,7 +311,9 @@ See [CREATING-TEMPLATES.md](./docs/CREATING-TEMPLATES.md) for full guide.
 
 ## CLI Commands
 
-### `new server`
+### Project Creation
+
+#### `new server`
 
 Scaffold a new MCP server:
 
@@ -281,7 +327,68 @@ mcp-server-kit new server \
   [--pm npm|pnpm|yarn]
 ```
 
-### `template list`
+### Development Commands (For AI Agents)
+
+#### `add tool`
+
+Auto-scaffold a new tool with tests and registration:
+
+```bash
+mcp-server-kit add tool weather --description "Get weather information"
+
+# This automatically:
+# - Creates src/tools/weather.ts with TODO markers
+# - Generates test/unit/tools/weather.test.ts
+# - Generates test/integration/specs/weather.yaml
+# - Registers tool in src/index.ts
+# - Updates .mcp-template.json metadata
+```
+
+Options:
+- `--description` - Tool description (default: "TODO: Add description")
+- `--no-tests` - Skip test file generation
+- `--no-register` - Don't auto-register in index.ts
+
+#### `validate`
+
+Check project structure and configuration:
+
+```bash
+mcp-server-kit validate [--strict] [--fix]
+
+# Checks:
+# - All tools are registered in index.ts
+# - Test files exist for all tools
+# - Integration test YAMLs are valid
+# - Metadata is in sync
+```
+
+Options:
+- `--strict` - Fail on warnings (not just errors)
+- `--fix` - Automatically fix issues where possible
+
+#### `list tools`
+
+Show all tools with status:
+
+```bash
+mcp-server-kit list tools [--json] [--filter <status>] [--show-examples]
+
+# Example output:
+# NAME       | REG | UNIT | INT | FILE
+# ====================================================
+# echo       |  ✓  |  ✓  |  ✓  | src/tools/echo.ts
+# weather    |  ✓  |  ✗  |  ✓  | src/tools/weather.ts
+```
+
+Options:
+- `--json` - Output as JSON
+- `--filter` - Filter by status (all, registered, unregistered, tested, untested)
+- `--show-examples` - Include example tools in output
+
+### Template Management
+
+#### `template list`
 
 List available templates:
 
@@ -289,7 +396,7 @@ List available templates:
 mcp-server-kit template list [--json]
 ```
 
-### `template info`
+#### `template info`
 
 Show template details:
 
@@ -297,7 +404,7 @@ Show template details:
 mcp-server-kit template info <template-id>
 ```
 
-### `template validate`
+#### `template validate`
 
 Validate a template:
 

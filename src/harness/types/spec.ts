@@ -54,8 +54,8 @@ export interface JsonPathAssertion {
 	type: "json_path";
 	/** JSON path expression (e.g., "$.apis[0].name") */
 	path: string;
-	/** Expected value at path */
-	expected: any;
+	/** Expected value at path (optional - if omitted, just checks path exists) */
+	expected?: any;
 }
 
 export interface RegexMatchAssertion {

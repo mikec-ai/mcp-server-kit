@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { checkResponseTime } from "../../../src/harness/assertions/response-time.ts";
+import { checkResponseTime } from "@/harness/assertions/index";
 
 describe("checkResponseTime", () => {
 	it("should pass when duration is under max", () => {

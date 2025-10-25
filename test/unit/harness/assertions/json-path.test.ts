@@ -3,8 +3,8 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { checkJsonPath } from "../../../src/harness/assertions/json-path.ts";
-import type { MCPToolResponse } from "../../../src/harness/types/client.ts";
+import { checkJsonPath } from "@/harness/assertions/index";
+import type { MCPToolResponse } from "@/harness/types/client";
 
 describe("checkJsonPath", () => {
 	it("should pass when JSON path matches expected value", async () => {

@@ -4,8 +4,8 @@
  * Verifies that the tool call succeeded (no error).
  */
 
-import type { MCPToolResponse } from "../types/client.ts";
-import type { AssertionResult } from "../types/results.ts";
+import type { MCPToolResponse } from "../types/client.js";
+import type { AssertionResult } from "../types/results.js";
 
 /**
  * Check if tool call was successful

@@ -6,9 +6,9 @@
  * Design: Fully portable, no project-specific dependencies
  */
 
-import type { AssertionResult } from "../types/results.ts";
-import type { MCPToolResponse } from "../types/client.ts";
-import { getResponseText } from "./helpers.ts";
+import type { AssertionResult } from "../types/results.js";
+import type { MCPToolResponse } from "../types/client.js";
+import { getResponseText } from "./helpers.js";
 
 /**
  * Check that the tool call resulted in an error

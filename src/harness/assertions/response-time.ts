@@ -4,7 +4,7 @@
  * Verifies that the tool response time is within acceptable limits.
  */
 
-import type { AssertionResult } from "../types/results.ts";
+import type { AssertionResult } from "../types/results.js";
 
 /**
  * Check if response time is within maximum threshold

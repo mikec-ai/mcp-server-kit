@@ -6,15 +6,15 @@
  * Design: Fully portable, no project-specific dependencies
  */
 
-import type { Assertion } from "../types/spec.ts";
-import type { AssertionResult } from "../types/results.ts";
-import type { MCPToolResponse } from "../types/client.ts";
-import { checkSuccess } from "./success.ts";
-import { checkError } from "./error.ts";
-import { checkContainsText, checkNotContainsText } from "./contains-text.ts";
-import { checkResponseTime } from "./response-time.ts";
-import { checkJsonPath } from "./json-path.ts";
-import { checkRegexMatch } from "./regex.ts";
+import type { Assertion } from "../types/spec.js";
+import type { AssertionResult } from "../types/results.js";
+import type { MCPToolResponse } from "../types/client.js";
+import { checkSuccess } from "./success.js";
+import { checkError } from "./error.js";
+import { checkContainsText, checkNotContainsText } from "./contains-text.js";
+import { checkResponseTime } from "./response-time.js";
+import { checkJsonPath } from "./json-path.js";
+import { checkRegexMatch } from "./regex.js";
 
 /**
  * Run all assertions against a tool response
@@ -103,5 +103,13 @@ export async function runAssertions(
 	return results;
 }
 
+// Export individual assertion functions (for testing)
+export { checkSuccess } from "./success.js";
+export { checkError } from "./error.js";
+export { checkContainsText, checkNotContainsText } from "./contains-text.js";
+export { checkResponseTime } from "./response-time.js";
+export { checkJsonPath } from "./json-path.js";
+export { checkRegexMatch } from "./regex.js";
+
 // Export helper functions
-export { getResponseText } from "./helpers.ts";
+export { getResponseText } from "./helpers.js";

@@ -4,7 +4,7 @@
  * Shared utility functions for assertions.
  */
 
-import type { MCPToolResponse } from "../types/client.ts";
+import type { MCPToolResponse } from "../types/client.js";
 
 /**
  * Get text content from MCP tool response

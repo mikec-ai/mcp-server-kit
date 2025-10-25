@@ -6,7 +6,7 @@
  * Design: Fully portable, optimized for agent consumption
  */
 
-import type { TestRunResults } from "../types/results.ts";
+import type { TestRunResults } from "../types/results.js";
 
 /**
  * Format test results as JSON
