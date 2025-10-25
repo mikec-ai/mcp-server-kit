@@ -44,8 +44,8 @@ npm run test:unit
 ```
 
 **What agents get:**
-- Example tools showing all patterns (_example-simple.ts, _example-validated.ts, _example-async.ts)
-- Optional utility helpers (mcp-helpers.ts, validation.ts, test-utils.ts)
+- Example tools showing all patterns
+- Optional utility helpers
 - Auto-registration (no manual import management)
 - Validation catching common mistakes
 - Comprehensive inline documentation
@@ -99,9 +99,8 @@ Every scaffolded project includes:
 - ✅ **Code Quality** - Biome for formatting and linting
 - ✅ **Deployment** - Ready to deploy (Cloudflare, Vercel, etc.)
 - ✅ **Documentation** - README with "For AI Agents" section
-- ✅ **Example Tools** - Three comprehensive example files (_example-simple.ts, _example-validated.ts, _example-async.ts)
-- ✅ **Utility Libraries** - Optional helpers (mcp-helpers.ts, validation.ts)
-- ✅ **Test Utilities** - Testing helpers for Vitest (test-utils.ts)
+- ✅ **Example Tools** - Comprehensive example files
+- ✅ **Utility Libraries** - Optional helpers
 - ✅ **Development Scripts** - npm shortcuts for common tasks
 
 ## Architecture
@@ -117,15 +116,14 @@ mcp-server-kit/
 │   │   └── runner.ts         # Test execution engine
 │   │
 │   └── core/
+│       ├── cli/              # CLI commands
+│       ├── commands/         # Command implementations
 │       └── template-system/  # Extensible template system
-│           ├── registry.ts   # Template discovery
-│           ├── processor.ts  # Scaffolding engine
-│           └── types.ts      # Template interfaces
 │
 └── templates/                # Template plugins
     ├── cloudflare-remote/    # Cloudflare Workers template
-    ├── vercel-edge/          # (Future) Vercel Edge template
-    └── node-stdio/           # (Future) Node.js stdio template
+    ├── vercel-edge/          # (Coming soon)
+    └── node-stdio/           # (Coming soon)
 ```
 
 ## Key Design Principles
@@ -134,35 +132,9 @@ mcp-server-kit/
 
 Each MCP framework is a self-contained template plugin. Adding support for a new framework requires only creating a new template directory—no core code changes.
 
-```
-templates/my-framework/
-├── template.config.json      # Template metadata
-├── files/                    # Files to scaffold
-│   ├── src/
-│   ├── test/
-│   └── package.json.hbs     # Handlebars templates
-└── hooks/                    # Optional lifecycle hooks
-    ├── pre-scaffold.js
-    └── post-scaffold.js
-```
-
 ### 2. **Framework-Agnostic Test Harness**
 
-The test harness uses dependency injection (`IMCPTestClient` interface) to remain portable across different MCP implementations:
-
-```typescript
-// Use harness independently
-import { TestRunner, loadTestSpec } from 'mcp-server-kit/harness';
-
-const client = new MyMCPClient();
-const runner = new TestRunner(client);
-await runner.connect();
-
-const spec = await loadTestSpec('test.yaml');
-const result = await runner.runTest(spec);
-
-console.log(result.passed ? 'PASS' : 'FAIL');
-```
+The test harness uses dependency injection (`IMCPTestClient` interface) to remain portable across different MCP implementations.
 
 ### 3. **Declarative Testing**
 
@@ -182,101 +154,30 @@ assertions:
     text: "Hello, MCP!"
 ```
 
-## Available Templates
+## Documentation
 
-### Cloudflare Workers (`cloudflare-remote`)
+- **[CLI Reference](./docs/CLI.md)** - Complete command-line documentation
+- **[Template System Guide](./docs/TEMPLATES.md)** - Creating and using templates
+- **[Testing Guide](./docs/TESTING.md)** - Writing and running tests
+- **[Test Harness API](./src/harness/README.md)** - Detailed test harness documentation
 
-**Runtime**: Cloudflare Workers
-**Transport**: SSE, HTTP
-**Deployment**: Remote (Cloudflare Edge Network)
+## CLI Commands
 
-Features:
-- Zero cold starts (edge deployment)
-- Built-in TypeScript support
-- Dual transport (SSE + HTTP)
-- Integration test harness pre-configured
+Quick reference (see [CLI.md](./docs/CLI.md) for details):
 
 ```bash
-mcp-server-kit new server --template cloudflare-remote --name my-server
-```
+# Project creation
+mcp-server-kit new server --name <name> --template <template>
 
-### Coming Soon
+# Development commands (for AI agents)
+mcp-server-kit add tool <name> --description "<desc>"
+mcp-server-kit validate [--strict] [--fix]
+mcp-server-kit list tools [--json]
 
-- **`vercel-edge`** - Vercel Edge Functions
-- **`node-stdio`** - Node.js stdio server (local)
-- **`deno-fresh`** - Deno Fresh server
-
-## Using the Test Harness Independently
-
-The test harness can be used in any MCP project:
-
-```typescript
-import { TestRunner, loadTestSpec } from 'mcp-server-kit/harness';
-
-// 1. Implement IMCPTestClient interface
-class MyMCPClient implements IMCPTestClient {
-  async connect() { /* ... */ }
-  async disconnect() { /* ... */ }
-  async callTool(name, args) { /* ... */ }
-  // ...
-}
-
-// 2. Create runner and load tests
-const client = new MyMCPClient();
-const runner = new TestRunner(client);
-const specs = await loadTestSpec('tests/*.yaml');
-
-// 3. Run tests
-await runner.connect();
-const results = await runner.runTests(specs);
-console.log(results);
-await runner.disconnect();
-```
-
-## Template System API
-
-### Programmatic Scaffolding
-
-```typescript
-import { TemplateRegistry, TemplateProcessor } from 'mcp-server-kit';
-
-// 1. Create registry and processor
-const registry = new TemplateRegistry();
-const processor = new TemplateProcessor(registry);
-
-// 2. Scaffold a project
-const result = await processor.scaffold({
-  template: 'cloudflare-remote',
-  targetDir: './my-server',
-  variables: {
-    PROJECT_NAME: 'my-server',
-    DESCRIPTION: 'My MCP server',
-    PORT: '8788',
-  },
-});
-
-console.log(result.success ? 'Success!' : result.error);
-```
-
-### Template Discovery
-
-```typescript
-import { TemplateRegistry } from 'mcp-server-kit';
-
-const registry = new TemplateRegistry();
-
-// List all templates
-const templates = await registry.listTemplates();
-
-// Filter by capabilities
-const remoteTemplates = await registry.listTemplates({
-  deployment: 'remote',
-  transport: 'sse',
-});
-
-// Get specific template
-const template = await registry.getTemplate('cloudflare-remote');
-console.log(template.config);
+# Template management
+mcp-server-kit template list
+mcp-server-kit template info <template-id>
+mcp-server-kit template validate <template-id>
 ```
 
 ## Development
@@ -284,7 +185,7 @@ console.log(template.config);
 ### Building from Source
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/mcp-server-kit.git
+git clone https://github.com/MikeC-A6/mcp-server-kit.git
 cd mcp-server-kit
 npm install
 npm run build
@@ -293,149 +194,22 @@ npm run build
 ### Project Structure
 
 - **`src/harness/`** - Portable test harness (zero dependencies on core)
-- **`src/core/template-system/`** - Template registry and processor
+- **`src/core/`** - CLI and template system
 - **`templates/`** - Template plugins
-- **`test/unit/`** - Unit tests
+- **`test/`** - Unit and integration tests
 - **`docs/`** - Documentation
 
-### Adding a New Template
-
-1. Create `templates/my-template/` directory
-2. Add `template.config.json` with metadata
-3. Create `files/` directory with template files
-4. Use `.hbs` extension for files needing variable substitution
-5. Optionally add `hooks/` for custom lifecycle logic
-6. Test with `mcp-server-kit new server --template my-template`
-
-See [CREATING-TEMPLATES.md](./docs/CREATING-TEMPLATES.md) for full guide.
-
-## CLI Commands
-
-### Project Creation
-
-#### `new server`
-
-Scaffold a new MCP server:
+### Running Tests
 
 ```bash
-mcp-server-kit new server \
-  --name <project-name> \
-  --template <template-id> \
-  [--description <desc>] \
-  [--port <port>] \
-  [--no-install] \
-  [--pm npm|pnpm|yarn]
-```
+# Unit tests (fast)
+npm run test:unit
 
-### Development Commands (For AI Agents)
+# E2E template tests (slow)
+npm run test:e2e
 
-#### `add tool`
-
-Auto-scaffold a new tool with tests and registration:
-
-```bash
-mcp-server-kit add tool weather --description "Get weather information"
-
-# This automatically:
-# - Creates src/tools/weather.ts with TODO markers
-# - Generates test/unit/tools/weather.test.ts
-# - Generates test/integration/specs/weather.yaml
-# - Registers tool in src/index.ts
-# - Updates .mcp-template.json metadata
-```
-
-Options:
-- `--description` - Tool description (default: "TODO: Add description")
-- `--no-tests` - Skip test file generation
-- `--no-register` - Don't auto-register in index.ts
-
-#### `validate`
-
-Check project structure and configuration:
-
-```bash
-mcp-server-kit validate [--strict] [--fix]
-
-# Checks:
-# - All tools are registered in index.ts
-# - Test files exist for all tools
-# - Integration test YAMLs are valid
-# - Metadata is in sync
-```
-
-Options:
-- `--strict` - Fail on warnings (not just errors)
-- `--fix` - Automatically fix issues where possible
-
-#### `list tools`
-
-Show all tools with status:
-
-```bash
-mcp-server-kit list tools [--json] [--filter <status>] [--show-examples]
-
-# Example output:
-# NAME       | REG | UNIT | INT | FILE
-# ====================================================
-# echo       |  ✓  |  ✓  |  ✓  | src/tools/echo.ts
-# weather    |  ✓  |  ✗  |  ✓  | src/tools/weather.ts
-```
-
-Options:
-- `--json` - Output as JSON
-- `--filter` - Filter by status (all, registered, unregistered, tested, untested)
-- `--show-examples` - Include example tools in output
-
-### Template Management
-
-#### `template list`
-
-List available templates:
-
-```bash
-mcp-server-kit template list [--json]
-```
-
-#### `template info`
-
-Show template details:
-
-```bash
-mcp-server-kit template info <template-id>
-```
-
-#### `template validate`
-
-Validate a template:
-
-```bash
-mcp-server-kit template validate <template-id>
-```
-
-## Testing
-
-### Test Assertion Types
-
-The harness supports 7 assertion types:
-
-- `success` - Verifies no error
-- `error` - Verifies error occurred
-- `contains_text` - Text search
-- `not_contains_text` - Negative text search
-- `response_time_ms` - Performance check
-- `json_path` - JSONPath queries
-- `regex_match` - Regex pattern matching
-
-Example:
-
-```yaml
-assertions:
-  - type: "success"
-  - type: "json_path"
-    path: "$.data.id"
-    expected: "123"
-  - type: "regex_match"
-    pattern: "^\\d+ items"
+# Type checking
+npm run type-check
 ```
 
 ## Contributing
@@ -445,7 +219,7 @@ We welcome contributions! Areas we'd love help with:
 - **New Templates** - Add support for Vercel, Deno, etc.
 - **Test Harness Features** - New assertion types, reporters
 - **Documentation** - Guides, examples, tutorials
-- **Bug Fixes** - See [issues](https://github.com/YOUR_USERNAME/mcp-server-kit/issues)
+- **Bug Fixes** - See [issues](https://github.com/MikeC-A6/mcp-server-kit/issues)
 
 ## License
 
@@ -455,8 +229,9 @@ MIT
 
 - [Model Context Protocol Specification](https://modelcontextprotocol.io/)
 - [Cloudflare Workers Documentation](https://developers.cloudflare.com/workers/)
-- [Test Harness Documentation](./src/harness/README.md)
+- [CLI Reference](./docs/CLI.md)
 - [Template System Guide](./docs/TEMPLATES.md)
+- [Testing Guide](./docs/TESTING.md)
 
 ---
 

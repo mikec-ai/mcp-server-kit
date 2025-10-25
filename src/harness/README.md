@@ -395,23 +395,23 @@ npm run test:harness:watch
 
 ### Test Coverage
 
-**88 tests covering:**
+**Comprehensive test coverage:**
 
 **Assertion Functions:**
-- `success.test.ts` - 3 tests
-- `error.test.ts` - 6 tests (messageContains, case sensitivity)
-- `contains-text.test.ts` - 13 tests (case sensitivity, special chars, emoji)
-- `response-time.test.ts` - 7 tests (boundary conditions, edge cases)
-- `json-path.test.ts` - 10 tests (nested paths, arrays, invalid JSON)
-- `regex.test.ts` - 13 tests (flags, special chars, invalid patterns)
+- `success.test.ts` - Success assertion tests
+- `error.test.ts` - Error handling (messageContains, case sensitivity)
+- `contains-text.test.ts` - Text search (case sensitivity, special chars, emoji)
+- `response-time.test.ts` - Performance checks (boundary conditions, edge cases)
+- `json-path.test.ts` - JSON path queries (nested paths, arrays, invalid JSON)
+- `regex.test.ts` - Regex matching (flags, special chars, invalid patterns)
 
 **Infrastructure:**
-- `spec-loader.test.ts` - 15 tests (YAML/JSON parsing, validation)
-- `validation.test.ts` - 21 tests (Zod schemas, required fields)
+- `spec-loader.test.ts` - YAML/JSON parsing, validation
+- `validation.test.ts` - Zod schemas, required fields
 
 ### Benefits
 
-- **Fast**: < 100ms execution time (no MCP server required)
+- **Fast**: Sub-second execution (no MCP server required)
 - **Isolated**: Test harness logic independently
 - **Coverage**: Edge cases, boundary conditions, error paths
 - **Documentation**: Each test documents expected behavior

@@ -31,7 +31,7 @@ E2E tests (*.e2e.ts)      - Slow (~5min), end-to-end, run separately
 ### Test-Driven Development
 1. Write test file → Run test → Fix issues → Iterate
 2. Run tests **immediately** after writing (don't batch)
-3. All 328 unit tests must pass before committing
+3. All unit tests must pass before committing
 4. E2E tests validate full template scaffolding workflow
 
 ### Test Commands
@@ -156,6 +156,43 @@ Each template in `templates/` contains:
 - All variables must be strings (not booleans or numbers)
 - Variables use `{{VARIABLE_NAME}}` syntax in template files
 - Required variables: `PROJECT_NAME`, `MCP_SERVER_NAME`, `PORT`
+
+---
+
+## Documentation Best Practices
+
+### Principles
+- **Modular and Focused**: One topic per file, single responsibility
+- **Avoid Specific Numbers**: Don't reference test counts, line numbers, or file counts that change frequently
+- **Use References**: Link between docs instead of duplicating content
+- **Keep Lightweight**: Prefer concise summaries with links to detailed docs
+
+### Documentation Structure
+```
+README.md              - Project overview, links to detailed docs
+docs/CLI.md            - Complete CLI command reference
+docs/TEMPLATES.md      - Template system guide
+docs/TESTING.md        - Testing overview
+src/harness/README.md  - Detailed test harness API
+claude.md              - Agent development guide (this file)
+```
+
+### Examples
+```markdown
+❌ Wrong: "The project has 328 unit tests covering all utilities"
+✅ Right: "Comprehensive unit test coverage for all utilities"
+
+❌ Wrong: "The harness includes 88 tests that run in ~100ms"
+✅ Right: "The harness includes comprehensive test coverage with sub-second execution"
+
+❌ Wrong: Copying entire CLI reference into README
+✅ Right: "See [CLI Reference](./docs/CLI.md) for complete command documentation"
+```
+
+### When to Update
+- README changed → Check if docs need updates
+- New feature added → Add to relevant modular doc (CLI.md, TEMPLATES.md, etc.)
+- Numbers changed → Verify no hard-coded counts exist
 
 ---
 
