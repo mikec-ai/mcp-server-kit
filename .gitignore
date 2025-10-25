@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Testing
+coverage/
+.vitest/
+*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+.dev.vars
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary
+tmp/
+temp/
+.tmp/
+
+# Scaffolding test output
+test-output/
+scaffolded-*/

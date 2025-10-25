@@ -1,0 +1,93 @@
+# {{PROJECT_NAME}}
+
+{{DESCRIPTION}}
+
+## Quick Start
+
+### Prerequisites
+- Node.js 18+ (LTS recommended)
+- npm 9+
+
+### Development
+
+```bash
+# Start development server
+npm run dev
+```
+
+Server runs at `http://localhost:{{PORT}}/sse`
+
+### Health Check
+
+```bash
+curl http://localhost:{{PORT}}/health
+```
+
+Expected: `{"status":"ok","service":"{{MCP_SERVER_NAME}}","version":"1.0.0"}`
+
+## Testing
+
+```bash
+# Run all tests
+npm run test:all
+
+# Run unit tests only
+npm run test:unit
+
+# Run integration tests (requires dev server running)
+npm run test:integration
+
+# Generate coverage report
+npm run test:coverage
+```
+
+## Deployment
+
+```bash
+# Deploy to Cloudflare Workers
+npm run deploy
+```
+
+## Tools
+
+This MCP server provides the following tools:
+
+- **`health_check`** - Returns server health status
+- **`echo`** - Echoes back the provided message (useful for testing)
+
+## Project Structure
+
+```
+{{PROJECT_NAME}}/
+├── src/
+│   ├── index.ts              # MCP server entry point
+│   └── tools/                # Tool implementations
+│       ├── health.ts
+│       └── echo.ts
+├── test/
+│   ├── unit/                 # Unit tests
+│   └── integration/          # Integration tests
+│       ├── adapters/         # MCP client adapters
+│       ├── specs/            # Test specifications (YAML)
+│       └── cli.ts            # Integration test CLI
+├── wrangler.jsonc            # Cloudflare Workers config
+├── tsconfig.json             # TypeScript configuration
+└── package.json              # Dependencies and scripts
+```
+
+## Adding New Tools
+
+1. Create a new file in `src/tools/`
+2. Implement the tool using the MCP SDK
+3. Register the tool in `src/index.ts`
+4. Add unit tests in `test/unit/`
+5. Add integration test spec in `test/integration/specs/`
+
+## Documentation
+
+- [MCP SDK Documentation](https://modelcontextprotocol.io/)
+- [Cloudflare Workers Documentation](https://developers.cloudflare.com/workers/)
+
+## License
+
+MIT

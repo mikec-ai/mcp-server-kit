@@ -1,0 +1,76 @@
+{
+	"name": "mcp-server-kit",
+	"version": "1.0.0",
+	"description": "Extensible scaffolding tool and test harness for Model Context Protocol (MCP) servers",
+	"keywords": [
+		"mcp",
+		"model-context-protocol",
+		"scaffolding",
+		"testing",
+		"cloudflare-workers",
+		"vercel",
+		"cli"
+	],
+	"author": "",
+	"license": "MIT",
+	"type": "module",
+	"bin": {
+		"mcp-server-kit": "./bin/mcp-server-kit.js"
+	},
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		},
+		"./harness": {
+			"types": "./dist/harness/index.d.ts",
+			"import": "./dist/harness/index.js"
+		},
+		"./commands": {
+			"types": "./dist/core/commands/index.d.ts",
+			"import": "./dist/core/commands/index.js"
+		}
+	},
+	"files": [
+		"dist",
+		"templates",
+		"bin"
+	],
+	"scripts": {
+		"build": "tsup",
+		"dev": "tsup --watch",
+		"type-check": "tsc --noEmit",
+		"format": "biome format --write",
+		"lint": "biome lint",
+		"lint:fix": "biome lint --fix",
+		"test": "vitest run",
+		"test:watch": "vitest watch",
+		"test:unit": "vitest run test/unit",
+		"test:integration": "vitest run test/integration",
+		"test:all": "vitest run",
+		"test:coverage": "vitest run --coverage",
+		"prepublishOnly": "npm run build && npm run test:all"
+	},
+	"dependencies": {
+		"commander": "^12.1.0",
+		"handlebars": "^4.7.8",
+		"yaml": "^2.7.0",
+		"zod": "^3.25.76",
+		"jsonpath-plus": "^10.3.0",
+		"glob": "^11.0.3",
+		"@modelcontextprotocol/sdk": "1.19.1"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.2.5",
+		"@types/node": "^24.9.1",
+		"@vitest/coverage-v8": "^3.2.4",
+		"tsup": "^8.3.5",
+		"tsx": "^4.20.6",
+		"typescript": "5.9.3",
+		"vitest": "^3.2.4"
+	},
+	"engines": {
+		"node": ">=18.0.0",
+		"npm": ">=9.0.0"
+	}
+}

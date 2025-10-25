@@ -1,0 +1,63 @@
+/**
+ * {{MCP_SERVER_NAME}} - Cloudflare Workers MCP Server
+ *
+ * Entry point for the MCP server running on Cloudflare Workers.
+ */
+
+import { McpAgent } from "agents";
+import type { Env, ExecutionContext } from "agents";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { registerHealthTool } from "./tools/health.js";
+import { registerEchoTool } from "./tools/echo.js";
+
+/**
+ * Main MCP Agent class
+ */
+export class MCPServerAgent extends McpAgent<Env> {
+	server = new McpServer({
+		name: "{{MCP_SERVER_NAME}}",
+		version: "1.0.0",
+	});
+
+	async init() {
+		// Register all tools
+		registerHealthTool(this.server);
+		registerEchoTool(this.server);
+	}
+}
+
+/**
+ * Cloudflare Workers fetch handler
+ */
+export default {
+	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+		const url = new URL(request.url);
+
+		// Route: Health check
+		if (url.pathname === "/health") {
+			return new Response(
+				JSON.stringify({
+					status: "ok",
+					service: "{{MCP_SERVER_NAME}}",
+					version: "1.0.0",
+				}),
+				{
+					headers: { "Content-Type": "application/json" },
+				},
+			);
+		}
+
+		// Route: SSE/MCP endpoint
+		if (url.pathname === "/sse" || url.pathname === "/sse/message") {
+			return MCPServerAgent.serveSSE(request, env, ctx);
+		}
+
+		// Route: Standard MCP endpoint (JSON-RPC)
+		if (url.pathname === "/mcp") {
+			return MCPServerAgent.serve(request, env, ctx);
+		}
+
+		// 404 for all other routes
+		return new Response("Not Found", { status: 404 });
+	},
+};
