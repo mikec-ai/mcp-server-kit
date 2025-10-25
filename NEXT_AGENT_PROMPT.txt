@@ -1,0 +1,159 @@
+# Paste this for the next agent:
+
+You are continuing development of **mcp-server-kit** - an extensible scaffolding tool and test harness for Model Context Protocol (MCP) servers.
+
+## Project Location
+`/Users/mikec/mcp-server-kit`
+
+## Current State ✅
+The foundation is **100% complete**:
+- ✅ Template system (registry, processor, schemas) - fully working
+- ✅ Framework-agnostic test harness - extracted and portable
+- ✅ Cloudflare Workers template - production-ready
+- ✅ Reusable utilities (JSON Schema to Zod, example generator, LRU cache, error formatter)
+- ✅ Build system (TypeScript, tsup, Biome, Vitest)
+- ✅ Comprehensive documentation (README, IMPLEMENTATION_STATUS)
+- ✅ Builds successfully: `npm run build` works
+
+**Latest commit**: `1613545` (docs: Add comprehensive agent handoff documentation)
+
+## What You Need to Do 🚧
+
+### PRIORITY 1: Implement CLI (Critical - 4-6 hours for MVP)
+
+The core system works perfectly, but needs a CLI interface to be usable.
+
+**Files to create**:
+1. `bin/mcp-server-kit.js` - CLI executable with shebang
+2. `src/core/cli/index.ts` - Commander.js router (replace placeholder)
+3. `src/core/commands/new-server.ts` - Scaffold projects
+4. `src/core/commands/template.ts` - Template management (list/info/validate)
+
+**What each does**:
+- `new server` - Use existing `TemplateProcessor` to scaffold projects
+- `template list` - Use existing `TemplateRegistry.listTemplates()`
+- `template info <id>` - Use existing `TemplateRegistry.getTemplate()`
+- `template validate <id>` - Use existing `TemplateRegistry.validateTemplate()`
+
+**Dependencies**: `commander` already in package.json ✅
+
+**Testing**:
+```bash
+npm run build
+npm link
+mcp-server-kit new server --name test-server --template cloudflare-remote
+cd test-server && npm install && npm run dev
+curl http://localhost:8788/health  # Should return JSON
+npm run test:integration  # Should pass 2 tests
+```
+
+### PRIORITY 2: End-to-End Test (2 hours)
+Create `test/integration/scaffold-e2e.test.ts` that:
+1. Scaffolds a project to temp directory
+2. Installs dependencies
+3. Starts dev server
+4. Verifies health endpoint
+5. Runs integration tests
+6. Cleans up
+
+### PRIORITY 3: Documentation (2-3 hours)
+- `docs/CLI.md` - CLI command reference
+- `docs/TEMPLATES.md` - Template usage guide
+- `docs/CREATING-TEMPLATES.md` - Template authoring guide
+
+## Complete Documentation
+
+Read these files in order:
+1. **AGENT_HANDOFF.md** (624 lines) - Complete implementation guide with code examples
+2. **IMPLEMENTATION_STATUS.md** - What's done, what's next, architecture decisions
+3. **README.md** - User-facing documentation
+
+**AGENT_HANDOFF.md contains**:
+- Detailed CLI implementation examples
+- Testing strategies
+- Common pitfalls to avoid
+- Success criteria
+- Time estimates
+
+## Quick Start
+
+```bash
+cd /Users/mikec/mcp-server-kit
+
+# Verify current state
+npm run build          # ✅ Should succeed
+npm run type-check     # ✅ Should pass
+ls -la src/            # Review structure
+
+# Read the guides
+cat AGENT_HANDOFF.md | head -100  # Start here for implementation details
+cat IMPLEMENTATION_STATUS.md      # Full project status
+```
+
+## Architecture Overview
+
+**Template System** (src/core/template-system/):
+- `TemplateRegistry` discovers templates from `templates/` directory
+- `TemplateProcessor` scaffolds projects with Handlebars variable substitution
+- Templates are self-contained plugins (add new frameworks without core changes)
+
+**Test Harness** (src/harness/):
+- Framework-agnostic (uses dependency injection via `IMCPTestClient`)
+- YAML-based declarative tests
+- 7 assertion types (success, error, contains_text, json_path, etc.)
+
+**Templates** (templates/):
+- `cloudflare-remote/` - Complete Cloudflare Workers template
+- Future: `vercel-edge/`, `node-stdio/`
+
+## Key Design Principle
+
+**Template-driven extensibility**: Each MCP framework is a self-contained template plugin. The CLI just routes to `TemplateProcessor` which does all the work.
+
+Your job is to create the CLI interface that makes the existing system usable.
+
+## Success Criteria (MVP)
+
+- [ ] `mcp-server-kit new server` command works
+- [ ] Scaffolded project builds without errors
+- [ ] Dev server starts successfully
+- [ ] Integration tests pass in scaffolded project
+- [ ] `template list/info/validate` commands work
+
+## Time Estimate
+
+**MVP (CLI working)**: 4-6 hours
+- CLI implementation: 2-3 hours (most time here)
+- Manual testing: 1 hour
+- Bug fixes: 1-2 hours
+
+**v1.0.0 (Fully tested)**: 8-12 hours total
+- MVP above
+- Integration test: 2 hours
+- Documentation: 2-3 hours
+- Polish: 2-3 hours
+
+## The Hard Parts Are Done ✅
+
+- ✅ Template system implementation (most complex)
+- ✅ Test harness extraction and adaptation
+- ✅ Utilities and services
+- ✅ Complete Cloudflare template
+- ✅ Build system and configuration
+
+**What's left is straightforward**:
+- CLI: Just Commander.js routing to existing APIs
+- Testing: Manual verification + one integration test
+- Documentation: Documenting what already works
+
+## Need Help?
+
+Everything you need is in **AGENT_HANDOFF.md** including:
+- Complete CLI implementation examples
+- Testing checklists
+- Common pitfalls and solutions
+- File locations and references
+
+The foundation is solid. You're implementing the user interface for a working system.
+
+Good luck! 🚀
