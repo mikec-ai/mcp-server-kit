@@ -10,6 +10,12 @@ export * from "./harness/index.js";
 // Re-export template system
 export * from "./core/template-system/index.js";
 
+// Re-export utilities
+export * from "./utils/index.js";
+
+// Re-export services
+export * from "./services/index.js";
+
 // Package metadata
 export const VERSION = "1.0.0";
 export const NAME = "mcp-server-kit";
