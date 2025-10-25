@@ -4,7 +4,14 @@
  * Reusable mock implementations for testing
  */
 
-import type { IMCPTestClient, MCPToolResponse } from "../../src/harness/types/client.js";
+import type {
+	IMCPTestClient,
+	MCPToolResponse,
+	MCPPrompt,
+	MCPPromptResponse,
+	MCPResource,
+	MCPResourceContent,
+} from "../../src/harness/types/client.js";
 
 /**
  * Create a mock MCP test client
@@ -32,6 +39,30 @@ export function createMockMCPClient(
 			version: "1.0.0",
 			protocolVersion: "2024-11-05",
 		}),
+		listPrompts: async () => [],
+		getPrompt: async (name: string, args?: Record<string, unknown>) => {
+			// Default successful prompt response
+			return {
+				messages: [
+					{
+						role: "user" as const,
+						content: {
+							type: "text" as const,
+							text: `Mock prompt: ${name}`,
+						},
+					},
+				],
+			};
+		},
+		listResources: async () => [],
+		readResource: async (uri: string) => {
+			// Default successful resource response
+			return {
+				uri,
+				text: JSON.stringify({ success: true, uri }, null, 2),
+				mimeType: "application/json",
+			};
+		},
 		...overrides,
 	};
 }

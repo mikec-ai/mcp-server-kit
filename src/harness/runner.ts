@@ -41,8 +41,31 @@ export class TestRunner {
 		const startTime = Date.now();
 
 		try {
-			// Call the tool
-			const response = await this.client.callTool(spec.tool, spec.arguments);
+			// Dispatch based on test type
+			let response: any;
+
+			switch (spec.type) {
+				case "tool":
+					// Execute tool test
+					response = await this.client.callTool(spec.tool, spec.arguments);
+					break;
+
+				case "prompt":
+					// Execute prompt test
+					response = await this.client.getPrompt(spec.prompt, spec.arguments);
+					break;
+
+				case "resource":
+					// Execute resource test
+					response = await this.client.readResource(spec.uri);
+					break;
+
+				default:
+					// TypeScript should ensure this is never reached
+					// But provide fallback for safety
+					throw new Error(`Unknown test type: ${(spec as any).type}`);
+			}
+
 			const duration = Date.now() - startTime;
 
 			// Run assertions

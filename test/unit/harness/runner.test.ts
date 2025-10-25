@@ -22,6 +22,7 @@ describe("TestRunner", () => {
 	describe("runTest", () => {
 		it("should run a successful test", async () => {
 			const spec: TestSpec = {
+				type: "tool",
 				name: "Test success",
 				description: "A successful test",
 				tool: "echo",
@@ -49,7 +50,8 @@ describe("TestRunner", () => {
 			runner = new TestRunner(client);
 
 			const spec: TestSpec = {
-				name: "Test failure",
+				type: "tool",
+			name: "Test failure",
 				description: "A failing test",
 				tool: "failing_tool",
 				arguments: {},
@@ -74,7 +76,8 @@ describe("TestRunner", () => {
 			runner = new TestRunner(client);
 
 			const spec: TestSpec = {
-				name: "Test error",
+				type: "tool",
+			name: "Test error",
 				description: "A test with execution error",
 				tool: "broken_tool",
 				arguments: {},
@@ -93,7 +96,8 @@ describe("TestRunner", () => {
 
 		it("should skip tests marked with skip: true", async () => {
 			const spec: TestSpec = {
-				name: "Skipped test",
+				type: "tool",
+			name: "Skipped test",
 				description: "This test should be skipped",
 				tool: "echo",
 				arguments: {},
@@ -120,7 +124,8 @@ describe("TestRunner", () => {
 			runner = new TestRunner(client);
 
 			const spec: TestSpec = {
-				name: "Duration test",
+				type: "tool",
+			name: "Duration test",
 				description: "Test duration tracking",
 				tool: "slow_tool",
 				arguments: {},
@@ -146,7 +151,8 @@ describe("TestRunner", () => {
 			runner = new TestRunner(client);
 
 			const spec: TestSpec = {
-				name: "Parameter test",
+				type: "tool",
+			name: "Parameter test",
 				description: "Test parameter passing",
 				tool: "test_tool",
 				arguments: { foo: "bar", count: 42 },
@@ -161,7 +167,8 @@ describe("TestRunner", () => {
 
 		it("should run all assertions", async () => {
 			const spec: TestSpec = {
-				name: "Multiple assertions",
+				type: "tool",
+			name: "Multiple assertions",
 				description: "Test with multiple assertions",
 				tool: "echo",
 				arguments: { message: "test" },
@@ -184,7 +191,8 @@ describe("TestRunner", () => {
 			runner = new TestRunner(client);
 
 			const spec: TestSpec = {
-				name: "Partial failure",
+				type: "tool",
+			name: "Partial failure",
 				description: "Test with one failing assertion",
 				tool: "echo",
 				arguments: {},
@@ -206,13 +214,15 @@ describe("TestRunner", () => {
 		it("should run multiple tests", async () => {
 			const specs: TestSpec[] = [
 				{
-					name: "Test 1",
+					type: "tool",
+				name: "Test 1",
 					description: "First test",
 					tool: "echo",
 					arguments: {},
 					assertions: [{ type: "success" }],
 				},
 				{
+					type: "tool",
 					name: "Test 2",
 					description: "Second test",
 					tool: "echo",
@@ -245,13 +255,15 @@ describe("TestRunner", () => {
 
 			const specs: TestSpec[] = [
 				{
-					name: "Pass",
+					type: "tool",
+				name: "Pass",
 					description: "Passing test",
 					tool: "echo",
 					arguments: {},
 					assertions: [{ type: "success" }],
 				},
 				{
+					type: "tool",
 					name: "Fail",
 					description: "Failing test",
 					tool: "echo",
@@ -272,13 +284,15 @@ describe("TestRunner", () => {
 		it("should track skipped tests in summary", async () => {
 			const specs: TestSpec[] = [
 				{
-					name: "Run",
+					type: "tool",
+				name: "Run",
 					description: "Normal test",
 					tool: "echo",
 					arguments: {},
 					assertions: [{ type: "success" }],
 				},
 				{
+					type: "tool",
 					name: "Skip",
 					description: "Skipped test",
 					tool: "echo",
@@ -304,7 +318,8 @@ describe("TestRunner", () => {
 
 			const specs: TestSpec[] = [
 				{
-					name: "Failing test",
+					type: "tool",
+				name: "Failing test",
 					description: "A test that fails",
 					tool: "failing_tool",
 					arguments: {},
@@ -329,7 +344,8 @@ describe("TestRunner", () => {
 
 			const specs: TestSpec[] = [
 				{
-					name: "Error test",
+					type: "tool",
+				name: "Error test",
 					description: "Test with execution error",
 					tool: "broken_tool",
 					arguments: {},
@@ -348,13 +364,15 @@ describe("TestRunner", () => {
 		it("should only run tests marked with 'only'", async () => {
 			const specs: TestSpec[] = [
 				{
-					name: "Normal test",
+					type: "tool",
+				name: "Normal test",
 					description: "Should be skipped",
 					tool: "echo",
 					arguments: {},
 					assertions: [{ type: "success" }],
 				},
 				{
+					type: "tool",
 					name: "Only test",
 					description: "Should run",
 					tool: "echo",
@@ -373,7 +391,8 @@ describe("TestRunner", () => {
 		it("should include timestamp in results", async () => {
 			const specs: TestSpec[] = [
 				{
-					name: "Test",
+					type: "tool",
+				name: "Test",
 					description: "Test",
 					tool: "echo",
 					arguments: {},
@@ -390,7 +409,8 @@ describe("TestRunner", () => {
 		it("should include serverUrl when provided", async () => {
 			const specs: TestSpec[] = [
 				{
-					name: "Test",
+					type: "tool",
+				name: "Test",
 					description: "Test",
 					tool: "echo",
 					arguments: {},
@@ -406,13 +426,15 @@ describe("TestRunner", () => {
 		it("should calculate total duration", async () => {
 			const specs: TestSpec[] = [
 				{
-					name: "Test 1",
+					type: "tool",
+				name: "Test 1",
 					description: "First",
 					tool: "echo",
 					arguments: {},
 					assertions: [{ type: "success" }],
 				},
 				{
+					type: "tool",
 					name: "Test 2",
 					description: "Second",
 					tool: "echo",

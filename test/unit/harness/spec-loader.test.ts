@@ -13,12 +13,13 @@ import {
 	serializeTestSpecToYAML,
 	serializeTestSpecToJSON,
 } from "../../../src/harness/spec-loader.js";
-import type { TestSpec, TestSuiteSpec } from "../../../src/harness/types/spec.js";
+import type { TestSpec, TestSuiteSpec, ToolTestSpec } from "../../../src/harness/types/spec.js";
 
 describe("loadTestSpec", () => {
 	const tempDir = tmpdir();
 	const validSpec: TestSpec = {
-		name: "Test name",
+		type: "tool",
+				name: "Test name",
 		tool: "test_tool",
 		arguments: { param: "value" },
 		assertions: [{ type: "success" }],
@@ -39,6 +40,7 @@ describe("loadTestSpec", () => {
 		await writeFile(
 			yamlFilePath,
 			`name: "Test name"
+type: "tool"
 tool: "test_tool"
 arguments:
   param: "value"
@@ -49,6 +51,7 @@ assertions:
 		await writeFile(
 			jsonFilePath,
 			JSON.stringify({
+				type: "tool",
 				name: "Test name",
 				tool: "test_tool",
 				arguments: { param: "value" },
@@ -74,8 +77,8 @@ assertions:
 		const spec = await loadTestSpec(yamlFilePath);
 
 		expect(spec.name).toBe("Test name");
-		expect(spec.tool).toBe("test_tool");
-		expect(spec.arguments).toEqual({ param: "value" });
+		expect((spec as ToolTestSpec).tool).toBe("test_tool");
+		expect((spec as ToolTestSpec).arguments).toEqual({ param: "value" });
 		expect(spec.assertions).toHaveLength(1);
 	});
 
@@ -83,8 +86,8 @@ assertions:
 		const spec = await loadTestSpec(jsonFilePath);
 
 		expect(spec.name).toBe("Test name");
-		expect(spec.tool).toBe("test_tool");
-		expect(spec.arguments).toEqual({ param: "value" });
+		expect((spec as ToolTestSpec).tool).toBe("test_tool");
+		expect((spec as ToolTestSpec).arguments).toEqual({ param: "value" });
 		expect(spec.assertions).toHaveLength(1);
 	});
 
@@ -105,6 +108,7 @@ assertions:
 		await writeFile(
 			ymlPath,
 			`name: "Test"
+type: "tool"
 tool: "tool"
 arguments: {}
 assertions:
@@ -138,6 +142,7 @@ assertions:
 describe("parseTestSpec", () => {
 	it("should parse valid YAML string", () => {
 		const yaml = `name: "Test"
+type: "tool"
 tool: "test_tool"
 arguments:
   key: "value"
@@ -147,7 +152,7 @@ assertions:
 		const spec = parseTestSpec(yaml, "yaml");
 
 		expect(spec.name).toBe("Test");
-		expect(spec.tool).toBe("test_tool");
+		expect((spec as ToolTestSpec).tool).toBe("test_tool");
 	});
 
 	it("should parse valid JSON string", () => {
@@ -181,6 +186,7 @@ assertions:
 describe("serializeTestSpecToYAML", () => {
 	it("should serialize spec to YAML", () => {
 		const spec: TestSpec = {
+			type: "tool",
 			name: "Test",
 			tool: "test_tool",
 			arguments: { key: "value" },
@@ -196,6 +202,7 @@ describe("serializeTestSpecToYAML", () => {
 
 	it("should handle complex nested objects", () => {
 		const spec: TestSpec = {
+			type: "tool",
 			name: "Complex",
 			tool: "tool",
 			arguments: {
@@ -215,6 +222,7 @@ describe("serializeTestSpecToYAML", () => {
 describe("serializeTestSpecToJSON", () => {
 	it("should serialize spec to JSON with pretty print", () => {
 		const spec: TestSpec = {
+			type: "tool",
 			name: "Test",
 			tool: "test_tool",
 			arguments: {},
@@ -230,6 +238,7 @@ describe("serializeTestSpecToJSON", () => {
 
 	it("should serialize spec to compact JSON", () => {
 		const spec: TestSpec = {
+			type: "tool",
 			name: "Test",
 			tool: "test_tool",
 			arguments: {},
@@ -239,7 +248,8 @@ describe("serializeTestSpecToJSON", () => {
 		const json = serializeTestSpecToJSON(spec, false);
 
 		expect(json).not.toContain("\n"); // Compact
-		expect(json).toContain('{"name":"Test"');
+		expect(json).toContain('{"type":"tool"');
+		expect(json).toContain('"name":"Test"');
 	});
 });
 
@@ -249,12 +259,14 @@ describe("loadTestSuiteSpec", () => {
 		name: "Test Suite",
 		tests: [
 			{
+				type: "tool",
 				name: "Test 1",
 				tool: "test_tool",
 				arguments: { param: "value" },
 				assertions: [{ type: "success" }],
 			},
 			{
+				type: "tool",
 				name: "Test 2",
 				tool: "another_tool",
 				arguments: {},
@@ -310,8 +322,8 @@ tests:
 
 		expect(suite.name).toBe("Test Suite");
 		expect(suite.tests).toHaveLength(2);
-		expect(suite.tests[0].name).toBe("Test 1");
-		expect(suite.tests[1].name).toBe("Test 2");
+		expect((suite.tests[0] as TestSpec).name).toBe("Test 1");
+		expect((suite.tests[1] as TestSpec).name).toBe("Test 2");
 	});
 
 	it("should load valid JSON test suite", async () => {
@@ -319,8 +331,8 @@ tests:
 
 		expect(suite.name).toBe("Test Suite");
 		expect(suite.tests).toHaveLength(2);
-		expect(suite.tests[0].tool).toBe("test_tool");
-		expect(suite.tests[1].tool).toBe("another_tool");
+		expect((suite.tests[0] as ToolTestSpec).tool).toBe("test_tool");
+		expect((suite.tests[1] as ToolTestSpec).tool).toBe("another_tool");
 	});
 
 	it("should throw error for unsupported file format", async () => {

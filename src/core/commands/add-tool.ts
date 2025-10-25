@@ -12,6 +12,8 @@ import { Command } from "commander";
 import { writeFile, readFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
+import { createAddPromptCommand } from "./add-prompt.js";
+import { createAddResourceCommand } from "./add-resource.js";
 
 interface AddToolOptions {
 	description?: string;
@@ -415,6 +417,8 @@ export function createAddCommand(): Command {
 		.description("Add components to your MCP server");
 
 	addCmd.addCommand(createAddToolCommand());
+	addCmd.addCommand(createAddPromptCommand());
+	addCmd.addCommand(createAddResourceCommand());
 
 	return addCmd;
 }

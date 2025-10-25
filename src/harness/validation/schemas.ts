@@ -76,18 +76,74 @@ export const AssertionSchema = z.discriminatedUnion("type", [
 ]);
 
 /**
- * Test specification schema
+ * Base test specification schema (shared fields)
  */
-export const TestSpecSchema = z.object({
+const BaseTestSpecSchema = z.object({
 	name: z.string().min(1, "Test name is required"),
 	description: z.string().optional(),
-	tool: z.string().min(1, "Tool name is required"),
-	arguments: z.record(z.any()),
 	assertions: z.array(AssertionSchema).min(1, "At least one assertion required"),
 	timeout: z.number().positive().optional(),
 	skip: z.boolean().optional(),
 	only: z.boolean().optional(),
 });
+
+/**
+ * Tool test specification schema
+ */
+const ToolTestSpecSchema = BaseTestSpecSchema.extend({
+	type: z.literal("tool"),
+	tool: z.string().min(1, "Tool name is required"),
+	arguments: z.record(z.any()),
+});
+
+/**
+ * Prompt test specification schema
+ */
+const PromptTestSpecSchema = BaseTestSpecSchema.extend({
+	type: z.literal("prompt"),
+	prompt: z.string().min(1, "Prompt name is required"),
+	arguments: z.record(z.any()).optional(),
+});
+
+/**
+ * Resource test specification schema
+ */
+const ResourceTestSpecSchema = BaseTestSpecSchema.extend({
+	type: z.literal("resource"),
+	uri: z.string().min(1, "Resource URI is required"),
+});
+
+/**
+ * Test specification schema (discriminated union)
+ */
+const TestSpecUnionSchema = z.discriminatedUnion("type", [
+	ToolTestSpecSchema,
+	PromptTestSpecSchema,
+	ResourceTestSpecSchema,
+]);
+
+/**
+ * Test specification schema with backward compatibility
+ *
+ * Handles old test specs without a 'type' field by treating them as tool tests.
+ */
+export const TestSpecSchema = z.preprocess(
+	(data) => {
+		// If data has a 'type' field, use it as-is
+		if (typeof data === "object" && data !== null && "type" in data) {
+			return data;
+		}
+
+		// If data has a 'tool' field but no 'type', it's a legacy tool test
+		if (typeof data === "object" && data !== null && "tool" in data) {
+			return { ...data, type: "tool" };
+		}
+
+		// Otherwise, pass through and let validation fail with helpful message
+		return data;
+	},
+	TestSpecUnionSchema,
+);
 
 /**
  * Test suite specification schema

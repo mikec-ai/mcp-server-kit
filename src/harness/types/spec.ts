@@ -81,22 +81,16 @@ export interface JsonSchemaAssertion {
 }
 
 /**
- * Test specification format
+ * Base test specification
  *
- * This is the structure agents will write in YAML/JSON format.
+ * Shared fields across all test types.
  */
-export interface TestSpec {
+export interface BaseTestSpec {
 	/** Test name (human-readable) */
 	name: string;
 
 	/** Test description (optional, for documentation) */
 	description?: string;
-
-	/** MCP tool name to test */
-	tool: string;
-
-	/** Arguments to pass to the tool */
-	arguments: Record<string, any>;
 
 	/** Assertions to verify the response */
 	assertions: Assertion[];
@@ -110,6 +104,53 @@ export interface TestSpec {
 	/** Only run this test (exclusive) */
 	only?: boolean;
 }
+
+/**
+ * Tool test specification (existing functionality)
+ */
+export interface ToolTestSpec extends BaseTestSpec {
+	/** Test type discriminator */
+	type: "tool";
+
+	/** MCP tool name to test */
+	tool: string;
+
+	/** Arguments to pass to the tool */
+	arguments: Record<string, any>;
+}
+
+/**
+ * Prompt test specification (new)
+ */
+export interface PromptTestSpec extends BaseTestSpec {
+	/** Test type discriminator */
+	type: "prompt";
+
+	/** MCP prompt name to test */
+	prompt: string;
+
+	/** Optional arguments to pass to the prompt */
+	arguments?: Record<string, any>;
+}
+
+/**
+ * Resource test specification (new)
+ */
+export interface ResourceTestSpec extends BaseTestSpec {
+	/** Test type discriminator */
+	type: "resource";
+
+	/** Resource URI to test */
+	uri: string;
+}
+
+/**
+ * Test specification format
+ *
+ * This is the structure agents will write in YAML/JSON format.
+ * Supports tools, prompts, and resources as a discriminated union.
+ */
+export type TestSpec = ToolTestSpec | PromptTestSpec | ResourceTestSpec;
 
 /**
  * Test suite specification

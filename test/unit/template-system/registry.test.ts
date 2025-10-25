@@ -203,7 +203,7 @@ describe("TemplateRegistry", () => {
 
 		it("should return empty array when no templates match deployment filter", async () => {
 			const filter: TemplateFilter = {
-				deployment: "non-existent-deployment",
+				deployment: "non-existent-deployment" as any,
 			};
 
 			const templates = await registry.listTemplates(filter);
@@ -213,7 +213,7 @@ describe("TemplateRegistry", () => {
 
 		it("should return empty array when no templates match language filter", async () => {
 			const filter: TemplateFilter = {
-				language: "non-existent-language",
+				language: "non-existent-language" as any,
 			};
 
 			const templates = await registry.listTemplates(filter);
@@ -243,7 +243,7 @@ describe("TemplateRegistry", () => {
 		it("should return empty array when combined filters don't match", async () => {
 			const filter: TemplateFilter = {
 				runtime: "cloudflare-workers",
-				deployment: "non-existent", // This won't match
+				deployment: "non-existent" as any, // This won't match
 			};
 
 			const templates = await registry.listTemplates(filter);

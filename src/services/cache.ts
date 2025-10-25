@@ -110,3 +110,5 @@ export class LRUCache<T> {
 // Singleton cache instances
 export const metadataCache = new LRUCache<any>(50, 60); // 50 items, 1 hour TTL
 export const openApiCache = new LRUCache<any>(50, 60); // 50 specs, 1 hour TTL
+export const promptCache = new LRUCache<any>(50, 60); // 50 prompts, 1 hour TTL
+export const resourceCache = new LRUCache<any>(100, 30); // 100 resources, 30 min TTL

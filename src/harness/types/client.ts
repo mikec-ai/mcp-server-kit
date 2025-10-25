@@ -47,6 +47,68 @@ export interface MCPServerInfo {
 }
 
 /**
+ * MCP Prompt metadata
+ */
+export interface MCPPrompt {
+	/** Prompt name */
+	name: string;
+	/** Prompt description */
+	description: string;
+	/** Optional arguments schema (JSON Schema) */
+	argsSchema?: Record<string, any>;
+}
+
+/**
+ * MCP Prompt response
+ */
+export interface MCPPromptResponse {
+	/** Array of messages in the prompt */
+	messages: Array<{
+		/** Message role */
+		role: "user" | "assistant";
+		/** Message content */
+		content: {
+			/** Content type */
+			type: "text" | "image" | "resource";
+			/** Text content */
+			text?: string;
+			/** Base64-encoded data */
+			data?: string;
+			/** MIME type */
+			mimeType?: string;
+		};
+	}>;
+}
+
+/**
+ * MCP Resource metadata
+ */
+export interface MCPResource {
+	/** Resource URI */
+	uri: string;
+	/** Resource name */
+	name: string;
+	/** Resource description */
+	description?: string;
+	/** MIME type */
+	mimeType?: string;
+}
+
+/**
+ * MCP Resource content
+ */
+export interface MCPResourceContent {
+	/** Resource URI */
+	uri: string;
+	/** Text content */
+	text?: string;
+	/** Base64-encoded blob */
+	blob?: string;
+	/** MIME type */
+	mimeType?: string;
+}
+
+/**
  * Generic MCP Test Client Interface
  *
  * Projects must implement this interface to integrate with the test harness.
@@ -85,4 +147,35 @@ export interface IMCPTestClient {
 	 * @returns Server metadata
 	 */
 	getServerInfo(): Promise<MCPServerInfo>;
+
+	/**
+	 * List all available prompts from the server
+	 *
+	 * @returns Array of prompt metadata
+	 */
+	listPrompts(): Promise<MCPPrompt[]>;
+
+	/**
+	 * Get a prompt with optional arguments
+	 *
+	 * @param name - Prompt name
+	 * @param args - Optional prompt arguments
+	 * @returns Prompt response with messages
+	 */
+	getPrompt(name: string, args?: Record<string, unknown>): Promise<MCPPromptResponse>;
+
+	/**
+	 * List all available resources from the server
+	 *
+	 * @returns Array of resource metadata
+	 */
+	listResources(): Promise<MCPResource[]>;
+
+	/**
+	 * Read a resource by URI
+	 *
+	 * @param uri - Resource URI
+	 * @returns Resource content
+	 */
+	readResource(uri: string): Promise<MCPResourceContent>;
 }

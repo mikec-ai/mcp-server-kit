@@ -60,7 +60,10 @@
 		"unitTesting": true,
 		"integrationTesting": true,
 		"exampleTools": ["health", "echo"],
-		"documentation": true
+		"examplePrompts": ["code-review"],
+		"exampleResources": ["config"],
+		"documentation": true,
+		"notes": "Example prompts and resources are reference-only (prefixed with _example-) and NOT registered by default. Use 'mcp-server-kit add prompt' or 'mcp-server-kit add resource' to create real implementations."
 	},
 	"compatibility": {
 		"node": ">=18.0.0",
