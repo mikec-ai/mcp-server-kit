@@ -16,7 +16,7 @@ export default defineConfig({
 		cli: "src/core/cli/index.ts",
 	},
 	format: ["esm"],
-	dts: false, // TODO: Fix TypeScript type issues in harness
+	dts: true, // Generate TypeScript declaration files for full IDE support
 	sourcemap: true,
 	clean: true,
 	splitting: false,

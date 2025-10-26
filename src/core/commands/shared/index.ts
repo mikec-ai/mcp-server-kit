@@ -61,5 +61,4 @@ export {
 	toPascalCase,
 	toKebabCase,
 	fileExists,
-	extractVariablesFromPattern,
 } from "./utils.js";
