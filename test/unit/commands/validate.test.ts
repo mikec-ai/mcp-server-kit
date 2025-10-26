@@ -650,8 +650,7 @@ describe("validate command", () => {
 				expect.objectContaining({
 					severity: "warning",
 					category: "Metadata",
-					message: expect.stringContaining("ghost-tool"),
-					message: expect.stringContaining("doesn't exist"),
+					message: expect.stringMatching(/ghost-tool.*doesn't exist|doesn't exist.*ghost-tool/),
 				}),
 			);
 		});
@@ -683,8 +682,7 @@ describe("validate command", () => {
 				expect.objectContaining({
 					severity: "info",
 					category: "Metadata",
-					message: expect.stringContaining("untracked-tool"),
-					message: expect.stringContaining("not tracked"),
+					message: expect.stringMatching(/untracked-tool.*not tracked|not tracked.*untracked-tool/),
 				}),
 			);
 		});
@@ -723,9 +721,7 @@ describe("validate command", () => {
 				expect.objectContaining({
 					severity: "info",
 					category: "Metadata",
-					message: expect.stringContaining("test-tool"),
-					message: expect.stringContaining("registration status"),
-					message: expect.stringContaining("incorrect"),
+					message: expect.stringMatching(/test-tool.*registration status.*incorrect/),
 				}),
 			);
 		});
@@ -765,9 +761,7 @@ describe("validate command", () => {
 				expect.objectContaining({
 					severity: "info",
 					category: "Metadata",
-					message: expect.stringContaining("test-tool"),
-					message: expect.stringContaining("unit test status"),
-					message: expect.stringContaining("incorrect"),
+					message: expect.stringMatching(/test-tool.*unit test status.*incorrect/),
 				}),
 			);
 		});
