@@ -185,13 +185,13 @@ Quick reference (see [CLI Guide](./.claude/skills/mcp-server-kit-cli/SKILL.md) f
 
 ```bash
 # Project creation
-mcp-server-kit new server --name <name> --template <template> [--output <path>]
+mcp-server-kit new server --name <name> --template <template> [--output <path>] [--json]
 
 # Development commands (for AI agents)
-mcp-server-kit add tool <name> --description "<desc>"
-mcp-server-kit add prompt <name> --description "<desc>"
-mcp-server-kit add resource <name> --description "<desc>" [--static]
-mcp-server-kit validate [--strict] [--fix]
+mcp-server-kit add tool <name> --description "<desc>" [--json]
+mcp-server-kit add prompt <name> --description "<desc>" [--json]
+mcp-server-kit add resource <name> --description "<desc>" [--static] [--json]
+mcp-server-kit validate [--strict] [--fix] [--json]
 mcp-server-kit list tools [--json]
 mcp-server-kit list prompts [--json]
 mcp-server-kit list resources [--json]
@@ -200,6 +200,25 @@ mcp-server-kit list resources [--json]
 mcp-server-kit template list
 mcp-server-kit template info <template-id>
 mcp-server-kit template validate <template-id>
+```
+
+### JSON Output
+
+All commands support `--json` flag for programmatic use:
+
+```bash
+# Get parseable JSON output
+mcp-server-kit add tool weather --description "Weather API" --json
+# Output: {"success": true, "entityType": "tool", "entityName": "weather", ...}
+
+# Pipe to jq for processing
+mcp-server-kit validate --json | jq '.summary'
+# Output: {"errors": 0, "warnings": 2, "info": 1}
+
+# Use in scripts
+RESULT=$(mcp-server-kit new server --name test --json)
+echo $RESULT | jq '.path'
+# Output: "/path/to/test"
 ```
 
 ## Programmatic API Usage

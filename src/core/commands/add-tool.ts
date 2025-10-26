@@ -12,12 +12,15 @@ import { Command } from "commander";
 import { EntityScaffolder, type ScaffoldConfig } from "./shared/entity-scaffolder.js";
 import { createAddPromptCommand } from "./add-prompt.js";
 import { createAddResourceCommand } from "./add-resource.js";
+import { outputResult } from "./shared/json-output.js";
+import type { AddEntityResult } from "../../types/command-results.js";
 
 interface AddToolOptions {
 	description?: string;
 	tests: boolean;
 	register: boolean;
 	template: "simple" | "validated" | "async";
+	json?: boolean;
 }
 
 /**
@@ -39,10 +42,9 @@ export function createAddToolCommand(): Command {
 			"Template type: simple|validated|async",
 			"simple",
 		)
+		.option("--json", "Output result as JSON")
 		.action(async (name: string, options: AddToolOptions) => {
 			try {
-				console.log(`\n🔧 Adding tool: ${name}\n`);
-
 				const cwd = process.cwd();
 				const scaffolder = new EntityScaffolder();
 
@@ -56,26 +58,52 @@ export function createAddToolCommand(): Command {
 				};
 
 				// Scaffold the tool
-				const result = await scaffolder.scaffold(cwd, config);
+				const scaffoldResult = await scaffolder.scaffold(cwd, config);
 
-				// Report created files
-				for (const file of result.filesCreated) {
-					console.log(`✓ Created ${file}`);
-				}
+				// Build result object
+				const result: AddEntityResult = {
+					success: scaffoldResult.success,
+					entityType: "tool",
+					entityName: name,
+					filesCreated: scaffoldResult.filesCreated,
+					registered: scaffoldResult.registered,
+					message: `Tool '${name}' created successfully`,
+				};
 
-				if (result.registered) {
-					console.log(`✓ Registered in src/index.ts`);
-				}
+				// Output result
+				outputResult(result, !!options.json, (r) => {
+					console.log(`\n🔧 Adding tool: ${name}\n`);
 
-				console.log(`\n✅ Tool '${name}' created successfully!\n`);
-				console.log("Next steps:");
-				console.log(`  1. Edit src/tools/${name}.ts and implement your logic`);
-				console.log(`  2. Run 'npm test' to verify tests pass`);
-				console.log(`  3. Run 'npm run validate' to check project health\n`);
+					for (const file of r.filesCreated) {
+						console.log(`✓ Created ${file}`);
+					}
+
+					if (r.registered) {
+						console.log(`✓ Registered in src/index.ts`);
+					}
+
+					console.log(`\n✅ Tool '${name}' created successfully!\n`);
+					console.log("Next steps:");
+					console.log(`  1. Edit src/tools/${name}.ts and implement your logic`);
+					console.log(`  2. Run 'npm test' to verify tests pass`);
+					console.log(`  3. Run 'npm run validate' to check project health\n`);
+				});
 			} catch (error) {
-				console.error(
-					`\n❌ Error: ${error instanceof Error ? error.message : String(error)}\n`,
-				);
+				const errorMessage = error instanceof Error ? error.message : String(error);
+
+				if (options.json) {
+					const result: AddEntityResult = {
+						success: false,
+						entityType: "tool",
+						entityName: name,
+						filesCreated: [],
+						registered: false,
+						error: errorMessage,
+					};
+					console.log(JSON.stringify(result, null, 2));
+				} else {
+					console.error(`\n❌ Error: ${errorMessage}\n`);
+				}
 				process.exit(1);
 			}
 		});

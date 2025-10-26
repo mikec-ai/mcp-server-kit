@@ -77,15 +77,19 @@ export function createValidateCommand(): Command {
 		.description("Validate MCP server project structure and configuration")
 		.option("--fix", "Automatically fix issues where possible")
 		.option("--strict", "Fail on warnings (not just errors)")
+		.option("--json", "Output result as JSON")
 		.action(async (options) => {
 			const cwd = process.cwd();
 
-			console.log("🔍 Validating MCP server project...\n");
-
 			const result = await validateProject(cwd, options);
 
-			// Print results
-			printValidationResults(result);
+			// Output results
+			if (options.json) {
+				console.log(JSON.stringify(result, null, 2));
+			} else {
+				console.log("🔍 Validating MCP server project...\n");
+				printValidationResults(result);
+			}
 
 			// Exit with appropriate code
 			if (!result.passed) {
