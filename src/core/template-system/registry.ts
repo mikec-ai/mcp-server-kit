@@ -63,7 +63,13 @@ export class TemplateRegistry {
 				try {
 					// Check if template.config.json exists
 					await access(configPath);
+				} catch {
+					// Silently skip directories without template.config.json
+					// (they're not project templates, e.g., scaffolding/, utilities/, etc.)
+					continue;
+				}
 
+				try {
 					// Load and parse config
 					const configContent = await readFile(configPath, "utf-8");
 					const config = JSON.parse(configContent);
@@ -81,10 +87,17 @@ export class TemplateRegistry {
 							filesPath: join(templatePath, "files"),
 							hooksPath: join(templatePath, "hooks"),
 						});
+					} else {
+						// Warn about templates with invalid config format
+						console.warn(
+							`Skipping template ${entry.name}: Invalid config format`,
+						);
 					}
 				} catch (error) {
-					// Skip templates with invalid configs
-					console.warn(`Skipping template ${entry.name}: ${error}`);
+					// Warn about templates with parse errors or other issues
+					console.warn(
+						`Skipping template ${entry.name}: ${error instanceof Error ? error.message : String(error)}`,
+					);
 					continue;
 				}
 			}

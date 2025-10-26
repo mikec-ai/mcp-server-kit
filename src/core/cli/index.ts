@@ -21,8 +21,8 @@ function getVersion(): string {
 	try {
 		const __filename = fileURLToPath(import.meta.url);
 		const __dirname = dirname(__filename);
-		// From src/core/cli/index.ts, go up to project root: ../../../
-		const pkgPath = join(__dirname, "../../../package.json");
+		// Compiled to dist/cli.js, so go up one level to project root
+		const pkgPath = join(__dirname, "../package.json");
 		const content = readFileSync(pkgPath, "utf-8");
 		const pkg = JSON.parse(content);
 		return pkg.version || "unknown";
