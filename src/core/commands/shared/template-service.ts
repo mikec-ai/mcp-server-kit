@@ -5,6 +5,11 @@
  * Shared logic for generating entity files, unit tests, and integration tests
  */
 
+import Handlebars from "handlebars";
+import { readFileSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
 /**
  * Configuration for template generation
  */
@@ -31,159 +36,62 @@ export interface ResourceTemplateOptions extends TemplateConfig {
  * Service for generating entity file content from templates
  */
 export class TemplateService {
+	private templateCache = new Map<string, HandlebarsTemplateDelegate>();
+	private templatesDir: string;
+
+	constructor() {
+		// Get the project root directory (where templates/ folder is)
+		const __filename = fileURLToPath(import.meta.url);
+		const __dirname = dirname(__filename);
+		// From src/core/commands/shared/ -> project root
+		this.templatesDir = join(__dirname, "../../../../templates/scaffolding");
+	}
+
+	/**
+	 * Load and compile a Handlebars template
+	 */
+	private loadTemplate(templatePath: string): HandlebarsTemplateDelegate {
+		// Check cache first
+		if (this.templateCache.has(templatePath)) {
+			return this.templateCache.get(templatePath)!;
+		}
+
+		// Load template from file
+		const fullPath = join(this.templatesDir, templatePath);
+		const templateContent = readFileSync(fullPath, "utf-8");
+
+		// Compile template
+		const compiled = Handlebars.compile(templateContent, { noEscape: true });
+
+		// Cache it
+		this.templateCache.set(templatePath, compiled);
+
+		return compiled;
+	}
+
 	/**
 	 * Generate tool file content
 	 */
 	generateToolFile(config: TemplateConfig): string {
-		const { name, capitalizedName, description } = config;
-
-		return `/**
- * ${capitalizedName} Tool
- *
- * ${description}
- */
-
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
-
-// TODO: Define your parameter schema
-// Example:
-// const ${capitalizedName}ParamsSchema = z.object({
-//   message: z.string().describe("Your message"),
-//   count: z.number().int().positive().optional().describe("Repeat count"),
-// });
-
-const ${capitalizedName}ParamsSchema = z.object({
-	// Add your parameters here
-});
-
-/**
- * Register ${name} tool with the MCP server
- */
-export function register${capitalizedName}Tool(server: McpServer): void {
-	server.tool(
-		"${name}",
-		"${description}",
-		${capitalizedName}ParamsSchema.shape,
-		async (params) => {
-			// TODO: Implement your tool logic here
-			// You can access params like: params.message, params.count, etc.
-
-			// Example: Return a simple response
-			return {
-				content: [
-					{
-						type: "text",
-						text: JSON.stringify(
-							{
-								result: "not implemented",
-								params,
-							},
-							null,
-							2,
-						),
-					},
-				],
-			};
-
-			// Example: Handle errors with inline pattern
-			// try {
-			//   const result = await yourLogic();
-			//   return {
-			//     content: [{
-			//       type: "text" as const,
-			//       text: JSON.stringify(result, null, 2),
-			//     }],
-			//   };
-			// } catch (error) {
-			//   return {
-			//     content: [{
-			//       type: "text" as const,
-			//       text: JSON.stringify({
-			//         error: true,
-			//         message: error instanceof Error ? error.message : String(error),
-			//       }, null, 2),
-			//     }],
-			//     isError: true,
-			//   };
-			// }
-		},
-	);
-}
-`;
+		const template = this.loadTemplate("entities/tool.hbs");
+		return template(config);
 	}
 
 	/**
 	 * Generate prompt file content
 	 */
 	generatePromptFile(config: TemplateConfig): string {
-		const { name, capitalizedName, description } = config;
-
-		return `/**
- * ${capitalizedName} Prompt
- *
- * ${description}
- */
-
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
-
-// TODO: Define your argument schema
-// Example:
-// const ${capitalizedName}ArgsSchema = z.object({
-//   language: z.string().optional().describe("Programming language"),
-//   topic: z.string().describe("Topic to explain"),
-// });
-
-const ${capitalizedName}ArgsSchema = z.object({
-	// Add your arguments here
-});
-
-/**
- * Register ${name} prompt with the MCP server
- */
-export function register${capitalizedName}Prompt(server: McpServer): void {
-	server.prompt(
-		"${name}",
-		"${description}",
-		${capitalizedName}ArgsSchema.shape,
-		async (args) => {
-			// TODO: Implement your prompt logic here
-			// You can access args like: args.language, args.topic, etc.
-
-			// Example: Return a simple prompt
-			const promptText = \`You are a helpful assistant.
-
-TODO: Replace this with your actual prompt template.
-
-Example with args:
-- Language: \${args.language || "any"}
-- Topic: \${args.topic || "general"}
-\`;
-
-			return {
-				messages: [
-					{
-						role: "user",
-						content: {
-							type: "text",
-							text: promptText,
-						},
-					},
-				],
-			};
-		},
-	);
-}
-`;
+		const template = this.loadTemplate("entities/prompt.hbs");
+		return template(config);
 	}
 
 	/**
 	 * Generate resource file content
 	 */
 	generateResourceFile(config: ResourceTemplateOptions): string {
-		const { name, capitalizedName, description, uriPattern } = config;
+		const { uriPattern } = config;
 
+		// Check if URI pattern has variables
 		const hasVariables = uriPattern.includes("{") && uriPattern.includes("}");
 
 		// Extract variable names from pattern
@@ -191,89 +99,16 @@ Example with args:
 			? Array.from(uriPattern.matchAll(/\{(\w+)\}/g)).map((m) => m[1])
 			: [];
 
-		// Generate appropriate imports
-		const imports = hasVariables
-			? `import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";\nimport { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";`
-			: `import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";`;
+		// Prepare template context
+		const context = {
+			...config,
+			hasVariables,
+			variables,
+			variablesJoined: variables.join(", "),
+		};
 
-		// Generate ResourceTemplate wrapper if needed
-		const uriPatternCode = hasVariables
-			? `new ResourceTemplate("${uriPattern}", {\n\t\t\t// TODO: Implement list callback to return available resources\n\t\t\tlist: async () => {\n\t\t\t\t// Example: return { resources: [{ uri: "...", name: "...", description: "..." }] };\n\t\t\t\treturn { resources: [] };\n\t\t\t},\n\t\t\t// TODO: Implement autocomplete for template variables\n\t\t\tcomplete: {\n${variables.map((v) => `\t\t\t\t${v}: async (value) => {\n\t\t\t\t\t// Return suggestions for ${v}\n\t\t\t\t\treturn [];\n\t\t\t\t}`).join(",\n")}\n\t\t\t}\n\t\t})`
-			: `"${uriPattern}"`;
-
-		// Handler signature depends on whether we have variables
-		const handlerSignature = hasVariables
-			? "async (uri, variables)"
-			: "async (uri)";
-
-		// Parameter extraction comment and code
-		const paramExtractionComment = hasVariables
-			? `\t\t\t// Extract parameters from ResourceTemplate variables\n${variables.map((v) => `\t\t\tconst ${v} = variables.${v} as string;`).join("\n")}`
-			: `\t\t\t// Static resource - no parameters to extract\n\t\t\t// The uri parameter is a URL object with parsed components`;
-
-		const exampleData = hasVariables
-			? `{\n\t\t\t\t\tresource: "${name}",\n\t\t\t\t\turi: uri.href,\n${variables.map((v) => `\t\t\t\t\t${v}: ${v}`).join(",\n")},\n\t\t\t\t\tmessage: "Replace this with your actual resource data"\n\t\t\t\t}`
-			: `{\n\t\t\t\t\tresource: "${name}",\n\t\t\t\t\turi: uri.href,\n\t\t\t\t\tmessage: "Replace this with your actual resource data"\n\t\t\t\t}`;
-
-		return `/**
- * ${capitalizedName} Resource
- *
- * ${description}
- *
- * ${hasVariables ? `⚠️  DYNAMIC RESOURCE (uses ResourceTemplate)\n * This resource has template variables: ${variables.join(", ")}\n * URI pattern: ${uriPattern}` : `✓ STATIC RESOURCE (fixed URI)\n * URI pattern: ${uriPattern}`}
- */
-
-${imports}
-
-/**
- * Register ${name} resource with the MCP server
- */
-export function register${capitalizedName}Resource(server: McpServer): void {
-	server.resource(
-		"${name}",
-		${uriPatternCode},
-		{
-			description: "${description}",
-			mimeType: "application/json", // TODO: Update MIME type as needed
-		},
-		${handlerSignature} => {
-${paramExtractionComment}
-
-			// TODO: Replace this example data with your actual resource logic
-			// Common patterns:
-			// - Read from KV: await env.MY_KV.get(${hasVariables ? variables[0] : "key"})
-			// - Query D1: await env.MY_DB.prepare("SELECT * FROM table WHERE id = ?").bind(${hasVariables ? variables[0] : "id"}).first()
-			// - Fetch external API: await fetch(\`https://api.example.com/\${${hasVariables ? variables[0] : "id"}}\`)
-
-			const exampleData = ${exampleData};
-
-			return {
-				contents: [
-					{
-						uri: uri.href,
-						text: JSON.stringify(exampleData, null, 2),
-						mimeType: "application/json",
-					},
-				],
-			};
-
-			// Example: Handle errors
-			// try {
-			//   const data = await fetchResourceData(id);
-			//   return {
-			//     contents: [{
-			//       uri: uri.href,
-			//       text: JSON.stringify(data, null, 2),
-			//       mimeType: "application/json",
-			//     }],
-			//   };
-			// } catch (error) {
-			//   throw new Error(\`Failed to load resource: \${error}\`);
-			// }
-		},
-	);
-}
-`;
+		const template = this.loadTemplate("entities/resource.hbs");
+		return template(context);
 	}
 
 	/**
@@ -306,97 +141,18 @@ ${paramExtractionComment}
 		const functionSuffix =
 			entityType.charAt(0).toUpperCase() + entityType.slice(1);
 
-		return `/**
- * ${capitalizedName} ${functionSuffix} - Unit Tests
- */
+		// Prepare template context
+		const context = {
+			...config,
+			entityTypePlural,
+			functionSuffix,
+			isToolType: entityType === "tool",
+			isPromptType: entityType === "prompt",
+			isResourceType: entityType === "resource",
+		};
 
-import { describe, it, expect, beforeEach } from "vitest";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { register${capitalizedName}${functionSuffix} } from "../../../src/${entityTypePlural}/${name}.js";
-
-describe("${name} ${entityType}", () => {
-	let server: McpServer;
-
-	beforeEach(() => {
-		server = new McpServer({
-			name: "test-server",
-			version: "1.0.0",
-		});
-		register${capitalizedName}${functionSuffix}(server);
-	});
-
-	it("should register the ${entityType}", () => {
-		// TODO: Verify ${entityType} is registered
-		expect(server).toBeDefined();
-	});
-
-	${entityType === "tool" ? this.generateToolTestCases(name) : ""}${entityType === "prompt" ? this.generatePromptTestCases(name) : ""}${entityType === "resource" ? this.generateResourceTestCases(name) : ""}
-});
-`;
-	}
-
-	/**
-	 * Generate tool-specific test cases
-	 */
-	private generateToolTestCases(name: string): string {
-		return `
-	it("should handle valid parameters", async () => {
-		// TODO: Test with valid parameters
-		// Example:
-		// const result = await callTool(server, "${name}", { /* params */ });
-		// expect(result.content[0].text).toContain("expected");
-	});
-
-	it("should validate parameters", async () => {
-		// TODO: Test parameter validation
-		// Example: Test with missing required params, invalid types, etc.
-	});
-
-	it("should handle errors gracefully", async () => {
-		// TODO: Test error handling
-	});`;
-	}
-
-	/**
-	 * Generate prompt-specific test cases
-	 */
-	private generatePromptTestCases(name: string): string {
-		return `
-	it("should handle valid arguments", async () => {
-		// TODO: Test with valid arguments
-		// Example:
-		// const result = await getPrompt(server, "${name}", { /* args */ });
-		// expect(result.messages[0].content.text).toContain("expected");
-	});
-
-	it("should validate arguments", async () => {
-		// TODO: Test argument validation
-	});
-
-	it("should handle errors gracefully", async () => {
-		// TODO: Test error handling
-	});`;
-	}
-
-	/**
-	 * Generate resource-specific test cases
-	 */
-	private generateResourceTestCases(name: string): string {
-		return `
-	it("should handle valid URIs", async () => {
-		// TODO: Test with valid URIs
-		// Example:
-		// const result = await readResource(server, "resource://test-id");
-		// expect(result.contents[0].text).toContain("expected");
-	});
-
-	it("should handle resource parameters", async () => {
-		// TODO: Test URI parameter extraction
-	});
-
-	it("should handle errors gracefully", async () => {
-		// TODO: Test error handling
-	});`;
+		const template = this.loadTemplate("unit-tests/main.hbs");
+		return template(context);
 	}
 
 	/**
@@ -421,25 +177,14 @@ describe("${name} ${entityType}", () => {
 	 * Generate tool integration test YAML
 	 */
 	private generateToolIntegrationYaml(name: string, description: string): string {
-		return `name: "${name.replace(/_/g, " ")} - Basic"
-description: "${description || `Verify that ${name} tool works correctly`}"
-tool: "${name}"
-arguments:
-  # TODO: Add test arguments
-  # Example:
-  # message: "test message"
+		const context = {
+			name,
+			nameWithSpaces: name.replace(/_/g, " "),
+			description: description || `Verify that ${name} tool works correctly`,
+		};
 
-assertions:
-  - type: "success"
-  - type: "response_time_ms"
-    max: 5000
-  # TODO: Add more assertions
-  # - type: "contains_text"
-  #   text: "expected output"
-  # - type: "json_path"
-  #   path: "$.result"
-  #   expected: "expected value"
-`;
+		const template = this.loadTemplate("integration-tests/tool.yaml.hbs");
+		return template(context);
 	}
 
 	/**
@@ -449,32 +194,14 @@ assertions:
 		name: string,
 		description: string,
 	): string {
-		return `type: "prompt"
-name: "${name.replace(/_/g, " ")} - Basic"
-description: "${description || `Verify that ${name} prompt works correctly`}"
-prompt: "${name}"
-arguments:
-  # TODO: Add test arguments
-  # Example:
-  # language: "python"
+		const context = {
+			name,
+			nameWithSpaces: name.replace(/_/g, " "),
+			description: description || `Verify that ${name} prompt works correctly`,
+		};
 
-assertions:
-  # Verify the prompt request succeeds
-  - type: "success"
-
-  # Check response time (adjust max value as needed)
-  - type: "response_time_ms"
-    max: 5000
-
-  # Example: Verify prompt content contains expected text
-  # - type: "contains_text"
-  #   text: "expected instruction or keyword"
-
-  # Example: Check message structure with JSON path
-  # - type: "json_path"
-  #   path: "$.messages[0].role"
-  #   expected: "user"
-`;
+		const template = this.loadTemplate("integration-tests/prompt.yaml.hbs");
+		return template(context);
 	}
 
 	/**
@@ -485,39 +212,15 @@ assertions:
 		description: string,
 		uriPattern: string,
 	): string {
-		return `type: "resource"
-name: "${name.replace(/_/g, " ")} - Basic"
-description: "${description || "Test resource"}"
-uri: "${uriPattern}"
-# Note: URI pattern is "${uriPattern}"
-# Adjust the test URI above to use realistic values for your resource
+		const context = {
+			name,
+			nameWithSpaces: name.replace(/_/g, " "),
+			description: description || "Test resource",
+			uriPattern,
+			uriPatternNoVars: uriPattern.replace(/\{[^}]+\}/g, ""),
+		};
 
-assertions:
-  # Verify the resource read succeeds
-  - type: "success"
-
-  # Check response time (adjust max value as needed)
-  - type: "response_time_ms"
-    max: 5000
-
-  # Example: Verify resource content contains expected text
-  # - type: "contains_text"
-  #   text: "expected data or keyword"
-
-  # Example: Verify resource content structure with JSON path
-  # - type: "json_path"
-  #   path: "$.contents[0].mimeType"
-  #   expected: "application/json"
-
-  # Example: Check if specific fields exist
-  # - type: "json_path"
-  #   path: "$.contents[0].text"
-  #   exists: true
-
-  # Example: Verify content matches pattern
-  # - type: "json_path"
-  #   path: "$.contents[0].uri"
-  #   contains: "${uriPattern.replace(/\{[^}]+\}/g, "")}"
-`;
+		const template = this.loadTemplate("integration-tests/resource.yaml.hbs");
+		return template(context);
 	}
 }
