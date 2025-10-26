@@ -4,20 +4,19 @@
  * Verifies that response contains (or doesn't contain) specific text.
  */
 
-import type { MCPToolResponse } from "../types/client.js";
 import type { AssertionResult } from "../types/results.js";
-import { getResponseText } from "./helpers.js";
+import { getResponseText, type MCPResponse } from "./helpers.js";
 
 /**
  * Check if response contains specific text
  *
- * @param response - MCP tool response
+ * @param response - MCP response (tool, prompt, or resource)
  * @param text - Text to search for
  * @param caseInsensitive - Case insensitive matching
  * @returns Assertion result
  */
 export function checkContainsText(
-	response: MCPToolResponse,
+	response: MCPResponse,
 	text: string,
 	caseInsensitive = false,
 ): AssertionResult {
@@ -47,13 +46,13 @@ export function checkContainsText(
 /**
  * Check if response does NOT contain specific text
  *
- * @param response - MCP tool response
+ * @param response - MCP response (tool, prompt, or resource)
  * @param text - Text that should not be present
  * @param caseInsensitive - Case insensitive matching
  * @returns Assertion result
  */
 export function checkNotContainsText(
-	response: MCPToolResponse,
+	response: MCPResponse,
 	text: string,
 	caseInsensitive = false,
 ): AssertionResult {

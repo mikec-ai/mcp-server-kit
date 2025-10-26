@@ -202,6 +202,64 @@ export class MCPClient {
 	}
 
 	/**
+	 * List available prompts
+	 */
+	async listPrompts(): Promise<any> {
+		const response = await this.request("prompts/list");
+
+		if (response.error) {
+			throw new Error(`Failed to list prompts: ${response.error.message}`);
+		}
+
+		return response.result;
+	}
+
+	/**
+	 * Get a prompt with arguments
+	 */
+	async getPrompt(
+		promptName: string,
+		args: Record<string, any> = {},
+	): Promise<any> {
+		const response = await this.request("prompts/get", {
+			name: promptName,
+			arguments: args,
+		});
+
+		if (response.error) {
+			throw new Error(`Failed to get prompt: ${response.error.message}`);
+		}
+
+		return response.result;
+	}
+
+	/**
+	 * List available resources
+	 */
+	async listResources(): Promise<any> {
+		const response = await this.request("resources/list");
+
+		if (response.error) {
+			throw new Error(`Failed to list resources: ${response.error.message}`);
+		}
+
+		return response.result;
+	}
+
+	/**
+	 * Read a resource by URI
+	 */
+	async readResource(uri: string): Promise<any> {
+		const response = await this.request("resources/read", { uri });
+
+		if (response.error) {
+			throw new Error(`Failed to read resource: ${response.error.message}`);
+		}
+
+		return response.result;
+	}
+
+	/**
 	 * Initialize the MCP session
 	 */
 	async initialize(_params = {}): Promise<any> {

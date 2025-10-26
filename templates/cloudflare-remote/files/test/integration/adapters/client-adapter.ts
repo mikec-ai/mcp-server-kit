@@ -12,6 +12,10 @@ import type {
 	MCPToolResponse,
 	MCPTool,
 	MCPServerInfo,
+	MCPPrompt,
+	MCPPromptResponse,
+	MCPResource,
+	MCPResourceContent,
 } from "../harness/types/client.ts";
 
 /**
@@ -80,5 +84,51 @@ export class MCPClientAdapter implements IMCPTestClient {
 			protocolVersion: initResult.protocolVersion || "unknown",
 			capabilities: initResult.capabilities,
 		};
+	}
+
+	/**
+	 * List available prompts
+	 */
+	async listPrompts(): Promise<MCPPrompt[]> {
+		const result = await this.client.listPrompts();
+
+		return result.prompts.map((prompt: any) => ({
+			name: prompt.name,
+			description: prompt.description,
+			argsSchema: prompt.argsSchema,
+		}));
+	}
+
+	/**
+	 * Get a prompt with arguments
+	 */
+	async getPrompt(
+		name: string,
+		args?: Record<string, unknown>,
+	): Promise<MCPPromptResponse> {
+		const result = await this.client.getPrompt(name, args || {});
+		return result;
+	}
+
+	/**
+	 * List available resources
+	 */
+	async listResources(): Promise<MCPResource[]> {
+		const result = await this.client.listResources();
+
+		return result.resources.map((resource: any) => ({
+			uri: resource.uri,
+			name: resource.name,
+			description: resource.description,
+			mimeType: resource.mimeType,
+		}));
+	}
+
+	/**
+	 * Read a resource by URI
+	 */
+	async readResource(uri: string): Promise<MCPResourceContent> {
+		const result = await this.client.readResource(uri);
+		return result;
 	}
 }

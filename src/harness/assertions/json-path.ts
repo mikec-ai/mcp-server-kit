@@ -4,9 +4,8 @@
  * Verifies values at specific JSON paths in the response.
  */
 
-import type { MCPToolResponse } from "../types/client.js";
 import type { AssertionResult } from "../types/results.js";
-import { getResponseText } from "./helpers.js";
+import { getResponseText, type MCPResponse } from "./helpers.js";
 
 /**
  * Simple JSON path evaluator
@@ -91,30 +90,48 @@ function deepEqual(a: any, b: any): boolean {
 /**
  * Check if value at JSON path matches expected value
  *
- * @param response - MCP tool response
+ * @param response - MCP response (tool, prompt, or resource)
  * @param path - JSON path expression
  * @param expected - Expected value at path
  * @returns Assertion result
  */
 export async function checkJsonPath(
-	response: MCPToolResponse,
+	response: MCPResponse,
 	path: string,
 	expected: any,
 ): Promise<AssertionResult> {
 	try {
-		const responseText = getResponseText(response);
-
-		// Try to parse response as JSON
 		let responseData: any;
-		try {
-			responseData = JSON.parse(responseText);
-		} catch {
+
+		// For prompts and resources, use the response object directly
+		// For tools, parse the text content as JSON
+		if ("messages" in response) {
+			// Prompt response - use the response object directly
+			responseData = response;
+		} else if ("contents" in response && Array.isArray(response.contents)) {
+			// Resource response - use the response object directly
+			responseData = response;
+		} else if ("content" in response && Array.isArray(response.content)) {
+			// Tool response - try to parse the text content as JSON
+			const responseText = getResponseText(response);
+			try {
+				responseData = JSON.parse(responseText);
+			} catch {
+				return {
+					type: "json_path",
+					passed: false,
+					message: "Response is not valid JSON",
+					expected: "valid JSON",
+					actual: "invalid JSON",
+				};
+			}
+		} else {
 			return {
 				type: "json_path",
 				passed: false,
-				message: "Response is not valid JSON",
-				expected: "valid JSON",
-				actual: "invalid JSON",
+				message: "Unknown response type",
+				expected: "valid MCP response",
+				actual: "unknown type",
 			};
 		}
 

@@ -135,13 +135,43 @@ function generateResourceFile(
 	const description = options.description || "TODO: Add description";
 	const uriPattern = options.uriPattern || "resource://{id}";
 
+	// Detect if URI pattern has template variables
+	const hasVariables = uriPattern.includes("{") && uriPattern.includes("}");
+
+	// Extract variable names from pattern (e.g., "user://{id}/{name}" -> ["id", "name"])
+	const variables = hasVariables ? Array.from(uriPattern.matchAll(/\{(\w+)\}/g)).map(m => m[1]) : [];
+
+	// Generate appropriate imports
+	const imports = hasVariables
+		? `import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";\nimport { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";`
+		: `import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";`;
+
+	// Generate ResourceTemplate wrapper if needed
+	const uriPatternCode = hasVariables
+		? `new ResourceTemplate("${uriPattern}", {\n\t\t\t// TODO: Implement list callback to return available resources\n\t\t\tlist: async () => {\n\t\t\t\t// Example: return { resources: [{ uri: "...", name: "...", description: "..." }] };\n\t\t\t\treturn { resources: [] };\n\t\t\t},\n\t\t\t// TODO: Implement autocomplete for template variables\n\t\t\tcomplete: {\n${variables.map(v => `\t\t\t\t${v}: async (value) => {\n\t\t\t\t\t// Return suggestions for ${v}\n\t\t\t\t\treturn [];\n\t\t\t\t}`).join(",\n")}\n\t\t\t}\n\t\t})`
+		: `"${uriPattern}"`;
+
+	// Handler signature depends on whether we have variables
+	const handlerSignature = hasVariables ? "async (uri, variables)" : "async (uri)";
+
+	// Parameter extraction comment and code
+	const paramExtractionComment = hasVariables
+		? `\t\t\t// Extract parameters from ResourceTemplate variables\n${variables.map(v => `\t\t\tconst ${v} = variables.${v} as string;`).join("\n")}`
+		: `\t\t\t// Static resource - no parameters to extract\n\t\t\t// The uri parameter is a URL object with parsed components`;
+
+	const exampleData = hasVariables
+		? `{\n\t\t\t\t\tresource: "${name}",\n\t\t\t\t\turi: uri.href,\n${variables.map(v => `\t\t\t\t\t${v}: ${v}`).join(",\n")},\n\t\t\t\t\tmessage: "Replace this with your actual resource data"\n\t\t\t\t}`
+		: `{\n\t\t\t\t\tresource: "${name}",\n\t\t\t\t\turi: uri.href,\n\t\t\t\t\tmessage: "Replace this with your actual resource data"\n\t\t\t\t}`;
+
 	return `/**
  * ${capitalizedName} Resource
  *
  * ${description}
+ *
+ * ${hasVariables ? `⚠️  DYNAMIC RESOURCE (uses ResourceTemplate)\n * This resource has template variables: ${variables.join(", ")}\n * URI pattern: ${uriPattern}` : `✓ STATIC RESOURCE (fixed URI)\n * URI pattern: ${uriPattern}`}
  */
 
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+${imports}
 
 /**
  * Register ${name} resource with the MCP server
@@ -149,31 +179,21 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 export function register${capitalizedName}Resource(server: McpServer): void {
 	server.resource(
 		"${name}",
-		"${uriPattern}",
+		${uriPatternCode},
 		{
 			description: "${description}",
 			mimeType: "application/json", // TODO: Update MIME type as needed
 		},
-		async (uri) => {
-			// Working minimal example - customize for your use case
-			// The uri parameter is a URL object with parsed components
-
-			// Extract parameter from URI pattern (e.g., "resource://{id}" -> "resource://123")
-			// For pattern "${uriPattern}", extract the dynamic part:
-			const pathParam = uri.pathname.replace("//", ""); // Remove leading slashes
+		${handlerSignature} => {
+${paramExtractionComment}
 
 			// TODO: Replace this example data with your actual resource logic
 			// Common patterns:
-			// - Read from KV: await env.MY_KV.get(pathParam)
-			// - Query D1: await env.MY_DB.prepare("SELECT * FROM table WHERE id = ?").bind(pathParam).first()
-			// - Fetch external API: await fetch(\`https://api.example.com/\${pathParam}\`)
+			// - Read from KV: await env.MY_KV.get(${hasVariables ? variables[0] : 'key'})
+			// - Query D1: await env.MY_DB.prepare("SELECT * FROM table WHERE id = ?").bind(${hasVariables ? variables[0] : 'id'}).first()
+			// - Fetch external API: await fetch(\`https://api.example.com/\${${hasVariables ? variables[0] : 'id'}}\`)
 
-			const exampleData = {
-				resource: "${name}",
-				uri: uri.href,
-				parameter: pathParam,
-				message: "Replace this with your actual resource data",
-			};
+			const exampleData = ${exampleData};
 
 			return {
 				contents: [

@@ -1,24 +1,28 @@
 /**
- * Example: Configuration Resource
+ * Example: Configuration Resource (DYNAMIC with ResourceTemplate)
  *
- * This shows the pattern for an MCP resource.
- * Resources are **application-controlled** - they expose data that Claude can read
- * via URI patterns.
+ * ⚠️  CRITICAL: This example shows a DYNAMIC resource with template variables
+ *
+ * URI Pattern: "config://{key}"
+ * Since the URI contains {key}, we MUST use ResourceTemplate!
+ *
+ * 🚨 COMMON MISTAKE - DO NOT DO THIS:
+ * ❌ server.resource("config", "config://{key}", ..., async (uri) => {})
+ *    This will FAIL! SDK treats {key} as literal text, not a variable.
+ *
+ * ✅ CORRECT PATTERN:
+ * ✓ server.resource("config", new ResourceTemplate("config://{key}", {...}), ..., async (uri, variables) => {})
+ *    SDK extracts {key} and provides it in variables.key
  *
  * Pattern:
- * 1. Import McpServer
- * 2. Define URI pattern (e.g., "config://{key}")
- * 3. Export a register function that calls server.resource()
- * 4. Parse URI to extract parameters
- * 5. Return contents array with uri, text/blob, and mimeType
+ * 1. Import McpServer AND ResourceTemplate
+ * 2. Wrap URI pattern in new ResourceTemplate(...)
+ * 3. Provide list and complete callbacks
+ * 4. Handler receives (uri, variables) - NOT just (uri)
+ * 5. Extract parameters from variables, NOT uri.pathname
  *
  * NOTE: This is an example file - it's NOT registered by default.
  * Use it as a reference when creating your own resources.
- *
- * Key Differences from Tools and Prompts:
- * - Tools: Model-controlled (Claude calls to perform actions)
- * - Prompts: User-controlled (Claude suggests conversation starters)
- * - Resources: Application-controlled (expose data via URIs)
  *
  * @example
  * To use this pattern:
@@ -29,6 +33,7 @@
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 /**
  * Example configuration data
@@ -67,9 +72,29 @@ export function registerConfigResource(server: McpServer): void {
 		// Resource name (kebab-case, descriptive)
 		"config",
 
-		// URI pattern (defines the structure)
-		// {key} is a placeholder that will be extracted from the URI
-		"config://{key}",
+		// ✅ CORRECT: URI pattern wrapped in ResourceTemplate
+		// {key} is a template variable that will be extracted
+		new ResourceTemplate("config://{key}", {
+			// List callback - returns all available resources
+			list: async () => {
+				const keys = Object.keys(CONFIG_DATA);
+				return {
+					resources: keys.map((key) => ({
+						uri: `config://${key}`,
+						name: `config_${key}`,
+						description: `Configuration for ${key}`,
+						mimeType: "application/json",
+					})),
+				};
+			},
+			// Autocomplete callback - suggests values for {key}
+			complete: {
+				key: async (value) => {
+					const keys = Object.keys(CONFIG_DATA);
+					return keys.filter((k) => k.includes(value));
+				},
+			},
+		}),
 
 		// Resource metadata
 		{
@@ -77,11 +102,10 @@ export function registerConfigResource(server: McpServer): void {
 			mimeType: "application/json",
 		},
 
-		// Handler function (async, receives the full URI object)
-		async (uri) => {
-			// Extract the key from the URI
-			// uri.href will be something like "config://database"
-			const key = uri.pathname.replace("//", ""); // Remove leading //
+		// Handler function receives (uri, variables) - NOT just (uri)
+		async (uri, variables) => {
+			// ✅ CORRECT: Extract from variables parameter
+			const key = variables.key as string;
 
 			// Look up the configuration
 			const config = CONFIG_DATA[key];

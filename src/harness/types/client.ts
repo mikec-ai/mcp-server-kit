@@ -95,9 +95,9 @@ export interface MCPResource {
 }
 
 /**
- * MCP Resource content
+ * MCP Resource content (single content item)
  */
-export interface MCPResourceContent {
+export interface MCPResourceContentItem {
 	/** Resource URI */
 	uri: string;
 	/** Text content */
@@ -106,6 +106,14 @@ export interface MCPResourceContent {
 	blob?: string;
 	/** MIME type */
 	mimeType?: string;
+}
+
+/**
+ * MCP Resource content response (matches MCP protocol)
+ */
+export interface MCPResourceContent {
+	/** Array of content items */
+	contents: MCPResourceContentItem[];
 }
 
 /**
