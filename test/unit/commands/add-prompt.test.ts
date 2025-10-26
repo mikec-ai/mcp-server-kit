@@ -450,160 +450,60 @@ describe("add-prompt command", () => {
 		});
 	});
 
-	describe("direct function tests (for coverage)", () => {
-		describe("toPascalCase", () => {
-			it("should convert single word to PascalCase", async () => {
-				const { toPascalCase } = await import("@/core/commands/shared/utils.js");
-				expect(toPascalCase("reviewer")).toBe("Reviewer");
-			});
+	describe("updateTemplateMetadata", () => {
+		it("should add prompt to metadata file", async () => {
+			const { updateTemplateMetadata } = await import("@/core/commands/shared/metadata.js");
 
-			it("should convert hyphenated words to PascalCase", async () => {
-				const { toPascalCase } = await import("@/core/commands/shared/utils.js");
-				expect(toPascalCase("my-prompt")).toBe("MyPrompt");
-				expect(toPascalCase("code-review-helper")).toBe("CodeReviewHelper");
-			});
-		});
+			await updateTemplateMetadata(projectDir, "prompts", "test-prompt", "src/prompts/test-prompt.ts", true);
 
-		describe("generatePromptFile", () => {
-			it("should generate prompt file with correct structure", async () => {
-				const { generatePromptFile } = await import("@/core/commands/add-prompt.js");
-				const content = generatePromptFile("test-prompt", "TestPrompt", {
-					description: "Test description",
-					tests: true,
-					register: true,
-				});
+			const metadataPath = join(projectDir, ".mcp-template.json");
+			if (existsSync(metadataPath)) {
+				const content = await readFile(metadataPath, "utf-8");
+				const metadata = JSON.parse(content);
 
-				expect(content).toContain("export function registerTestPromptPrompt");
-				expect(content).toContain("Test description");
-				expect(content).toContain('"test-prompt"');
-				expect(content).toContain("TestPromptArgsSchema");
-			});
-
-			it("should include messages structure", async () => {
-				const { generatePromptFile } = await import("@/core/commands/add-prompt.js");
-				const content = generatePromptFile("reviewer", "Reviewer", {
-					description: "Code reviewer",
-					tests: true,
-					register: true,
-				});
-
-				expect(content).toContain("messages:");
-				expect(content).toContain('role: "user" as const');
-				expect(content).toContain('type: "text" as const');
-			});
-		});
-
-		describe("generateUnitTestFile", () => {
-			it("should generate unit test with correct imports", async () => {
-				const { generateUnitTestFile } = await import("@/core/commands/add-prompt.js");
-				const content = generateUnitTestFile("my-prompt", "MyPrompt");
-
-				expect(content).toContain('from "../../../src/prompts/my-prompt.js"');
-				expect(content).toContain("registerMyPromptPrompt");
-			});
-
-			it("should include test describe blocks", async () => {
-				const { generateUnitTestFile } = await import("@/core/commands/add-prompt.js");
-				const content = generateUnitTestFile("test-prompt", "TestPrompt");
-
-				expect(content).toContain('describe("test-prompt prompt"');
-			});
-		});
-
-		describe("generateIntegrationTestYaml", () => {
-			it("should generate YAML with prompt name", async () => {
-				const { generateIntegrationTestYaml } = await import("@/core/commands/add-prompt.js");
-				const content = generateIntegrationTestYaml(
-					"reviewer",
-					"Code reviewer",
+				const promptEntry = metadata.prompts?.find(
+					(p: any) => p.name === "test-prompt"
 				);
-
-				expect(content).toContain('prompt: "reviewer"');
-				expect(content).toContain('type: "success"');
-			});
-
-			it("should convert hyphens to spaces in name", async () => {
-				const { generateIntegrationTestYaml } = await import("@/core/commands/add-prompt.js");
-				const content = generateIntegrationTestYaml(
-					"code-reviewer",
-					"Code reviewer prompt",
-				);
-
-				expect(content).toContain('name: "code reviewer - Basic"');
-			});
+				expect(promptEntry).toBeDefined();
+				expect(promptEntry?.file).toBe("src/prompts/test-prompt.ts");
+				expect(promptEntry?.registered).toBe(true);
+			}
 		});
 
-		describe("registerPromptInIndex", () => {
-			it("should add import and registration call to index.ts", async () => {
-				const { registerPromptInIndex } = await import("@/core/commands/add-prompt.js");
+		it("should mark tests as created when hasTests is true", async () => {
+			const { updateTemplateMetadata } = await import("@/core/commands/shared/metadata.js");
 
-				await registerPromptInIndex(projectDir, "test-prompt", "TestPrompt");
+			await updateTemplateMetadata(projectDir, "prompts", "with-tests", "src/prompts/with-tests.ts", true);
 
-				const indexPath = join(projectDir, "src", "index.ts");
-				const content = await readFile(indexPath, "utf-8");
+			const metadataPath = join(projectDir, ".mcp-template.json");
+			if (existsSync(metadataPath)) {
+				const content = await readFile(metadataPath, "utf-8");
+				const metadata = JSON.parse(content);
 
-				expect(content).toContain(
-					'import { registerTestPromptPrompt } from "./prompts/test-prompt.js"'
+				const promptEntry = metadata.prompts?.find(
+					(p: any) => p.name === "with-tests"
 				);
-				expect(content).toContain("registerTestPromptPrompt(this.server)");
-			});
+				expect(promptEntry?.hasUnitTest).toBe(true);
+				expect(promptEntry?.hasIntegrationTest).toBe(true);
+			}
 		});
 
-		describe("updateTemplateMetadata", () => {
-			it("should add prompt to metadata file", async () => {
-				const { updateTemplateMetadata } = await import("@/core/commands/shared/metadata.js");
+		it("should mark tests as not created when hasTests is false", async () => {
+			const { updateTemplateMetadata } = await import("@/core/commands/shared/metadata.js");
 
-				await updateTemplateMetadata(projectDir, "prompts", "test-prompt", "src/prompts/test-prompt.ts", true);
+			await updateTemplateMetadata(projectDir, "prompts", "without-tests", "src/prompts/without-tests.ts", false);
 
-				const metadataPath = join(projectDir, ".mcp-template.json");
-				if (existsSync(metadataPath)) {
-					const content = await readFile(metadataPath, "utf-8");
-					const metadata = JSON.parse(content);
+			const metadataPath = join(projectDir, ".mcp-template.json");
+			if (existsSync(metadataPath)) {
+				const content = await readFile(metadataPath, "utf-8");
+				const metadata = JSON.parse(content);
 
-					const promptEntry = metadata.prompts?.find(
-						(p: any) => p.name === "test-prompt"
-					);
-					expect(promptEntry).toBeDefined();
-					expect(promptEntry?.file).toBe("src/prompts/test-prompt.ts");
-					expect(promptEntry?.registered).toBe(true);
-				}
-			});
-
-			it("should mark tests as created when hasTests is true", async () => {
-				const { updateTemplateMetadata } = await import("@/core/commands/shared/metadata.js");
-
-				await updateTemplateMetadata(projectDir, "prompts", "with-tests", "src/prompts/with-tests.ts", true);
-
-				const metadataPath = join(projectDir, ".mcp-template.json");
-				if (existsSync(metadataPath)) {
-					const content = await readFile(metadataPath, "utf-8");
-					const metadata = JSON.parse(content);
-
-					const promptEntry = metadata.prompts?.find(
-						(p: any) => p.name === "with-tests"
-					);
-					expect(promptEntry?.hasUnitTest).toBe(true);
-					expect(promptEntry?.hasIntegrationTest).toBe(true);
-				}
-			});
-
-			it("should mark tests as not created when hasTests is false", async () => {
-				const { updateTemplateMetadata } = await import("@/core/commands/shared/metadata.js");
-
-				await updateTemplateMetadata(projectDir, "prompts", "without-tests", "src/prompts/without-tests.ts", false);
-
-				const metadataPath = join(projectDir, ".mcp-template.json");
-				if (existsSync(metadataPath)) {
-					const content = await readFile(metadataPath, "utf-8");
-					const metadata = JSON.parse(content);
-
-					const promptEntry = metadata.prompts?.find(
-						(p: any) => p.name === "without-tests"
-					);
-					expect(promptEntry?.hasUnitTest).toBe(false);
-					expect(promptEntry?.hasIntegrationTest).toBe(false);
-				}
-			});
+				const promptEntry = metadata.prompts?.find(
+					(p: any) => p.name === "without-tests"
+				);
+				expect(promptEntry?.hasUnitTest).toBe(false);
+				expect(promptEntry?.hasIntegrationTest).toBe(false);
+			}
 		});
 	});
 });

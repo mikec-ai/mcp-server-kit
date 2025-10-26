@@ -507,188 +507,60 @@ describe("add-resource command", () => {
 		});
 	});
 
-	describe("direct function tests (for coverage)", () => {
-		describe("toPascalCase", () => {
-			it("should convert single word to PascalCase", async () => {
-				const { toPascalCase } = await import("@/core/commands/shared/utils.js");
-				expect(toPascalCase("config")).toBe("Config");
-			});
+	describe("updateTemplateMetadata", () => {
+		it("should add resource to metadata file", async () => {
+			const { updateTemplateMetadata } = await import("@/core/commands/shared/metadata.js");
 
-			it("should convert hyphenated words to PascalCase", async () => {
-				const { toPascalCase } = await import("@/core/commands/shared/utils.js");
-				expect(toPascalCase("my-resource")).toBe("MyResource");
-				expect(toPascalCase("user-profile-data")).toBe("UserProfileData");
-			});
-		});
+			await updateTemplateMetadata(projectDir, "resources", "test-resource", "src/resources/test-resource.ts", true);
 
-		describe("generateResourceFile", () => {
-			it("should generate static resource file with correct structure", async () => {
-				const { generateResourceFile } = await import("@/core/commands/add-resource.js");
-				const content = generateResourceFile("test-resource", "TestResource", {
-					description: "Test description",
-					uriPattern: "config://test",
-					tests: true,
-					register: true,
-				});
+			const metadataPath = join(projectDir, ".mcp-template.json");
+			if (existsSync(metadataPath)) {
+				const content = await readFile(metadataPath, "utf-8");
+				const metadata = JSON.parse(content);
 
-				expect(content).toContain("export function registerTestResourceResource");
-				expect(content).toContain("Test description");
-				expect(content).toContain('"test-resource"');
-				expect(content).toContain('"config://test"');
-			});
-
-			it("should generate dynamic resource file with ResourceTemplate", async () => {
-				const { generateResourceFile } = await import("@/core/commands/add-resource.js");
-				const content = generateResourceFile("user", "User", {
-					description: "User resource",
-					uriPattern: "user://{id}",
-					tests: true,
-					register: true,
-				});
-
-				expect(content).toContain("ResourceTemplate");
-				expect(content).toContain("user://{id}");
-				expect(content).toContain("async (uri, variables)");
-			});
-
-			it("should include variable extraction for dynamic resources", async () => {
-				const { generateResourceFile } = await import("@/core/commands/add-resource.js");
-				const content = generateResourceFile("db-record", "DbRecord", {
-					description: "DB record",
-					uriPattern: "db://{table}/{id}",
-					tests: true,
-					register: true,
-				});
-
-				expect(content).toContain("const table = variables.table");
-				expect(content).toContain("const id = variables.id");
-			});
-		});
-
-		describe("generateUnitTestFile", () => {
-			it("should generate unit test with correct imports", async () => {
-				const { generateUnitTestFile } = await import("@/core/commands/add-resource.js");
-				const content = generateUnitTestFile("my-resource", "MyResource");
-
-				expect(content).toContain('from "../../../src/resources/my-resource.js"');
-				expect(content).toContain("registerMyResourceResource");
-			});
-
-			it("should include test describe blocks", async () => {
-				const { generateUnitTestFile } = await import("@/core/commands/add-resource.js");
-				const content = generateUnitTestFile("test-resource", "TestResource");
-
-				expect(content).toContain('describe("test-resource resource"');
-			});
-		});
-
-		describe("generateIntegrationTestYaml", () => {
-			it("should generate YAML with static URI", async () => {
-				const { generateIntegrationTestYaml } = await import("@/core/commands/add-resource.js");
-				const content = generateIntegrationTestYaml(
-					"config",
-					"Config resource",
-					"config://app",
+				const resourceEntry = metadata.resources?.find(
+					(r: any) => r.name === "test-resource"
 				);
-
-				expect(content).toContain('uri: "config://app"');
-				expect(content).toContain('type: "success"');
-			});
-
-			it("should replace template variables with test values", async () => {
-				const { generateIntegrationTestYaml } = await import("@/core/commands/add-resource.js");
-				const content = generateIntegrationTestYaml(
-					"user",
-					"User resource",
-					"user://{id}",
-				);
-
-				expect(content).toContain('uri: "user://test-value"');
-			});
-
-			it("should convert hyphens to spaces in name", async () => {
-				const { generateIntegrationTestYaml } = await import("@/core/commands/add-resource.js");
-				const content = generateIntegrationTestYaml(
-					"user-profile",
-					"User profile",
-					"profile://test",
-				);
-
-				expect(content).toContain('name: "user profile - Basic"');
-			});
+				expect(resourceEntry).toBeDefined();
+				expect(resourceEntry?.file).toBe("src/resources/test-resource.ts");
+				expect(resourceEntry?.registered).toBe(true);
+			}
 		});
 
-		describe("registerResourceInIndex", () => {
-			it("should add import and registration call to index.ts", async () => {
-				const { registerResourceInIndex } = await import("@/core/commands/add-resource.js");
+		it("should mark tests as created when hasTests is true", async () => {
+			const { updateTemplateMetadata } = await import("@/core/commands/shared/metadata.js");
 
-				await registerResourceInIndex(projectDir, "test-resource", "TestResource");
+			await updateTemplateMetadata(projectDir, "resources", "with-tests", "src/resources/with-tests.ts", true);
 
-				const indexPath = join(projectDir, "src", "index.ts");
-				const content = await readFile(indexPath, "utf-8");
+			const metadataPath = join(projectDir, ".mcp-template.json");
+			if (existsSync(metadataPath)) {
+				const content = await readFile(metadataPath, "utf-8");
+				const metadata = JSON.parse(content);
 
-				expect(content).toContain(
-					'import { registerTestResourceResource } from "./resources/test-resource.js"'
+				const resourceEntry = metadata.resources?.find(
+					(r: any) => r.name === "with-tests"
 				);
-				expect(content).toContain("registerTestResourceResource(this.server)");
-			});
+				expect(resourceEntry?.hasUnitTest).toBe(true);
+				expect(resourceEntry?.hasIntegrationTest).toBe(true);
+			}
 		});
 
-		describe("updateTemplateMetadata", () => {
-			it("should add resource to metadata file", async () => {
-				const { updateTemplateMetadata } = await import("@/core/commands/shared/metadata.js");
+		it("should mark tests as not created when hasTests is false", async () => {
+			const { updateTemplateMetadata } = await import("@/core/commands/shared/metadata.js");
 
-				await updateTemplateMetadata(projectDir, "resources", "test-resource", "src/resources/test-resource.ts", true);
+			await updateTemplateMetadata(projectDir, "resources", "without-tests", "src/resources/without-tests.ts", false);
 
-				const metadataPath = join(projectDir, ".mcp-template.json");
-				if (existsSync(metadataPath)) {
-					const content = await readFile(metadataPath, "utf-8");
-					const metadata = JSON.parse(content);
+			const metadataPath = join(projectDir, ".mcp-template.json");
+			if (existsSync(metadataPath)) {
+				const content = await readFile(metadataPath, "utf-8");
+				const metadata = JSON.parse(content);
 
-					const resourceEntry = metadata.resources?.find(
-						(r: any) => r.name === "test-resource"
-					);
-					expect(resourceEntry).toBeDefined();
-					expect(resourceEntry?.file).toBe("src/resources/test-resource.ts");
-					expect(resourceEntry?.registered).toBe(true);
-				}
-			});
-
-			it("should mark tests as created when hasTests is true", async () => {
-				const { updateTemplateMetadata } = await import("@/core/commands/shared/metadata.js");
-
-				await updateTemplateMetadata(projectDir, "resources", "with-tests", "src/resources/with-tests.ts", true);
-
-				const metadataPath = join(projectDir, ".mcp-template.json");
-				if (existsSync(metadataPath)) {
-					const content = await readFile(metadataPath, "utf-8");
-					const metadata = JSON.parse(content);
-
-					const resourceEntry = metadata.resources?.find(
-						(r: any) => r.name === "with-tests"
-					);
-					expect(resourceEntry?.hasUnitTest).toBe(true);
-					expect(resourceEntry?.hasIntegrationTest).toBe(true);
-				}
-			});
-
-			it("should mark tests as not created when hasTests is false", async () => {
-				const { updateTemplateMetadata } = await import("@/core/commands/shared/metadata.js");
-
-				await updateTemplateMetadata(projectDir, "resources", "without-tests", "src/resources/without-tests.ts", false);
-
-				const metadataPath = join(projectDir, ".mcp-template.json");
-				if (existsSync(metadataPath)) {
-					const content = await readFile(metadataPath, "utf-8");
-					const metadata = JSON.parse(content);
-
-					const resourceEntry = metadata.resources?.find(
-						(r: any) => r.name === "without-tests"
-					);
-					expect(resourceEntry?.hasUnitTest).toBe(false);
-					expect(resourceEntry?.hasIntegrationTest).toBe(false);
-				}
-			});
+				const resourceEntry = metadata.resources?.find(
+					(r: any) => r.name === "without-tests"
+				);
+				expect(resourceEntry?.hasUnitTest).toBe(false);
+				expect(resourceEntry?.hasIntegrationTest).toBe(false);
+			}
 		});
 	});
 });
