@@ -1,3 +1,4 @@
+
 # Tools - Complete Development Guide
 
 Tools execute operations and return results. This is the most commonly used MCP primitive.

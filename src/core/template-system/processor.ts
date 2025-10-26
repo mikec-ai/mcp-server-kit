@@ -74,6 +74,14 @@ export class TemplateProcessor {
 					options.packageManager,
 					template.config.scaffolding.postScaffold.installCommand,
 				);
+
+				// 7.5. Run post-install commands (if configured)
+				if (template.config.scaffolding.postScaffold?.postInstall) {
+					await this.runPostInstallCommands(
+						options.targetDir,
+						template.config.scaffolding.postScaffold.postInstall,
+					);
+				}
 			}
 
 			// 8. Run smoke test (if configured and requested)
@@ -279,6 +287,42 @@ export class TemplateProcessor {
 				reject(error);
 			});
 		});
+	}
+
+	/**
+	 * Run post-install commands
+	 */
+	private async runPostInstallCommands(
+		targetDir: string,
+		commands: string[],
+	): Promise<void> {
+		const { spawn } = await import("node:child_process");
+
+		console.log(`\n📦 Running ${commands.length} post-install command(s)...\n`);
+
+		for (const command of commands) {
+			await new Promise<void>((resolve, reject) => {
+				const [cmd, ...args] = command.split(" ");
+
+				const proc = spawn(cmd, args, {
+					cwd: targetDir,
+					stdio: "inherit",
+					shell: true,
+				});
+
+				proc.on("close", (code) => {
+					if (code === 0) {
+						resolve();
+					} else {
+						reject(new Error(`Post-install command "${command}" failed with code ${code}`));
+					}
+				});
+
+				proc.on("error", (error) => {
+					reject(error);
+				});
+			});
+		}
 	}
 
 	/**

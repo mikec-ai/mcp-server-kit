@@ -211,21 +211,77 @@ describe("new-server command", () => {
 		});
 	});
 
+	describe("output directory option", () => {
+		it("should use current directory when --output is not specified", () => {
+			const options = {
+				name: "my-server",
+				output: undefined,
+			};
+
+			const targetDir = options.output
+				? `${options.output}/${options.name}`
+				: `./${options.name}`;
+
+			expect(targetDir).toBe("./my-server");
+		});
+
+		it("should use specified directory when --output is provided", () => {
+			const options = {
+				name: "my-server",
+				output: "/tmp/custom-path",
+			};
+
+			const targetDir = options.output
+				? `${options.output}/${options.name}`
+				: `./${options.name}`;
+
+			expect(targetDir).toBe("/tmp/custom-path/my-server");
+		});
+
+		it("should handle relative paths in --output", () => {
+			const options = {
+				name: "my-server",
+				output: "../parent-dir",
+			};
+
+			const targetDir = options.output
+				? `${options.output}/${options.name}`
+				: `./${options.name}`;
+
+			expect(targetDir).toBe("../parent-dir/my-server");
+		});
+
+		it("should correctly show next steps with custom output path", () => {
+			const options = {
+				name: "my-server",
+				output: "/tmp/test-output",
+			};
+
+			const targetDir = options.output
+				? `${options.output}/${options.name}`
+				: `./${options.name}`;
+
+			const nextStepsMessage = `cd ${targetDir}`;
+
+			expect(nextStepsMessage).toBe("cd /tmp/test-output/my-server");
+		});
+	});
+
 	describe("success output", () => {
 		it("should provide clear next steps for normal mode", () => {
 			const projectName = "my-server";
 			const pm = "npm";
 			const install = true;
 
+			// cf-typegen runs automatically via postInstall, so it's not in next steps
 			const nextSteps = [
 				`cd ${projectName}`,
 				...(install ? [] : [`${pm} install`]),
-				`${pm} run cf-typegen`,
 				`${pm} run dev`,
 			];
 
 			expect(nextSteps).toContain(`cd ${projectName}`);
-			expect(nextSteps).toContain(`${pm} run cf-typegen`);
+			expect(nextSteps).not.toContain(`${pm} run cf-typegen`); // Auto-runs now
 			expect(nextSteps).toContain(`${pm} run dev`);
 		});
 
@@ -237,13 +293,12 @@ describe("new-server command", () => {
 			const nextSteps = [
 				`cd ${projectName}`,
 				...(install ? [] : [`${pm} install`]),
-				`${pm} run cf-typegen`,
 				`${pm} run dev`,
 			];
 
 			expect(nextSteps).toContain(`cd ${projectName}`);
 			expect(nextSteps).toContain(`${pm} install`); // Should show install step
-			expect(nextSteps).toContain(`${pm} run cf-typegen`);
+			expect(nextSteps).not.toContain(`${pm} run cf-typegen`); // Auto-runs now
 			expect(nextSteps).toContain(`${pm} run dev`);
 		});
 

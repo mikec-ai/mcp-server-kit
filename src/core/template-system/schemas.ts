@@ -26,6 +26,7 @@ export const TemplateVariableSchema = z.object({
 export const PostScaffoldConfigSchema = z.object({
 	install: z.boolean(),
 	installCommand: z.string().optional(),
+	postInstall: z.array(z.string()).optional(),
 	smokeTest: z.string().optional(),
 });
 

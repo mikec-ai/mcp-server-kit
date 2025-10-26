@@ -78,6 +78,9 @@ export interface PostScaffoldConfig {
 	/** Custom install command (default: npm install) */
 	installCommand?: string;
 
+	/** Commands to run after dependency installation (e.g., cf-typegen) */
+	postInstall?: string[];
+
 	/** Smoke test command to run after install */
 	smokeTest?: string;
 }

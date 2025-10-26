@@ -162,7 +162,7 @@ async function checkToolRegistrations(indexPath: string): Promise<string[]> {
 		let match: RegExpExecArray | null;
 
 		while ((match = registerRegex.exec(content)) !== null) {
-			const toolName = toSnakeCase(match[1]);
+			const toolName = toKebabCase(match[1]);
 			registered.push(toolName);
 		}
 
@@ -287,11 +287,11 @@ function printToolsTable(tools: ToolInfo[]): void {
 }
 
 /**
- * Convert PascalCase to snake_case
+ * Convert PascalCase to kebab-case
  */
-function toSnakeCase(str: string): string {
+function toKebabCase(str: string): string {
 	return str
-		.replace(/([A-Z])/g, "_$1")
+		.replace(/([A-Z])/g, "-$1")
 		.toLowerCase()
-		.replace(/^_/, "");
+		.replace(/^-/, "");
 }

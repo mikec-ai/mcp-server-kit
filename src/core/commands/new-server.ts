@@ -22,6 +22,7 @@ export function createNewServerCommand(): Command {
 		.option("--template <id>", "Template ID to use", "cloudflare-remote")
 		.option("--description <desc>", "Project description")
 		.option("--port <port>", "Development server port", "8788")
+		.option("--output <path>", "Output directory (defaults to current directory)")
 		.option("--no-install", "Skip dependency installation")
 		.option("--pm <manager>", "Package manager (npm, pnpm, yarn, bun)", "npm")
 		.option("--dev", "Development mode: use local mcp-server-kit paths instead of published package")
@@ -77,10 +78,15 @@ export function createNewServerCommand(): Command {
 					console.log(`📦 Development mode: Using local mcp-server-kit at ${mcpKitRoot}\n`);
 				}
 
+				// Determine target directory
+				const targetDir = options.output
+					? path.join(options.output, options.name)
+					: `./${options.name}`;
+
 				// Scaffold the project
 				const result = await processor.scaffold({
 					template: options.template,
-					targetDir: `./${options.name}`,
+					targetDir,
 					variables,
 					noInstall: !options.install,
 					packageManager: options.pm as PackageManager,
@@ -93,11 +99,10 @@ export function createNewServerCommand(): Command {
 						console.log("📦 Development mode enabled - using local mcp-server-kit\n");
 					}
 					console.log("Next steps:");
-					console.log(`  cd ${options.name}`);
+					console.log(`  cd ${targetDir}`);
 					if (!options.install) {
 						console.log(`  ${options.pm} install`);
 					}
-					console.log(`  ${options.pm} run cf-typegen  # Generate Cloudflare types`);
 					console.log(`  ${options.pm} run dev`);
 					console.log("\nHappy coding! 🎉\n");
 				} else {

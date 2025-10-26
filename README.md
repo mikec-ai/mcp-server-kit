@@ -11,7 +11,7 @@ Create production-ready MCP servers in seconds with built-in testing infrastruct
 - 🔌 **Extensible Templates** - Plugin architecture for multiple MCP frameworks
 - 📦 **Production Ready** - Includes TypeScript, testing, linting, and deployment config
 - 🤖 **Agent-Optimized** - Built specifically for AI agents with auto-scaffolding, examples, and validation
-- 🛠️ **Development Tools** - Add tools, validate projects, list tools, all from CLI
+- 🛠️ **Development Tools** - Add tools/prompts/resources, validate projects, list components, all from CLI
 - 📚 **Rich Examples** - Comprehensive example tools and utilities showing best practices
 
 ## For AI Agents 🤖
@@ -185,12 +185,16 @@ Quick reference (see [CLI Guide](./.claude/skills/mcp-server-kit-cli/SKILL.md) f
 
 ```bash
 # Project creation
-mcp-server-kit new server --name <name> --template <template>
+mcp-server-kit new server --name <name> --template <template> [--output <path>]
 
 # Development commands (for AI agents)
 mcp-server-kit add tool <name> --description "<desc>"
+mcp-server-kit add prompt <name> --description "<desc>"
+mcp-server-kit add resource <name> --description "<desc>" [--static]
 mcp-server-kit validate [--strict] [--fix]
 mcp-server-kit list tools [--json]
+mcp-server-kit list prompts [--json]
+mcp-server-kit list resources [--json]
 
 # Template management
 mcp-server-kit template list

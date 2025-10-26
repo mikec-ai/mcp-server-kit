@@ -22,6 +22,8 @@ mcp-server-kit validate
 
 # List components
 mcp-server-kit list tools
+mcp-server-kit list prompts
+mcp-server-kit list resources
 ```
 
 ### When to Use What

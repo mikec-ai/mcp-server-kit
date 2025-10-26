@@ -370,4 +370,168 @@ describe("Template Schema Validation", () => {
 			}
 		});
 	});
+
+	describe("postInstall configuration", () => {
+		it("should accept postInstall commands array", () => {
+			const configWithPostInstall = {
+				id: "test-template",
+				version: "1.0.0",
+				name: "Test Template",
+				description: "Test",
+				capabilities: {
+					runtime: "cloudflare-workers",
+					transport: ["sse"],
+					deployment: "remote",
+					language: "typescript",
+				},
+				dependencies: {},
+				scaffolding: {
+					variables: [],
+					postScaffold: {
+						install: true,
+						postInstall: ["npm run cf-typegen"],
+					},
+				},
+				cli: {
+					dev: "npm run dev",
+					test: "npm test",
+				},
+				features: {
+					unitTesting: false,
+					integrationTesting: false,
+					exampleTools: [],
+					documentation: false,
+				},
+				compatibility: {},
+			};
+
+			const result = validateTemplateConfig(configWithPostInstall);
+
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data!.scaffolding.postScaffold?.postInstall).toBeDefined();
+				expect(result.data!.scaffolding.postScaffold?.postInstall).toEqual(["npm run cf-typegen"]);
+			}
+		});
+
+		it("should accept multiple postInstall commands", () => {
+			const config = {
+				id: "test-template",
+				version: "1.0.0",
+				name: "Test Template",
+				description: "Test",
+				capabilities: {
+					runtime: "cloudflare-workers",
+					transport: ["sse"],
+					deployment: "remote",
+					language: "typescript",
+				},
+				dependencies: {},
+				scaffolding: {
+					variables: [],
+					postScaffold: {
+						install: true,
+						postInstall: ["npm run build", "npm run cf-typegen", "npm run validate"],
+					},
+				},
+				cli: {
+					dev: "npm run dev",
+					test: "npm test",
+				},
+				features: {
+					unitTesting: false,
+					integrationTesting: false,
+					exampleTools: [],
+					documentation: false,
+				},
+				compatibility: {},
+			};
+
+			const result = validateTemplateConfig(config);
+
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data!.scaffolding.postScaffold?.postInstall).toHaveLength(3);
+			}
+		});
+
+		it("should work without postInstall (optional field)", () => {
+			const configWithoutPostInstall = {
+				id: "test-template",
+				version: "1.0.0",
+				name: "Test Template",
+				description: "Test",
+				capabilities: {
+					runtime: "cloudflare-workers",
+					transport: ["sse"],
+					deployment: "remote",
+					language: "typescript",
+				},
+				dependencies: {},
+				scaffolding: {
+					variables: [],
+					postScaffold: {
+						install: true,
+						// No postInstall field
+					},
+				},
+				cli: {
+					dev: "npm run dev",
+					test: "npm test",
+				},
+				features: {
+					unitTesting: false,
+					integrationTesting: false,
+					exampleTools: [],
+					documentation: false,
+				},
+				compatibility: {},
+			};
+
+			const result = validateTemplateConfig(configWithoutPostInstall);
+
+			expect(result.success).toBe(true);
+			if (result.success) {
+				expect(result.data!.scaffolding.postScaffold?.postInstall).toBeUndefined();
+			}
+		});
+
+		it("should reject non-array postInstall values", () => {
+			const invalidConfig = {
+				id: "test-template",
+				version: "1.0.0",
+				name: "Test Template",
+				description: "Test",
+				capabilities: {
+					runtime: "cloudflare-workers",
+					transport: ["sse"],
+					deployment: "remote",
+					language: "typescript",
+				},
+				dependencies: {},
+				scaffolding: {
+					variables: [],
+					postScaffold: {
+						install: true,
+						postInstall: "npm run cf-typegen", // Should be array, not string
+					},
+				},
+				cli: {
+					dev: "npm run dev",
+					test: "npm test",
+				},
+				features: {
+					unitTesting: false,
+					integrationTesting: false,
+					exampleTools: [],
+					documentation: false,
+				},
+				compatibility: {},
+			};
+
+			const result = validateTemplateConfig(invalidConfig as any);
+
+			expect(result.success).toBe(false);
+		});
+	});
 });

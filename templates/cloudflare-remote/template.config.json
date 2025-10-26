@@ -47,6 +47,7 @@
 		"postScaffold": {
 			"install": true,
 			"installCommand": "npm install",
+			"postInstall": ["npm run cf-typegen"],
 			"smokeTest": "npm run type-check"
 		}
 	},
