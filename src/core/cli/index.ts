@@ -5,14 +5,34 @@
  */
 
 import { Command } from "commander";
+import { readFileSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { createNewCommand } from "../commands/new-server.js";
 import { createTemplateCommand } from "../commands/template.js";
 import { createAddCommand } from "../commands/add-tool.js";
 import { createValidateCommand } from "../commands/validate.js";
 import { createListCommand } from "../commands/list.js";
 
-// Read version from package.json
-const VERSION = "1.0.0";
+/**
+ * Read version from package.json
+ */
+function getVersion(): string {
+	try {
+		const __filename = fileURLToPath(import.meta.url);
+		const __dirname = dirname(__filename);
+		// From src/core/cli/index.ts, go up to project root: ../../../
+		const pkgPath = join(__dirname, "../../../package.json");
+		const content = readFileSync(pkgPath, "utf-8");
+		const pkg = JSON.parse(content);
+		return pkg.version || "unknown";
+	} catch (error) {
+		console.error("Warning: Could not read version from package.json");
+		return "unknown";
+	}
+}
+
+const VERSION = getVersion();
 
 /**
  * Create and configure the CLI program
