@@ -2,6 +2,84 @@
 
 Resources expose data via URIs for reading. They can be static (fixed) or dynamic (parameterized).
 
+---
+
+## 🚨 CRITICAL: Static vs Dynamic Resources
+
+###  The #1 Most Common Mistake
+
+**Problem:** Using `{variables}` in a plain string URI without `ResourceTemplate`
+**Symptom:** "Resource not found" errors
+**Cause:** SDK treats `{environment}` as literal text, NOT a template variable
+
+### Decision Rule - ALWAYS Follow This
+
+**Does your URI pattern contain curly braces like `{variable}`?**
+
+| Answer | Code Pattern | Example |
+|--------|--------------|---------|
+| **NO** - Fixed URI | Use plain string | `server.resource("config", "config://app", ...)` |
+| **YES** - Has `{variables}` | Use `new ResourceTemplate(...)` | `server.resource("user", new ResourceTemplate("user://{id}", {...}), ...)` |
+
+### Visual Comparison
+
+#### ✅ CORRECT - Static Resource (No Variables)
+```typescript
+server.resource(
+  "app-config",
+  "config://app/settings",  // ← No {variables} = plain string OK
+  { description: "App settings", mimeType: "application/json" },
+  async (uri) => {
+    return { contents: [{ uri: uri.href, text: JSON.stringify({...}), mimeType: "application/json" }] };
+  }
+);
+```
+
+#### ✅ CORRECT - Dynamic Resource (Has Variables)
+```typescript
+import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
+
+server.resource(
+  "user-profile",
+  new ResourceTemplate("user://{userId}", {  // ← {userId} = MUST use ResourceTemplate
+    list: async () => ({ resources: [...] }),
+    complete: { userId: async (val) => [...] }
+  }),
+  { description: "User profiles", mimeType: "application/json" },
+  async (uri, variables) => {  // ← Note: variables parameter available
+    const userId = variables.userId as string;  // ← Extract from variables, NOT uri.pathname
+    return { contents: [{ uri: uri.href, text: JSON.stringify({...}), mimeType: "application/json" }] };
+  }
+);
+```
+
+#### ❌ WRONG - Template Without ResourceTemplate (WILL FAIL)
+```typescript
+server.resource(
+  "user-profile",
+  "user://{userId}",  // ❌ Has {userId} but NO ResourceTemplate wrapper
+  { description: "User profiles", mimeType: "application/json" },
+  async (uri) => {
+    const userId = uri.pathname.replace("//", "");  // ❌ Will get literal "{userId}", not "123"
+    // This WILL FAIL with "Resource not found" error!
+  }
+);
+```
+
+### Why It Fails
+
+When you write `"user://{userId}"` as a plain string:
+1. SDK registers resource at literal URI: `user://{userId}` (with curly braces)
+2. Client requests: `user://123`
+3. SDK tries to match: `user://123` ≠ `user://{userId}` → **Not Found**
+
+When you wrap in `ResourceTemplate`:
+1. SDK knows `{userId}` is a template variable
+2. Client requests: `user://123`
+3. SDK extracts: `userId = "123"` and calls handler with `variables.userId`
+
+---
+
 ## Resource Anatomy
 
 ```typescript
