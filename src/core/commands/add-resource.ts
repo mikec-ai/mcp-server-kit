@@ -17,6 +17,7 @@ interface AddResourceOptions {
 	description?: string;
 	uriPattern?: string;
 	static?: boolean;
+	dynamic?: boolean;
 	tests: boolean;
 	register: boolean;
 }
@@ -39,16 +40,29 @@ export function createAddResourceCommand(): Command {
 		)
 		.option(
 			"--static",
-			"Create a static resource (fixed URI, no variables). Default is dynamic with variables.",
+			"Explicitly create a static resource (fixed URI, no variables)",
+		)
+		.option(
+			"--dynamic",
+			"Create a dynamic resource (URI with template variables like {id})",
 		)
 		.option("--no-tests", "Skip test file generation")
 		.option("--no-register", "Don't auto-register in index.ts")
 		.action(async (name: string, options: AddResourceOptions) => {
-			// Determine URI pattern based on --static flag and user input
+			// Validate conflicting flags
+			if (options.static && options.dynamic) {
+				throw new Error("Cannot use both --static and --dynamic flags");
+			}
+
+			// Determine URI pattern based on flags and user input
 			if (!options.uriPattern) {
-				options.uriPattern = options.static
-					? `config://${name}`
-					: "resource://{id}";
+				if (options.dynamic) {
+					// Explicit dynamic
+					options.uriPattern = "resource://{id}";
+				} else {
+					// Default to static (simpler, more common)
+					options.uriPattern = `config://${name}`;
+				}
 			}
 			try {
 				console.log(`\n📦 Adding resource: ${name}\n`);

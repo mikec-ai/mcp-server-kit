@@ -73,7 +73,7 @@ async function testTemplate(
 		console.log(`  [1/5] Scaffolding ${templateId}...`);
 		try {
 			await execAsync(
-				`node "${cliPath}" new server --name ${projectName} --template ${templateId} --no-install`,
+				`node "${cliPath}" new server --name ${projectName} --template ${templateId} --dev --no-install`,
 				{ cwd: tempDir }
 			);
 			result.steps.scaffold.passed = true;
@@ -85,25 +85,10 @@ async function testTemplate(
 		// Step 2: Install dependencies
 		console.log(`  [2/5] Installing dependencies...`);
 		try {
-			// Remove mcp-server-kit from package.json for local testing
-			const packageJsonPath = join(projectDir, "package.json");
-			const packageJsonContent = await readFile(packageJsonPath, "utf-8");
-			const packageJson = JSON.parse(packageJsonContent);
-			if (packageJson.devDependencies && packageJson.devDependencies["mcp-server-kit"]) {
-				delete packageJson.devDependencies["mcp-server-kit"];
-				await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2), "utf-8");
-			}
-
-			// Install dependencies
+			// Install dependencies (--dev flag already set correct paths)
 			await execAsync("npm install", {
 				cwd: projectDir,
 				env: { ...process.env, NODE_ENV: "test" },
-			});
-
-			// Link local mcp-server-kit for testing
-			const mcpKitRoot = join(__dirname, "../..");
-			await execAsync(`npm link "${mcpKitRoot}"`, {
-				cwd: projectDir,
 			});
 
 			result.steps.install.passed = true;

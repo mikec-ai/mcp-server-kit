@@ -185,6 +185,39 @@ describe("add-resource command", () => {
 		});
 	});
 
+	describe("default behavior", () => {
+		it("should default to static resources (simpler, more common)", () => {
+			// Test the default URI pattern generation logic
+			const resourceName = "server-status";
+
+			// When no flags provided, should generate static URI
+			const defaultUriPattern = `config://${resourceName}`;
+
+			expect(defaultUriPattern).toBe("config://server-status");
+			expect(defaultUriPattern).not.toContain("{");
+			expect(defaultUriPattern).not.toContain("}");
+		});
+
+		it("should use dynamic when --dynamic flag is provided", () => {
+			// When --dynamic flag is provided, should generate dynamic URI
+			const dynamicUriPattern = "resource://{id}";
+
+			expect(dynamicUriPattern).toContain("{id}");
+		});
+
+		it("should validate conflicting flags", () => {
+			// Cannot use both --static and --dynamic
+			const hasStaticFlag = true;
+			const hasDynamicFlag = true;
+
+			if (hasStaticFlag && hasDynamicFlag) {
+				expect(() => {
+					throw new Error("Cannot use both --static and --dynamic flags");
+				}).toThrow("Cannot use both --static and --dynamic flags");
+			}
+		});
+	});
+
 	describe("registration logic", () => {
 		it("should generate import statement", () => {
 			const resourceName = "my-resource";

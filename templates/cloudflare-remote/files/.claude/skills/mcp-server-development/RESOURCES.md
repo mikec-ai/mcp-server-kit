@@ -4,6 +4,31 @@ Resources expose data via URIs for reading. They can be static (fixed) or dynami
 
 ---
 
+## Quick Start: Adding Resources
+
+The CLI defaults to **static resources** (simpler, more common):
+
+```bash
+# Default: Creates static resource with fixed URI
+npm run tools:add resource server-status
+
+# Explicit static (same as default)
+npm run tools:add resource server-status --static
+
+# Dynamic resource with template variables
+npm run tools:add resource user-profile --dynamic
+
+# Custom URI pattern (auto-detects static vs dynamic)
+npm run tools:add resource config --uri-pattern "config://app/settings"
+npm run tools:add resource user --uri-pattern "user://{id}"
+```
+
+**When to use each:**
+- **Static** (~70% of cases): config, status, docs, API info, metrics
+- **Dynamic** (~30% of cases): user profiles, database records, logs by date
+
+---
+
 ## 🚨 CRITICAL: Static vs Dynamic Resources
 
 ###  The #1 Most Common Mistake
