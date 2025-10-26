@@ -68,6 +68,123 @@ mcp-server-kit new server --name my-test --dev
 
 ---
 
+## Recent Features & Improvements
+
+### 1. Auto-run cf-typegen After npm install
+
+**What Changed**: cf-typegen now runs automatically after `npm install` completes.
+
+**Impact**:
+- ✅ Type checking works immediately after project creation
+- ✅ No manual `npm run cf-typegen` step required
+- ✅ worker-configuration.d.ts generated automatically
+
+**How It Works**:
+- Template system now supports `postInstall` commands in template.config.json
+- Cloudflare template configured with `"postInstall": ["npm run cf-typegen"]`
+- Console output shows: `📦 Running 1 post-install command(s)...`
+
+**For Agents**: Remove `npm run cf-typegen` from workflow documentation - it happens automatically.
+
+### 2. --output Flag for Project Directory
+
+**What Changed**: `new server` command now accepts `--output <path>` to specify where to create projects.
+
+**Syntax**:
+```bash
+mcp-server-kit new server --name my-server --output /path/to/directory
+```
+
+**Use Cases**:
+- Creating projects in /tmp for testing
+- Organizing projects in custom directories
+- CI/CD pipelines with specific directory structures
+
+**Examples**:
+```bash
+# Create in /tmp for testing
+mcp-server-kit new server --name test-project --output /tmp --dev
+
+# Create in custom projects directory
+mcp-server-kit new server --name my-api --output ~/projects/mcp-servers
+```
+
+**Next Steps Output**: Correctly shows path: `cd /tmp/test-project`
+
+### 3. list prompts Command
+
+**What Changed**: New command to list all prompts with status information.
+
+**Syntax**:
+```bash
+mcp-server-kit list prompts [--json] [--filter <status>]
+```
+
+**Shows**:
+- Registration status (registered vs unregistered)
+- Unit test coverage
+- Integration test coverage
+- File locations
+- Descriptions
+
+**Filters**:
+- `--filter registered` - Only registered prompts
+- `--filter unregistered` - Only unregistered prompts
+- `--filter tested` - Prompts with tests
+- `--filter untested` - Prompts without tests
+
+**Example Output**:
+```
+Found 2 prompts:
+
+NAME            | REG | UNIT | INT | FILE
+================================================================
+code-reviewer   |  ✓  |  ✓  |  ✓  | src/prompts/code-reviewer.ts
+                  Review code quality
+test-generator  |  ✓  |  ✓  |  ✓  | src/prompts/test-generator.ts
+                  Generate tests
+
+Summary:
+  Registered:       2/2
+  Unit tests:       2/2
+  Integration tests: 2/2
+```
+
+### 4. list resources Command
+
+**What Changed**: New command to list all resources with status information.
+
+**Syntax**:
+```bash
+mcp-server-kit list resources [--json] [--filter <status>]
+```
+
+**Shows**: Same information as `list prompts` but for resources
+
+**Useful For**:
+- Checking if resources are properly registered
+- Verifying test coverage
+- Project health checks
+- CI/CD validation
+
+### 5. Registration Detection Fix
+
+**What Changed**: Fixed bug in `list tools` where hyphenated tool names showed as unregistered.
+
+**The Bug**:
+- Previous: Used `toSnakeCase()` conversion
+- Tools like `matrix-operations` were converted to `matrix_operations`
+- Didn't match actual registrations which use kebab-case
+
+**The Fix**:
+- Now uses `toKebabCase()` conversion
+- `MatrixOperations` → `matrix-operations` (correct)
+- Hyphenated tools now show ✓ in registration column
+
+**Affected Tools**: Any tool with hyphens (e.g., `api-client`, `data-processor`, `weather-api`)
+
+---
+
 ## Development Standards
 
 ### Type Safety

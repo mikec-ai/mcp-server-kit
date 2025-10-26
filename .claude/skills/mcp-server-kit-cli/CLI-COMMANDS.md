@@ -66,6 +66,31 @@ mcp-server-kit list templates
 mcp-server-kit new server --name my-server --template cloudflare-remote
 ```
 
+#### --output <path>
+
+**Purpose**: Specify output directory for the new project
+
+**Default**: Current directory
+
+**When to use**:
+- Creating projects in /tmp for testing
+- Organizing projects in custom directories
+- CI/CD pipelines with specific paths
+
+**Examples**:
+```bash
+# Create in /tmp for testing
+mcp-server-kit new server --name test-project --output /tmp --dev
+
+# Create in custom directory
+mcp-server-kit new server --name my-api --output ~/projects/mcp-servers
+
+# Create with relative path
+mcp-server-kit new server --name my-server --output ../other-directory
+```
+
+**Next Steps**: The "next steps" message will show the correct path to cd into.
+
 #### --port <number>
 
 **Purpose**: Set development server port
@@ -99,8 +124,7 @@ npm install  # Manual install
 ```bash
 mcp-server-kit new server --name my-weather-api
 cd my-weather-api
-npm install
-npm run cf-typegen
+# npm install and cf-typegen run automatically
 npm run dev
 ```
 
@@ -109,9 +133,17 @@ npm run dev
 mcp-server-kit new server --name test-project --dev --no-install
 cd test-project
 npm install
-npm run cf-typegen
+# cf-typegen runs automatically
 npm run type-check
 npm run test:unit
+```
+
+**Custom output directory**:
+```bash
+mcp-server-kit new server \
+  --name my-server \
+  --output /tmp/test-servers \
+  --dev
 ```
 
 **Custom port and template**:
@@ -479,15 +511,102 @@ mcp-server-kit list <type>
 ### Available Types
 
 #### list tools
-Lists all tools in the project
 
+Lists all tools in the project with registration and test status.
+
+**Syntax**:
 ```bash
-npm run tools:list
+mcp-server-kit list tools [--json] [--filter <status>]
+```
+
+**Flags**:
+- `--json` - Output as JSON
+- `--filter registered|unregistered|tested|untested` - Filter by status
+
+**Example output**:
+```
+Found 3 tools:
+
+NAME              | REG | UNIT | INT | FILE
+=====================================================================
+api-client        |  ✓  |  ✓  |  ✓  | src/tools/api-client.ts
+                    API client for external services
+weather-api       |  ✓  |  ✓  |  ✓  | src/tools/weather-api.ts
+                    Get weather information
+
+Summary:
+  Registered:       2/2
+  Unit tests:       2/2
+  Integration tests: 2/2
+```
+
+#### list prompts
+
+Lists all prompts in the project with registration and test status.
+
+**Syntax**:
+```bash
+mcp-server-kit list prompts [--json] [--filter <status>]
+```
+
+**Flags**:
+- `--json` - Output as JSON
+- `--filter registered|unregistered|tested|untested` - Filter by status
+- `--show-examples` - Include example prompts (prefixed with _example)
+
+**Example output**:
+```
+Found 2 prompts:
+
+NAME            | REG | UNIT | INT | FILE
+================================================================
+code-reviewer   |  ✓  |  ✓  |  ✓  | src/prompts/code-reviewer.ts
+                  Review code quality
+test-generator  |  ✓  |  ✓  |  ✓  | src/prompts/test-generator.ts
+                  Generate unit tests
+
+Summary:
+  Registered:       2/2
+  Unit tests:       2/2
+  Integration tests: 2/2
+```
+
+#### list resources
+
+Lists all resources in the project with registration and test status.
+
+**Syntax**:
+```bash
+mcp-server-kit list resources [--json] [--filter <status>]
+```
+
+**Flags**:
+- `--json` - Output as JSON
+- `--filter registered|unregistered|tested|untested` - Filter by status
+- `--show-examples` - Include example resources (prefixed with _example)
+
+**Example output**:
+```
+Found 2 resources:
+
+NAME       | REG | UNIT | INT | FILE
+=========================================================
+config     |  ✓  |  ✓  |  ✓  | src/resources/config.ts
+             Application configuration
+user-data  |  ✓  |  ✓  |  ✓  | src/resources/user-data.ts
+             User data by ID
+
+Summary:
+  Registered:       2/2
+  Unit tests:       2/2
+  Integration tests: 2/2
 ```
 
 #### list templates
-Lists available templates
 
+Lists available templates for creating new servers.
+
+**Syntax**:
 ```bash
 mcp-server-kit list templates
 ```
@@ -504,21 +623,22 @@ Available templates:
 
 ### Complete Project Setup
 ```bash
-# 1. Create project
+# 1. Create project (npm install and cf-typegen run automatically)
 mcp-server-kit new server --name my-api
 
-# 2. Setup
+# 2. Navigate to project
 cd my-api
-npm install
-npm run cf-typegen
 
 # 3. Add components
 npm run tools:add tool search
 npm run tools:add prompt reviewer
 npm run tools:add resource config --static
 
-# 4. Validate
+# 4. Validate and verify registration
 npm run validate
+mcp-server-kit list tools
+mcp-server-kit list prompts
+mcp-server-kit list resources
 
 # 5. Test
 npm run type-check
@@ -533,12 +653,13 @@ npm run dev
 # 1. Create test project
 mcp-server-kit new server --name test-feature --dev
 
-# 2. Setup and test
+# 2. Navigate (cf-typegen runs automatically)
 cd test-feature
-npm install
-npm run cf-typegen
+
+# 3. Verify and test
 npm run type-check
 npm test
+mcp-server-kit list tools
 ```
 
 ---
@@ -565,10 +686,10 @@ node ./bin/mcp-server-kit.js --help
 
 ### Import Errors After Scaffolding
 ```bash
-# Run type generation
+# cf-typegen runs automatically, but if you need to re-run it:
 npm run cf-typegen
 
-# Reinstall dependencies
+# Or reinstall dependencies (which will re-run cf-typegen)
 rm -rf node_modules package-lock.json
 npm install
 ```

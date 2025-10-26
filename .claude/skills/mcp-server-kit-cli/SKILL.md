@@ -92,6 +92,8 @@ mcp-server-kit validate [--strict]
 
 # List components
 mcp-server-kit list tools
+mcp-server-kit list prompts
+mcp-server-kit list resources
 mcp-server-kit list templates
 ```
 
@@ -104,10 +106,8 @@ mcp-server-kit list templates
 # 1. Scaffold project
 mcp-server-kit new server --name my-weather-server
 
-# 2. Navigate and install
+# 2. Navigate (npm install runs automatically with cf-typegen)
 cd my-weather-server
-npm install
-npm run cf-typegen
 
 # 3. Add components
 npm run tools:add tool weather --description "Get weather data"
@@ -124,10 +124,8 @@ npm run validate
 # 1. Scaffold test project with --dev flag
 mcp-server-kit new server --name test-project --dev
 
-# 2. Navigate and install
+# 2. Navigate (cf-typegen runs automatically)
 cd test-project
-npm install
-npm run cf-typegen
 
 # 3. Verify everything works
 npm run type-check
@@ -166,6 +164,7 @@ npm run tools:add resource user-profile --dynamic
 |------|---------|---------|
 | `--name <name>` | Required | Project name (kebab-case) |
 | `--template <id>` | cloudflare-remote | Template to use |
+| `--output <path>` | current directory | Output directory for project |
 | `--dev` | false | Local development mode |
 | `--port <port>` | 8788 | Dev server port |
 | `--no-install` | false | Skip npm install |
@@ -210,15 +209,6 @@ mcp-server-kit new server --name test-project --dev
 
 **Fix**: See [CLI-COMMANDS.md](CLI-COMMANDS.md) resource section
 
-### Error: "Type definition file not found"
-
-**Cause**: Didn't run `cf-typegen` after scaffolding
-
-**Fix**:
-```bash
-npm run cf-typegen
-```
-
 ---
 
 ## Detailed Documentation
@@ -233,10 +223,11 @@ For comprehensive command documentation, see:
 ## Best Practices
 
 ✅ **Always use `--dev` when testing mcp-server-kit**
-✅ **Run `npm run cf-typegen` after scaffolding**
+✅ **cf-typegen runs automatically - no manual step needed**
 ✅ **Use `validate` command to catch issues early**
 ✅ **Default to static resources (simpler)**
 ✅ **Check `--help` when unsure about flags**
+✅ **Use `list` commands to verify registration status**
 
 ❌ **Don't commit without running `validate`**
 ❌ **Don't scaffold without considering `--dev`**
