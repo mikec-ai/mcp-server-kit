@@ -244,7 +244,7 @@ describe("add-prompt command", () => {
 			);
 			const content = await readFile(yamlPath, "utf-8");
 
-			expect(content).toContain('name: "test prompt - Basic"');
+			expect(content).toContain('name: "test-prompt - Basic"');
 		});
 
 		it("should include success assertion in YAML", async () => {

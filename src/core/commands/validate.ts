@@ -736,3 +736,24 @@ function toKebabCase(str: string): string {
 function capitalize(str: string): string {
 	return str.charAt(0).toUpperCase() + str.slice(1);
 }
+
+// ============================================================================
+// Public API Exports
+// ============================================================================
+
+/**
+ * These exports allow programmatic usage of the validation system.
+ * Example:
+ *
+ * import { validateProject } from 'mcp-server-kit/validation';
+ *
+ * const result = await validateProject(process.cwd(), { strict: true });
+ * if (!result.passed) {
+ *   for (const issue of result.issues) {
+ *     console.error(`${issue.severity}: ${issue.message}`);
+ *   }
+ * }
+ */
+
+// Types are exported for programmatic usage
+// validateProject is already exported above (line 100)

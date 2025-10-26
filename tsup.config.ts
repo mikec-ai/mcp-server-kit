@@ -8,6 +8,10 @@ export default defineConfig({
 		"harness/index": "src/harness/index.ts",
 		// Commands entry point
 		"core/commands/index": "src/core/commands/index.ts",
+		// Scaffolding API entry point
+		"core/commands/shared/index": "src/core/commands/shared/index.ts",
+		// Validation API entry point
+		"core/commands/validate": "src/core/commands/validate.ts",
 		// CLI entry point
 		cli: "src/core/cli/index.ts",
 	},

@@ -29,6 +29,14 @@
 		"./commands": {
 			"types": "./dist/core/commands/index.d.ts",
 			"import": "./dist/core/commands/index.js"
+		},
+		"./scaffolding": {
+			"types": "./dist/core/commands/shared/index.d.ts",
+			"import": "./dist/core/commands/shared/index.js"
+		},
+		"./validation": {
+			"types": "./dist/core/commands/validate.d.ts",
+			"import": "./dist/core/commands/validate.js"
 		}
 	},
 	"files": [

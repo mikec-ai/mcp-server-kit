@@ -261,7 +261,7 @@ describe("add-resource command", () => {
 			);
 			const content = await readFile(yamlPath, "utf-8");
 
-			expect(content).toContain('name: "test resource - Basic"');
+			expect(content).toContain('name: "test-resource - Basic"');
 		});
 
 		it("should include success assertion in YAML", async () => {

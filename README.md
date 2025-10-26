@@ -202,6 +202,209 @@ mcp-server-kit template info <template-id>
 mcp-server-kit template validate <template-id>
 ```
 
+## Programmatic API Usage
+
+While mcp-server-kit provides a CLI for interactive use, **all core functionality is also available as a programmatic API** for building custom tooling, CI/CD integrations, and advanced workflows.
+
+### Available API Modules
+
+```typescript
+// Scaffolding API - Create entities programmatically
+import { EntityScaffolder } from 'mcp-server-kit/scaffolding';
+
+// Validation API - Validate projects programmatically
+import { validateProject } from 'mcp-server-kit/validation';
+
+// Template System API - Scaffold entire projects
+import { TemplateProcessor, TemplateRegistry } from 'mcp-server-kit';
+
+// Test Harness API - Run integration tests
+import { TestRunner, loadTestSpec } from 'mcp-server-kit/harness';
+```
+
+### Scaffolding API
+
+Create tools, prompts, and resources programmatically:
+
+```typescript
+import { EntityScaffolder } from 'mcp-server-kit/scaffolding';
+
+const scaffolder = new EntityScaffolder();
+
+// Create a tool
+const result = await scaffolder.scaffold(process.cwd(), {
+  entityType: 'tool',
+  name: 'weather-api',
+  description: 'Get weather data',
+  generateTests: true,
+  autoRegister: true,
+});
+
+console.log(`Created: ${result.filesCreated.join(', ')}`);
+console.log(`Registered: ${result.registered}`);
+// No console output from scaffolder - you control output!
+```
+
+**Use Cases**:
+- Custom project generators
+- IDE plugins for code generation
+- Automated entity scaffolding in CI/CD
+
+### Validation API
+
+Validate MCP server projects programmatically:
+
+```typescript
+import { validateProject } from 'mcp-server-kit/validation';
+
+const result = await validateProject(process.cwd(), { strict: true });
+
+if (!result.passed) {
+  for (const issue of result.issues) {
+    if (issue.severity === 'error') {
+      console.error(`❌ ${issue.message}`);
+      if (issue.file) console.error(`   File: ${issue.file}`);
+      if (issue.suggestion) console.error(`   Fix: ${issue.suggestion}`);
+    }
+  }
+  process.exit(1);
+}
+
+console.log(`✅ Valid! (${result.summary.errors} errors, ${result.summary.warnings} warnings)`);
+```
+
+**Use Cases**:
+- Custom CI/CD validation
+- Pre-commit hooks
+- IDE validation on save
+- Project health dashboards
+
+### Template System API
+
+Scaffold complete projects programmatically:
+
+```typescript
+import { TemplateProcessor, TemplateRegistry } from 'mcp-server-kit';
+
+const registry = new TemplateRegistry();
+const processor = new TemplateProcessor(registry);
+
+const result = await processor.scaffold({
+  template: 'cloudflare-remote',
+  targetDir: './my-project',
+  variables: {
+    PROJECT_NAME: 'my-server',
+    MCP_SERVER_NAME: 'My MCP Server',
+    PORT: '8788',
+  },
+  noInstall: false,
+  packageManager: 'npm',
+});
+
+if (result.success) {
+  console.log(`✅ Project created at: ${result.targetDir}`);
+}
+```
+
+**Use Cases**:
+- Custom project templates
+- Multi-project generators
+- Template testing automation
+
+### Entity Discovery API
+
+List and discover entities in a project:
+
+```typescript
+import { EntityLister } from 'mcp-server-kit/scaffolding';
+
+const lister = new EntityLister({
+  entityType: 'tool',
+  entityTypePlural: 'tools',
+  sourceDir: 'src/tools',
+  registrationPattern: /register(\w+)Tool/g,
+  unitTestDir: 'test/unit/tools',
+  integrationTestDir: 'test/integration/specs',
+  descriptionPattern: /\/\*\*[\s\S]*?\*\s*([^\n]+)/,
+});
+
+const entities = await lister.discoverEntities(process.cwd(), false);
+
+for (const entity of entities) {
+  console.log(`${entity.name}: registered=${entity.registered}, tested=${entity.hasUnitTest}`);
+}
+```
+
+**Use Cases**:
+- Custom status reporting
+- IDE entity browser
+- Documentation generation
+
+### Test Harness API
+
+Run integration tests programmatically:
+
+```typescript
+import { TestRunner, loadTestSpec } from 'mcp-server-kit/harness';
+import { MyMCPClient } from './my-client';
+
+// Create client adapter
+const client = new MyMCPClient();
+const runner = new TestRunner(client);
+
+// Connect
+await runner.connect();
+
+// Load and run tests
+const spec = await loadTestSpec('./test.yaml');
+const result = await runner.runTest(spec);
+
+console.log(`Test: ${result.name}`);
+console.log(`Status: ${result.passed ? 'PASS' : 'FAIL'}`);
+console.log(`Duration: ${result.duration}ms`);
+
+// Cleanup
+await runner.disconnect();
+```
+
+**Use Cases**:
+- Custom test runners
+- CI/CD integration
+- Performance testing
+- Monitoring and alerts
+
+### TypeScript Type Safety
+
+All APIs are fully typed:
+
+```typescript
+import type {
+  ScaffoldResult,
+  ValidationResult,
+  EntityInfo,
+  TestResult,
+} from 'mcp-server-kit/scaffolding';
+```
+
+**Benefits**:
+- IntelliSense in VS Code
+- Compile-time type checking
+- Self-documenting APIs
+
+### Package Exports
+
+```json
+{
+  "imports": {
+    "mcp-server-kit": "Main exports (template system, utils, services)",
+    "mcp-server-kit/harness": "Test harness (portable)",
+    "mcp-server-kit/scaffolding": "Entity scaffolding services",
+    "mcp-server-kit/validation": "Project validation",
+    "mcp-server-kit/commands": "CLI commands (Commander.js)"
+  }
+}
+```
+
 ## Development
 
 ### Building from Source
