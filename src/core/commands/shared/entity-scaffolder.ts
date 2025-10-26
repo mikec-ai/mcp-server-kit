@@ -12,27 +12,13 @@ import { ValidationService } from "./validation-service.js";
 import { TemplateService } from "./template-service.js";
 import { updateTemplateMetadata } from "./metadata.js";
 import { toPascalCase } from "./utils.js";
+import { ScaffoldConfigSchema, type ScaffoldConfig } from "./schemas.js";
 import type { RegistrationConfig } from "./registration-service.js";
 import type { ValidationConfig, ResourceOptions } from "./validation-service.js";
 import type { ResourceTemplateOptions } from "./template-service.js";
 
-/**
- * Configuration for entity scaffolding
- */
-export interface ScaffoldConfig {
-	/** Entity type (tool, prompt, resource) */
-	entityType: "tool" | "prompt" | "resource";
-	/** Entity name in kebab-case */
-	name: string;
-	/** Description of the entity */
-	description?: string;
-	/** Whether to generate test files (default: true) */
-	generateTests?: boolean;
-	/** Whether to auto-register in index.ts (default: true) */
-	autoRegister?: boolean;
-	/** Resource-specific options (required for resources) */
-	resourceOptions?: ResourceOptions;
-}
+// Re-export ScaffoldConfig type for external use
+export type { ScaffoldConfig };
 
 /**
  * Result of scaffolding operation
@@ -73,6 +59,15 @@ export class EntityScaffolder {
 	 * @returns Result with created files and registration status
 	 */
 	async scaffold(cwd: string, config: ScaffoldConfig): Promise<ScaffoldResult> {
+		// Validate configuration with Zod
+		const parseResult = ScaffoldConfigSchema.safeParse(config);
+		if (!parseResult.success) {
+			// Convert Zod errors to user-friendly error messages
+			const firstError = parseResult.error.errors[0];
+			throw new Error(firstError.message);
+		}
+		const validatedConfig = parseResult.data;
+
 		const result: ScaffoldResult = {
 			success: false,
 			filesCreated: [],
@@ -80,11 +75,11 @@ export class EntityScaffolder {
 			messages: [],
 		};
 
-		const { entityType, name } = config;
+		const { entityType, name } = validatedConfig;
 		const capitalizedName = toPascalCase(name);
-		const description = config.description || "TODO: Add description";
-		const generateTests = config.generateTests !== false; // Default true
-		const autoRegister = config.autoRegister !== false; // Default true
+		const description = validatedConfig.description || "TODO: Add description";
+		const generateTests = validatedConfig.generateTests !== false; // Default true
+		const autoRegister = validatedConfig.autoRegister !== false; // Default true
 
 		// Validate
 		const validationConfig: ValidationConfig = {
@@ -95,8 +90,8 @@ export class EntityScaffolder {
 		this.validationService.validateEntity(cwd, name, validationConfig);
 
 		// Handle resource-specific validation
-		if (entityType === "resource" && config.resourceOptions) {
-			this.validationService.validateResourceOptions(config.resourceOptions);
+		if (entityType === "resource" && validatedConfig.resourceOptions) {
+			this.validationService.validateResourceOptions(validatedConfig.resourceOptions);
 		}
 
 		// Generate entity file
@@ -105,7 +100,7 @@ export class EntityScaffolder {
 			name,
 			capitalizedName,
 			description,
-			config,
+			validatedConfig,
 		);
 		result.filesCreated.push(entityFilePath);
 

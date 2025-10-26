@@ -411,7 +411,7 @@ export class MCPServerAgent extends McpAgent<Env> {
 			};
 
 			await expect(scaffolder.scaffold(tempDir, config)).rejects.toThrow(
-				"Tool name must be lowercase with hyphens",
+				"Entity name must be lowercase with hyphens",
 			);
 		});
 
