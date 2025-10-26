@@ -16,6 +16,7 @@ import { existsSync } from "node:fs";
 interface AddResourceOptions {
 	description?: string;
 	uriPattern?: string;
+	static?: boolean;
 	tests: boolean;
 	register: boolean;
 }
@@ -34,12 +35,21 @@ export function createAddResourceCommand(): Command {
 		)
 		.option(
 			"--uri-pattern <pattern>",
-			"URI pattern (e.g., 'files://{path}')",
-			"resource://{id}",
+			"URI pattern (e.g., 'user://{id}' for dynamic, 'config://app' for static)",
+		)
+		.option(
+			"--static",
+			"Create a static resource (fixed URI, no variables). Default is dynamic with variables.",
 		)
 		.option("--no-tests", "Skip test file generation")
 		.option("--no-register", "Don't auto-register in index.ts")
 		.action(async (name: string, options: AddResourceOptions) => {
+			// Determine URI pattern based on --static flag and user input
+			if (!options.uriPattern) {
+				options.uriPattern = options.static
+					? `config://${name}`
+					: "resource://{id}";
+			}
 			try {
 				console.log(`\n📦 Adding resource: ${name}\n`);
 

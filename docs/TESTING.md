@@ -10,9 +10,12 @@ The toolkit includes a portable, declarative test harness for integration testin
 
 ---
 
-## Quick Example
+## Quick Examples
+
+### Tool Test
 
 ```yaml
+type: "tool"
 name: "Test echo tool"
 tool: "echo"
 arguments:
@@ -24,6 +27,36 @@ assertions:
     max: 3000
   - type: "contains_text"
     text: "Hello, MCP!"
+```
+
+### Prompt Test
+
+```yaml
+type: "prompt"
+name: "Test code reviewer prompt"
+prompt: "code-reviewer"
+arguments:
+  code: "function test() { return 42; }"
+  focus: "readability"
+
+assertions:
+  - type: "success"
+  - type: "contains_text"
+    text: "function"
+```
+
+### Resource Test
+
+```yaml
+type: "resource"
+name: "Test snippet resource"
+uri: "snippet://test-id-123"
+
+assertions:
+  - type: "success"
+  - type: "json_path"
+    path: "$.contents[0].mimeType"
+    expected: "application/json"
 ```
 
 ---
@@ -63,7 +96,13 @@ End-to-end tests using declarative YAML specs.
 
 **Run:**
 ```bash
-npm run test:integration
+npm run integration:run
+
+# Or run specific test file
+npm run integration:run test/integration/specs/echo.yaml
+
+# List all available integration tests
+npm run integration:list
 ```
 
 ---
@@ -87,20 +126,53 @@ Topics covered:
 
 ### For AI Agents
 
-1. **Add tool:** CLI auto-generates test files
-2. **Implement logic:** Write tool implementation
-3. **Update tests:** Modify generated tests for your logic
+1. **Add feature:** CLI auto-generates test files
+   ```bash
+   mcp-server-kit add tool weather --description "Get weather data"
+   ```
+2. **Implement logic:** Write implementation in `src/tools/weather.ts`
+3. **Update integration test:** Modify `test/integration/specs/tools/weather.yaml` with realistic test cases
 4. **Run unit tests:** `npm run test:unit`
-5. **Run integration tests:** `npm run test:integration`
+5. **Run integration tests:** `npm run integration:run`
 6. **Validate:** `mcp-server-kit validate`
+7. **Type check:** `npm run type-check`
 
 ### For Developers
 
 1. **Write unit test first** (TDD approach)
-2. **Implement tool**
-3. **Add integration test YAML**
-4. **Run all tests**
-5. **Commit when green**
+2. **Implement tool/prompt/resource**
+3. **Add integration test YAML** with realistic scenarios
+4. **Run all tests:** `npm run test:unit && npm run integration:run`
+5. **Fix any failures** (see Debugging section below)
+6. **Commit when green**
+
+### Debugging Test Failures
+
+**Unit test fails:**
+```bash
+# Run in watch mode for faster iteration
+npm run test:unit:watch
+
+# Run specific test file
+npx vitest test/unit/tools/weather.test.ts
+```
+
+**Integration test fails:**
+```bash
+# Run specific integration test
+npm run integration:run test/integration/specs/tools/weather.yaml
+
+# Check validation first
+mcp-server-kit validate
+
+# Check type errors
+npm run type-check
+```
+
+**Common issues:**
+- Tool not registered → Run `mcp-server-kit validate --fix`
+- Type errors → Run `npm run type-check` and fix TypeScript issues
+- Test YAML invalid → Check YAML syntax and assertion types
 
 ---
 
@@ -158,15 +230,24 @@ For complete API documentation, see [Test Harness Documentation](../src/harness/
 ```
 test/
 ├── unit/                      # Unit tests (fast)
-│   └── tools/
-│       ├── echo.test.ts
-│       └── weather.test.ts
+│   ├── tools/
+│   │   ├── echo.test.ts
+│   │   └── weather.test.ts
+│   ├── prompts/
+│   │   └── code-reviewer.test.ts
+│   └── resources/
+│       └── snippet.test.ts
 │
 ├── integration/               # Integration tests (slower)
 │   ├── cli.ts                # Test client
 │   └── specs/
-│       ├── echo.yaml
-│       └── weather.yaml
+│       ├── tools/
+│       │   ├── echo.yaml
+│       │   └── weather.yaml
+│       ├── prompts/
+│       │   └── code-reviewer.yaml
+│       └── resources/
+│           └── snippet.yaml
 │
 └── utils/                     # Test utilities
     └── test-utils.ts
@@ -174,8 +255,9 @@ test/
 
 ### Naming Conventions
 
-- Unit tests: `<tool-name>.test.ts`
-- Integration specs: `<tool-name>.yaml`
+- Unit tests: `<name>.test.ts`
+- Integration specs: `<name>.yaml`
+- Organize by type: `tools/`, `prompts/`, `resources/`
 - Test utilities: `*-utils.ts` or `helpers.ts`
 
 ---
@@ -221,8 +303,9 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
       - run: npm install
+      - run: npm run type-check
       - run: npm run test:unit
-      - run: npm run test:integration
+      - run: npm run integration:run
 ```
 
 ### Test Scripts
@@ -235,13 +318,25 @@ npm run test:unit
 npm run test:unit:watch
 
 # Run integration tests
-npm run test:integration
+npm run integration:run
+
+# List available integration tests
+npm run integration:list
+
+# Run specific integration test
+npm run integration:run test/integration/specs/tools/echo.yaml
 
 # Run all tests (unit only - fast)
 npm run test:all
 
 # Run with coverage
 npm run test:coverage
+
+# Type checking
+npm run type-check
+
+# Validation
+mcp-server-kit validate
 ```
 
 ---

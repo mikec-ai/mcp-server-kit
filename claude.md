@@ -5,6 +5,69 @@ See [README.md](./README.md) for full project overview and features.
 
 ---
 
+## Development Workflow for Agents
+
+### Testing the mcp-server-kit Toolkit Itself
+
+**CRITICAL:** When testing mcp-server-kit's scaffolding capabilities (not using it to build production servers):
+
+#### Always Use --dev Flag
+
+```bash
+# ✅ Correct - Testing toolkit functionality
+mcp-server-kit new server --name test-project --dev
+
+# ❌ Wrong - Will fail on npm install
+mcp-server-kit new server --name test-project
+```
+
+**Why?**
+- The `--dev` flag uses local mcp-server-kit paths instead of the published npm package
+- Without it, scaffolded projects reference `mcp-server-kit@^1.0.0` in devDependencies
+- This package doesn't exist on npm (or may be outdated), causing `npm install` to fail
+- The `--dev` flag sets `DEV_MODE=true` and `MCP_KIT_PATH` in template variables
+
+#### Discovery Pattern for Agents
+
+As an AI agent, follow this discovery pattern when using unfamiliar CLI tools:
+
+1. **Always run `--help` first** on unfamiliar commands
+   ```bash
+   mcp-server-kit --help
+   mcp-server-kit new server --help
+   mcp-server-kit add tool --help
+   ```
+
+2. **Check CLAUDE.md** (this file) for project-specific workflows
+
+3. **Look for development/testing flags** like `--dev`, `--local`, `--test`
+
+4. **Read error messages carefully** - they often contain solutions
+
+**Example Discovery Flow:**
+```bash
+# 1. Exploring a new command
+mcp-server-kit new server --help
+
+# Output shows:
+#   --dev    Development mode: use local mcp-server-kit paths
+#            instead of published package
+
+# 2. Use the discovered flag
+mcp-server-kit new server --name my-test --dev
+```
+
+### Common Agent Mistakes to Avoid
+
+❌ **Skipping --help**: Jumping straight to using commands without checking available options
+❌ **Ignoring dev flags**: Not using `--dev` when testing toolkit itself
+❌ **Assuming defaults**: Not verifying default behaviors match your use case
+❌ **Batch execution**: Running `npm install` before reading error messages
+
+✅ **Best Practice**: Help → Test → Read errors → Adjust → Retry
+
+---
+
 ## Development Standards
 
 ### Type Safety

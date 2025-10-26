@@ -17,6 +17,7 @@ import { fileURLToPath } from "node:url";
 export function createNewServerCommand(): Command {
 	const command = new Command("server")
 		.description("Scaffold a new MCP server project")
+		.showHelpAfterError('\n💡 Tip: Run with --help to see all available options')
 		.requiredOption("--name <name>", "Project name (lowercase with hyphens)")
 		.option("--template <id>", "Template ID to use", "cloudflare-remote")
 		.option("--description <desc>", "Project description")

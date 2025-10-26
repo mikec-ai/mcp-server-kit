@@ -141,12 +141,17 @@ async function validateProject(
 		// Check if tool is registered
 		const isRegistered = registeredTools.includes(toolName);
 		if (!isRegistered) {
+			// Convert kebab-case to PascalCase for function names
+			const pascalName = toolName
+				.split("-")
+				.map((word) => capitalize(word))
+				.join("");
 			issues.push({
 				severity: "error",
 				category: "Registration",
 				message: `Tool "${toolName}" is not registered in src/index.ts`,
 				file: toolFile,
-				suggestion: `Add: import { register${capitalize(toCamelCase(toolName))}Tool } from "./tools/${toolName}.js";\nregister${capitalize(toCamelCase(toolName))}Tool(this.server);`,
+				suggestion: `Add: import { register${pascalName}Tool } from "./tools/${toolName}.js";\nregister${pascalName}Tool(this.server);`,
 			});
 		}
 
@@ -197,9 +202,10 @@ async function validateProject(
 
 	// 5. Check for orphaned registrations (registered but file doesn't exist)
 	for (const registeredTool of registeredTools) {
-		const toolFile = actualTools.find((f) =>
-			f.includes(`${registeredTool}.ts`),
-		);
+		const toolFile = actualTools.find((f) => {
+			const fileName = path.basename(f, path.extname(f));
+			return fileName === registeredTool;
+		});
 		if (!toolFile) {
 			issues.push({
 				severity: "error",
@@ -256,7 +262,7 @@ async function checkToolRegistrations(indexPath: string): Promise<string[]> {
 		let match: RegExpExecArray | null;
 
 		while ((match = registerRegex.exec(content)) !== null) {
-			const toolName = toSnakeCase(match[1]);
+			const toolName = toKebabCase(match[1]);
 			registered.push(toolName);
 		}
 
@@ -711,6 +717,17 @@ function toSnakeCase(str: string): string {
 		.replace(/([A-Z])/g, "_$1")
 		.toLowerCase()
 		.replace(/^_/, "");
+}
+
+/**
+ * Convert string to kebab-case
+ * Handles PascalCase → kebab-case conversion for tool names
+ */
+function toKebabCase(str: string): string {
+	return str
+		.replace(/([a-z])([A-Z])/g, "$1-$2")
+		.replace(/([A-Z])([A-Z][a-z])/g, "$1-$2")
+		.toLowerCase();
 }
 
 /**

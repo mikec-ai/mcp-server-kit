@@ -29,18 +29,22 @@ Create production-ready MCP servers in seconds with built-in testing infrastruct
 # 1. Create project
 mcp-server-kit new server --template cloudflare-remote --name my-server
 
-# 2. Add tools (auto-scaffolds everything)
+# 2. Add tools, prompts, and resources (auto-scaffolds everything)
 cd my-server
 mcp-server-kit add tool weather --description "Get weather data"
+mcp-server-kit add prompt code-reviewer --description "Review code quality"
+mcp-server-kit add resource snippet --description "Code snippet by ID"
+mcp-server-kit add resource config --static --description "App configuration"
 
 # 3. Implement (TODO markers show what to code)
-# Edit src/tools/weather.ts - implement the actual logic
+# Edit src/tools/weather.ts, src/prompts/code-reviewer.ts, etc.
 
 # 4. Validate (catches missed registrations, tests, etc.)
 mcp-server-kit validate
 
 # 5. Test
 npm run test:unit
+npm run integration:run
 ```
 
 **What agents get:**
@@ -78,14 +82,25 @@ npm run dev
 # Server runs at http://localhost:8788/sse
 ```
 
+**Testing mcp-server-kit itself?** Use the `--dev` flag to use local mcp-server-kit paths:
+```bash
+mcp-server-kit new server --name test-project --dev
+```
+
 ### Verify It Works
 
 ```bash
 # Check health endpoint
 curl http://localhost:8788/health
 
-# Run integration tests (in another terminal)
-npm run test:integration
+# Run unit tests
+npm run test:unit
+
+# Run integration tests
+npm run integration:run
+
+# Validate project structure
+mcp-server-kit validate
 ```
 
 ## What's Included in a Scaffolded Project

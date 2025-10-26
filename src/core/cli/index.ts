@@ -22,8 +22,33 @@ function createProgram(): Command {
 
 	program
 		.name("mcp-server-kit")
-		.description("Extensible scaffolding tool and test harness for MCP servers")
+		.description(`Extensible scaffolding tool and test harness for MCP servers
+
+Examples:
+  $ mcp-server-kit new server --name my-server --dev
+  $ mcp-server-kit add tool weather --description "Get weather data"
+  $ mcp-server-kit add prompt code-reviewer --description "Review code"
+  $ mcp-server-kit add resource config --static
+  $ mcp-server-kit validate
+
+AI Agent Tips:
+  • Always use --dev flag when testing mcp-server-kit itself
+  • Use --static flag for resources with fixed URIs (no variables)
+  • Run validate after adding components to catch issues
+  • Check --help on any command for detailed options`)
 		.version(VERSION, "-v, --version", "Output the current version");
+
+	// Configure enhanced error handling
+	program
+		.showHelpAfterError('\n💡 Tip: Run with --help to see all available commands and options')
+		.configureOutput({
+			writeErr: (str) => {
+				process.stderr.write(str);
+			},
+			writeOut: (str) => {
+				process.stdout.write(str);
+			}
+		});
 
 	// Add commands
 	program.addCommand(createNewCommand());
@@ -40,6 +65,22 @@ function createProgram(): Command {
  */
 export function run(): void {
 	const program = createProgram();
+
+	// Detect if run with no arguments (only executable name)
+	if (process.argv.length <= 2) {
+		console.log('👋 Welcome to mcp-server-kit!\n');
+		console.log('Quick start:');
+		console.log('  mcp-server-kit new server --name my-server --dev');
+		console.log('  mcp-server-kit add tool weather --description "Get weather"');
+		console.log('  mcp-server-kit validate\n');
+		console.log('For full documentation:');
+		console.log('  mcp-server-kit --help\n');
+		program.outputHelp();
+		process.exit(0);
+	}
+
+	// Note: showHelpAfterError handles error messages automatically
+
 	program.parse(process.argv);
 }
 
