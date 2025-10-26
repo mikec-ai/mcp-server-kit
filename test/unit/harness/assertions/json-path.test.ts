@@ -4,7 +4,11 @@
 
 import { describe, it, expect } from "vitest";
 import { checkJsonPath } from "@/harness/assertions/index";
-import type { MCPToolResponse } from "@/harness/types/client";
+import type {
+	MCPToolResponse,
+	MCPPromptResponse,
+	MCPResourceContent,
+} from "@/harness/types/client";
 
 describe("checkJsonPath", () => {
 	it("should pass when JSON path matches expected value", async () => {
@@ -373,5 +377,132 @@ describe("checkJsonPath", () => {
 		const result = await checkJsonPath(response, "$.items", []);
 
 		expect(result.passed).toBe(true);
+	});
+
+	describe("Prompt Response Support", () => {
+		it("should query prompt response object directly", async () => {
+			const response: MCPPromptResponse = {
+				messages: [
+					{
+						role: "user",
+						content: {
+							type: "text",
+							text: "Hello",
+						},
+					},
+					{
+						role: "assistant",
+						content: {
+							type: "text",
+							text: "World",
+						},
+					},
+				],
+			};
+
+			const result = await checkJsonPath(response, "$.messages[0].role", "user");
+
+			expect(result.passed).toBe(true);
+		});
+
+		it("should query nested prompt content", async () => {
+			const response: MCPPromptResponse = {
+				messages: [
+					{
+						role: "assistant",
+						content: {
+							type: "text",
+							text: "Response text",
+						},
+					},
+				],
+			};
+
+			const result = await checkJsonPath(
+				response,
+				"$.messages[0].content.text",
+				"Response text",
+			);
+
+			expect(result.passed).toBe(true);
+		});
+	});
+
+	describe("Resource Response Support", () => {
+		it("should query resource response object directly", async () => {
+			const response: MCPResourceContent = {
+				contents: [
+					{
+						uri: "config://app",
+						text: '{"key": "value"}',
+						mimeType: "application/json",
+					},
+				],
+			};
+
+			const result = await checkJsonPath(
+				response,
+				"$.contents[0].mimeType",
+				"application/json",
+			);
+
+			expect(result.passed).toBe(true);
+		});
+
+		it("should query multiple resource contents", async () => {
+			const response: MCPResourceContent = {
+				contents: [
+					{
+						uri: "resource://1",
+						text: "First",
+						mimeType: "text/plain",
+					},
+					{
+						uri: "resource://2",
+						text: "Second",
+						mimeType: "text/plain",
+					},
+				],
+			};
+
+			const result = await checkJsonPath(
+				response,
+				"$.contents[1].uri",
+				"resource://2",
+			);
+
+			expect(result.passed).toBe(true);
+		});
+	});
+
+	describe("Error Handling", () => {
+		it("should handle unknown response type", async () => {
+			const invalidResponse = {
+				unknown: "field",
+			} as any;
+
+			const result = await checkJsonPath(invalidResponse, "$.test", "value");
+
+			expect(result.passed).toBe(false);
+			expect(result.message).toContain("Unknown response type");
+		});
+
+		it("should handle exceptions during path evaluation", async () => {
+			const response: MCPToolResponse = {
+				content: [
+					{
+						type: "text",
+						text: JSON.stringify({ valid: "json" }),
+					},
+				],
+			};
+
+			// Use an invalid JSONPath expression that might throw
+			const result = await checkJsonPath(response, "$..[invalid", "value");
+
+			expect(result.passed).toBe(false);
+			// Error message should contain exception details
+			expect(result.message).toBeTruthy();
+		});
 	});
 });
