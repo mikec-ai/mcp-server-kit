@@ -29,15 +29,14 @@ export function register{{capitalizedName}}Prompt(server: McpServer): void {
 		async (args) => {
 			// TODO: Implement your prompt logic here
 			// You can access args like: args.language, args.topic, etc.
+			// (after you define them in the schema above)
 
 			// Example: Return a simple prompt
 			const promptText = `You are a helpful assistant.
 
 TODO: Replace this with your actual prompt template.
 
-Example with args:
-- Language: ${args.language || "any"}
-- Topic: ${args.topic || "general"}
+You can use template literals to include argument values once you define them in the schema.
 `;
 
 			return {

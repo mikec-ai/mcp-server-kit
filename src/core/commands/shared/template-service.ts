@@ -6,7 +6,7 @@
  */
 
 import Handlebars from "handlebars";
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -43,8 +43,34 @@ export class TemplateService {
 		// Get the project root directory (where templates/ folder is)
 		const __filename = fileURLToPath(import.meta.url);
 		const __dirname = dirname(__filename);
-		// From src/core/commands/shared/ -> project root
-		this.templatesDir = join(__dirname, "../../../../templates/scaffolding");
+
+		// Find templates directory by searching upward from current file
+		// Works from both dist/cli.js and dist/core/commands/shared/
+		let currentDir = __dirname;
+		let templatesPath = "";
+
+		// Search up to 5 levels for templates/scaffolding
+		for (let i = 0; i < 5; i++) {
+			const candidatePath = join(currentDir, "templates/scaffolding");
+			try {
+				// Check if directory exists (sync is ok in constructor)
+				if (statSync(candidatePath).isDirectory()) {
+					templatesPath = candidatePath;
+					break;
+				}
+			} catch {
+				// Directory doesn't exist, try parent
+			}
+			currentDir = dirname(currentDir);
+		}
+
+		if (!templatesPath) {
+			throw new Error(
+				`Could not locate templates/scaffolding directory. Searched from: ${__dirname}`,
+			);
+		}
+
+		this.templatesDir = templatesPath;
 	}
 
 	/**
