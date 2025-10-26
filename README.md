@@ -171,14 +171,17 @@ assertions:
 
 ## Documentation
 
-- **[CLI Reference](./docs/CLI.md)** - Complete command-line documentation
-- **[Template System Guide](./docs/TEMPLATES.md)** - Creating and using templates
-- **[Testing Guide](./docs/TESTING.md)** - Writing and running tests
+**For AI Agents:**
+- **[CLI Guide](./.claude/skills/mcp-server-kit-cli/SKILL.md)** - Quick reference with decision trees
+- **[CLI Commands](./.claude/skills/mcp-server-kit-cli/CLI-COMMANDS.md)** - Complete command documentation
+- **[Testing Guide](./.claude/skills/mcp-server-kit-cli/TESTING.md)** - Testing the toolkit
+
+**For MCP Development** (in generated projects):
 - **[Test Harness API](./src/harness/README.md)** - Detailed test harness documentation
 
 ## CLI Commands
 
-Quick reference (see [CLI.md](./docs/CLI.md) for details):
+Quick reference (see [CLI Guide](./.claude/skills/mcp-server-kit-cli/SKILL.md) for details):
 
 ```bash
 # Project creation
@@ -212,7 +215,7 @@ npm run build
 - **`src/core/`** - CLI and template system
 - **`templates/`** - Template plugins
 - **`test/`** - Unit and integration tests
-- **`docs/`** - Documentation
+- **`.claude/skills/`** - Agent guidance and documentation
 
 ### Running Tests
 
@@ -244,9 +247,9 @@ MIT
 
 - [Model Context Protocol Specification](https://modelcontextprotocol.io/)
 - [Cloudflare Workers Documentation](https://developers.cloudflare.com/workers/)
-- [CLI Reference](./docs/CLI.md)
-- [Template System Guide](./docs/TEMPLATES.md)
-- [Testing Guide](./docs/TESTING.md)
+- [CLI Guide](./.claude/skills/mcp-server-kit-cli/SKILL.md)
+- [CLI Commands](./.claude/skills/mcp-server-kit-cli/CLI-COMMANDS.md)
+- [Testing Guide](./.claude/skills/mcp-server-kit-cli/TESTING.md)
 
 ---
 

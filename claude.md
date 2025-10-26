@@ -232,12 +232,10 @@ Each template in `templates/` contains:
 
 ### Documentation Structure
 ```
-README.md              - Project overview, links to detailed docs
-docs/CLI.md            - Complete CLI command reference
-docs/TEMPLATES.md      - Template system guide
-docs/TESTING.md        - Testing overview
-src/harness/README.md  - Detailed test harness API
-claude.md              - Agent development guide (this file)
+README.md                    - Project overview, links to detailed docs
+.claude/skills/              - Agent-focused CLI and testing guidance
+src/harness/README.md        - Detailed test harness API
+claude.md                    - Agent development guide (this file)
 ```
 
 ### Examples
@@ -249,12 +247,12 @@ claude.md              - Agent development guide (this file)
 ✅ Right: "The harness includes comprehensive test coverage with sub-second execution"
 
 ❌ Wrong: Copying entire CLI reference into README
-✅ Right: "See [CLI Reference](./docs/CLI.md) for complete command documentation"
+✅ Right: "See [CLI Guide](./.claude/skills/mcp-server-kit-cli/SKILL.md) for complete command documentation"
 ```
 
 ### When to Update
-- README changed → Check if docs need updates
-- New feature added → Add to relevant modular doc (CLI.md, TEMPLATES.md, etc.)
+- README changed → Check if skills need updates
+- New feature added → Add to relevant skill guide
 - Numbers changed → Verify no hard-coded counts exist
 
 ---
