@@ -20,12 +20,12 @@ const __dirname = path.dirname(__filename);
 /**
  * Validation issue severity
  */
-type IssueSeverity = "error" | "warning" | "info";
+export type IssueSeverity = "error" | "warning" | "info";
 
 /**
  * Validation issue
  */
-interface ValidationIssue {
+export interface ValidationIssue {
 	severity: IssueSeverity;
 	category: string;
 	message: string;
@@ -36,7 +36,7 @@ interface ValidationIssue {
 /**
  * Validation result
  */
-interface ValidationResult {
+export interface ValidationResult {
 	passed: boolean;
 	issues: ValidationIssue[];
 	summary: {
@@ -97,9 +97,9 @@ export function createValidateCommand(): Command {
 /**
  * Validate entire project
  */
-async function validateProject(
+export async function validateProject(
 	cwd: string,
-	options: { fix?: boolean; strict?: boolean },
+	options: { fix?: boolean; strict?: boolean } = {},
 ): Promise<ValidationResult> {
 	const issues: ValidationIssue[] = [];
 

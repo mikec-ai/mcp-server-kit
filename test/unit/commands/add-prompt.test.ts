@@ -1,243 +1,609 @@
 /**
  * add-prompt - Unit Tests
  *
- * Tests for the add prompt command
- * Note: Similar to add-tool, this command is tightly coupled to fs operations.
- * We test the core logic and utility functions here.
+ * Comprehensive tests for the add prompt command
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { rm, readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { createTestProject, getTempDir } from "../../helpers/project-setup.js";
+import { exec } from "node:child_process";
+import { promisify } from "node:util";
+
+const execAsync = promisify(exec);
 
 describe("add-prompt command", () => {
+	let projectDir: string;
+	let tempDir: string;
+
+	beforeEach(async () => {
+		// Create a fresh test project for each test
+		projectDir = await createTestProject();
+		tempDir = getTempDir(projectDir);
+	});
+
+	afterEach(async () => {
+		// Clean up temp directory
+		if (tempDir && existsSync(tempDir)) {
+			await rm(tempDir, { recursive: true, force: true });
+		}
+	});
+
 	/**
-	 * The add-prompt command scaffolds new prompts with:
-	 * - Prompt implementation file (src/prompts/${name}.ts)
-	 * - Unit test file (test/unit/prompts/${name}.test.ts)
-	 * - Integration test YAML (test/integration/specs/prompts/${name}.yaml)
-	 * - Auto-registration in src/index.ts
-	 * - Metadata tracking in .mcp-template.json
-	 *
-	 * Full integration testing is done through:
-	 * 1. Template quality tests
-	 * 2. Real-world usage during development
-	 * 3. E2E tests
+	 * Helper function to run add prompt command
 	 */
+	async function runAddPrompt(
+		cwd: string,
+		promptName: string,
+		options: {
+			description?: string;
+			noTests?: boolean;
+			noRegister?: boolean;
+		} = {},
+	): Promise<{ success: boolean; stdout: string; stderr: string }> {
+		const cliPath = join(process.cwd(), "bin", "mcp-server-kit.js");
+		const args = ["add", "prompt", promptName];
+
+		if (options.description) args.push("--description", `"${options.description}"`);
+		if (options.noTests) args.push("--no-tests");
+		if (options.noRegister) args.push("--no-register");
+
+		try {
+			const { stdout, stderr } = await execAsync(
+				`node "${cliPath}" ${args.join(" ")}`,
+				{ cwd },
+			);
+			return { success: true, stdout, stderr };
+		} catch (error: any) {
+			return { success: false, stdout: error.stdout || "", stderr: error.stderr || "" };
+		}
+	}
 
 	describe("prompt name validation", () => {
-		it("should accept kebab-case names", () => {
-			const validNameRegex = /^[a-z][a-z0-9-_]*$/;
+		it("should accept valid kebab-case names", async () => {
+			const result = await runAddPrompt(projectDir, "my-prompt");
 
-			expect(validNameRegex.test("my-prompt")).toBe(true);
-			expect(validNameRegex.test("code-reviewer")).toBe(true);
-			expect(validNameRegex.test("test_prompt")).toBe(true);
+			expect(result.success).toBe(true);
+			expect(result.stdout).toContain("created successfully");
 		});
 
-		it("should reject invalid names", () => {
-			const validNameRegex = /^[a-z][a-z0-9-_]*$/;
+		it("should accept single-word names", async () => {
+			const result = await runAddPrompt(projectDir, "reviewer");
 
-			expect(validNameRegex.test("MyPrompt")).toBe(false); // Uppercase
-			expect(validNameRegex.test("123prompt")).toBe(false); // Starts with number
-			expect(validNameRegex.test("my prompt")).toBe(false); // Spaces
+			expect(result.success).toBe(true);
+			expect(result.stdout).toContain("created successfully");
+		});
+
+		it("should reject names with uppercase", async () => {
+			const result = await runAddPrompt(projectDir, "MyPrompt");
+
+			expect(result.success).toBe(false);
+			expect(result.stderr).toContain("lowercase with hyphens");
+		});
+
+		it("should reject names starting with numbers", async () => {
+			const result = await runAddPrompt(projectDir, "123prompt");
+
+			expect(result.success).toBe(false);
+			expect(result.stderr).toContain("lowercase with hyphens");
+		});
+
+		it("should reject names with spaces", async () => {
+			const cliPath = join(process.cwd(), "bin", "mcp-server-kit.js");
+
+			try {
+				await execAsync(`node "${cliPath}" add prompt "my prompt"`, {
+					cwd: projectDir,
+				});
+				expect.fail("Should have rejected prompt name with spaces");
+			} catch (error: any) {
+				expect(error.stderr).toContain("lowercase with hyphens");
+			}
+		});
+
+		it("should reject names with underscores only at start", async () => {
+			const result = await runAddPrompt(projectDir, "_prompt");
+
+			expect(result.success).toBe(false);
+			expect(result.stderr).toContain("lowercase with hyphens");
 		});
 	});
 
-	describe("string conversion utilities", () => {
-		it("should convert kebab-case to PascalCase", () => {
-			const toPascalCase = (str: string): string => {
-				return str
-					.split(/[-_]/)
-					.map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-					.join("");
-			};
+	describe("prompt file generation", () => {
+		it("should create prompt file in correct location", async () => {
+			await runAddPrompt(projectDir, "test-prompt");
 
-			expect(toPascalCase("my-prompt")).toBe("MyPrompt");
-			expect(toPascalCase("code-reviewer")).toBe("CodeReviewer");
-			expect(toPascalCase("simple")).toBe("Simple");
-			expect(toPascalCase("test_prompt")).toBe("TestPrompt");
+			const promptPath = join(projectDir, "src", "prompts", "test-prompt.ts");
+			expect(existsSync(promptPath)).toBe(true);
 		});
 
-		it("should convert kebab-case to camelCase", () => {
-			const toCamelCase = (str: string): string => {
-				const words = str.split(/[-_]/);
-				return (
-					words[0].toLowerCase() +
-					words
-						.slice(1)
-						.map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-						.join("")
+		it("should generate prompt with correct function name", async () => {
+			await runAddPrompt(projectDir, "my-prompt");
+
+			const promptPath = join(projectDir, "src", "prompts", "my-prompt.ts");
+			const content = await readFile(promptPath, "utf-8");
+
+			expect(content).toContain("export function registerMyPromptPrompt");
+		});
+
+		it("should include prompt description", async () => {
+			await runAddPrompt(projectDir, "test-prompt", {
+				description: "Custom prompt description",
+			});
+
+			const promptPath = join(projectDir, "src", "prompts", "test-prompt.ts");
+			const content = await readFile(promptPath, "utf-8");
+
+			expect(content).toContain("Custom prompt description");
+		});
+
+		it("should include args schema", async () => {
+			await runAddPrompt(projectDir, "test-prompt");
+
+			const promptPath = join(projectDir, "src", "prompts", "test-prompt.ts");
+			const content = await readFile(promptPath, "utf-8");
+
+			expect(content).toContain("const TestPromptArgsSchema = z.object({");
+		});
+
+		it("should reject duplicate prompt names", async () => {
+			await runAddPrompt(projectDir, "duplicate-prompt");
+			const result = await runAddPrompt(projectDir, "duplicate-prompt");
+
+			expect(result.success).toBe(false);
+			expect(result.stderr).toContain("already exists");
+		});
+	});
+
+	describe("unit test file generation", () => {
+		it("should create unit test file when tests enabled", async () => {
+			await runAddPrompt(projectDir, "test-prompt");
+
+			const testPath = join(
+				projectDir,
+				"test",
+				"unit",
+				"prompts",
+				"test-prompt.test.ts",
+			);
+			expect(existsSync(testPath)).toBe(true);
+		});
+
+		it("should skip unit test file when --no-tests flag used", async () => {
+			await runAddPrompt(projectDir, "test-prompt", { noTests: true });
+
+			const testPath = join(
+				projectDir,
+				"test",
+				"unit",
+				"prompts",
+				"test-prompt.test.ts",
+			);
+			expect(existsSync(testPath)).toBe(false);
+		});
+
+		it("should include correct import path in unit test", async () => {
+			await runAddPrompt(projectDir, "my-prompt");
+
+			const testPath = join(
+				projectDir,
+				"test",
+				"unit",
+				"prompts",
+				"my-prompt.test.ts",
+			);
+			const content = await readFile(testPath, "utf-8");
+
+			expect(content).toContain(
+				'from "../../../src/prompts/my-prompt.js"',
+			);
+		});
+	});
+
+	describe("integration test YAML generation", () => {
+		it("should create integration test YAML when tests enabled", async () => {
+			await runAddPrompt(projectDir, "test-prompt");
+
+			const yamlPath = join(
+				projectDir,
+				"test",
+				"integration",
+				"specs",
+				"prompts",
+				"test-prompt.yaml",
+			);
+			expect(existsSync(yamlPath)).toBe(true);
+		});
+
+		it("should skip integration test YAML when --no-tests flag used", async () => {
+			await runAddPrompt(projectDir, "test-prompt", { noTests: true });
+
+			const yamlPath = join(
+				projectDir,
+				"test",
+				"integration",
+				"specs",
+				"prompts",
+				"test-prompt.yaml",
+			);
+			expect(existsSync(yamlPath)).toBe(false);
+		});
+
+		it("should include correct prompt name in YAML", async () => {
+			await runAddPrompt(projectDir, "test-prompt");
+
+			const yamlPath = join(
+				projectDir,
+				"test",
+				"integration",
+				"specs",
+				"prompts",
+				"test-prompt.yaml",
+			);
+			const content = await readFile(yamlPath, "utf-8");
+
+			expect(content).toContain('name: "test prompt - Basic"');
+		});
+
+		it("should include success assertion in YAML", async () => {
+			await runAddPrompt(projectDir, "test-prompt");
+
+			const yamlPath = join(
+				projectDir,
+				"test",
+				"integration",
+				"specs",
+				"prompts",
+				"test-prompt.yaml",
+			);
+			const content = await readFile(yamlPath, "utf-8");
+
+			expect(content).toContain('type: "success"');
+		});
+	});
+
+	describe("prompt registration in index.ts", () => {
+		it("should add import statement to index.ts", async () => {
+			await runAddPrompt(projectDir, "my-prompt");
+
+			const indexPath = join(projectDir, "src", "index.ts");
+			const content = await readFile(indexPath, "utf-8");
+
+			expect(content).toContain(
+				'import { registerMyPromptPrompt } from "./prompts/my-prompt.js"',
+			);
+		});
+
+		it("should add registration call in init method", async () => {
+			await runAddPrompt(projectDir, "my-prompt");
+
+			const indexPath = join(projectDir, "src", "index.ts");
+			const content = await readFile(indexPath, "utf-8");
+
+			expect(content).toContain("registerMyPromptPrompt(this.server)");
+		});
+
+		it("should skip registration when --no-register flag used", async () => {
+			await runAddPrompt(projectDir, "my-prompt", { noRegister: true });
+
+			const indexPath = join(projectDir, "src", "index.ts");
+			const content = await readFile(indexPath, "utf-8");
+
+			expect(content).not.toContain("registerMyPromptPrompt");
+		});
+
+		it("should handle multiple prompts in sequence", async () => {
+			await runAddPrompt(projectDir, "first-prompt");
+			await runAddPrompt(projectDir, "second-prompt");
+
+			const indexPath = join(projectDir, "src", "index.ts");
+			const content = await readFile(indexPath, "utf-8");
+
+			expect(content).toContain("registerFirstPromptPrompt");
+			expect(content).toContain("registerSecondPromptPrompt");
+		});
+	});
+
+	describe("metadata updates", () => {
+		it("should add prompt to metadata file", async () => {
+			await runAddPrompt(projectDir, "test-prompt");
+
+			const metadataPath = join(projectDir, ".mcp-template.json");
+			if (existsSync(metadataPath)) {
+				const content = await readFile(metadataPath, "utf-8");
+				const metadata = JSON.parse(content);
+
+				const promptEntry = metadata.prompts?.find(
+					(p: any) => p.name === "test-prompt",
 				);
-			};
+				expect(promptEntry).toBeDefined();
+				expect(promptEntry?.file).toBe("src/prompts/test-prompt.ts");
+			}
+		});
 
-			expect(toCamelCase("my-prompt")).toBe("myPrompt");
-			expect(toCamelCase("code-reviewer")).toBe("codeReviewer");
-			expect(toCamelCase("simple")).toBe("simple");
+		it("should mark prompt as registered in metadata", async () => {
+			await runAddPrompt(projectDir, "test-prompt");
+
+			const metadataPath = join(projectDir, ".mcp-template.json");
+			if (existsSync(metadataPath)) {
+				const content = await readFile(metadataPath, "utf-8");
+				const metadata = JSON.parse(content);
+
+				const promptEntry = metadata.prompts?.find(
+					(p: any) => p.name === "test-prompt",
+				);
+				expect(promptEntry?.registered).toBe(true);
+			}
+		});
+
+		it("should mark tests as created when enabled", async () => {
+			await runAddPrompt(projectDir, "test-prompt");
+
+			const metadataPath = join(projectDir, ".mcp-template.json");
+			if (existsSync(metadataPath)) {
+				const content = await readFile(metadataPath, "utf-8");
+				const metadata = JSON.parse(content);
+
+				const promptEntry = metadata.prompts?.find(
+					(p: any) => p.name === "test-prompt",
+				);
+				expect(promptEntry?.hasUnitTest).toBe(true);
+				expect(promptEntry?.hasIntegrationTest).toBe(true);
+			}
 		});
 	});
 
-	describe("template generation", () => {
-		it("should generate prompt file with correct structure", () => {
-			const promptName = "my-prompt";
-			const capitalizedName = "MyPrompt";
-			const description = "My custom prompt";
+	describe("error scenarios", () => {
+		it("should fail when not in a project directory", async () => {
+			const nonProjectDir = join(tempDir, "not-a-project");
+			await import("node:fs/promises").then((fs) => fs.mkdir(nonProjectDir));
 
-			// Template should include these key elements
-			const expectedElements = [
-				`${capitalizedName} Prompt`,
-				description,
-				`const ${capitalizedName}ArgsSchema`,
-				`export function register${capitalizedName}Prompt`,
-				`server.prompt(\n\t\t"${promptName}"`,
-				`${capitalizedName}ArgsSchema.shape`,
-				"// TODO: Implement your prompt logic here",
-				"messages:",
-				'role: "user" as const',
-			];
+			const result = await runAddPrompt(nonProjectDir, "test-prompt");
 
-			// All these elements should be present in generated template
-			expectedElements.forEach((element) => {
-				expect(element).toBeDefined();
+			expect(result.success).toBe(false);
+			expect(result.stderr).toContain("Not in a valid project");
+		});
+
+		it("should provide helpful error messages", async () => {
+			const result = await runAddPrompt(projectDir, "Invalid-Name");
+
+			expect(result.success).toBe(false);
+			expect(result.stderr).toContain("lowercase with hyphens");
+		});
+	});
+
+	describe("success output", () => {
+		it("should show success message", async () => {
+			const result = await runAddPrompt(projectDir, "test-prompt");
+
+			expect(result.stdout).toContain("created successfully");
+		});
+
+		it("should show next steps", async () => {
+			const result = await runAddPrompt(projectDir, "test-prompt");
+
+			expect(result.stdout).toContain("Next steps:");
+			expect(result.stdout).toContain("src/prompts/test-prompt.ts");
+		});
+
+		it("should show file creation confirmations", async () => {
+			const result = await runAddPrompt(projectDir, "test-prompt");
+
+			expect(result.stdout).toContain("Created");
+			expect(result.stdout).toContain("Registered in src/index.ts");
+		});
+	});
+
+	describe("PascalCase conversion", () => {
+		it("should convert single-word names to PascalCase", async () => {
+			await runAddPrompt(projectDir, "reviewer");
+
+			const promptPath = join(projectDir, "src", "prompts", "reviewer.ts");
+			const content = await readFile(promptPath, "utf-8");
+
+			expect(content).toContain("registerReviewerPrompt");
+		});
+
+		it("should convert hyphenated names to PascalCase", async () => {
+			await runAddPrompt(projectDir, "my-prompt");
+
+			const promptPath = join(projectDir, "src", "prompts", "my-prompt.ts");
+			const content = await readFile(promptPath, "utf-8");
+
+			expect(content).toContain("registerMyPromptPrompt");
+		});
+
+		it("should convert multi-word names to PascalCase", async () => {
+			await runAddPrompt(projectDir, "code-review-helper");
+
+			const promptPath = join(projectDir, "src", "prompts", "code-review-helper.ts");
+			const content = await readFile(promptPath, "utf-8");
+
+			expect(content).toContain("registerCodeReviewHelperPrompt");
+		});
+	});
+
+	describe("file organization", () => {
+		it("should create src/prompts directory if it doesn't exist", async () => {
+			await runAddPrompt(projectDir, "test-prompt");
+
+			const promptsDir = join(projectDir, "src", "prompts");
+			expect(existsSync(promptsDir)).toBe(true);
+		});
+
+		it("should create test directories if they don't exist", async () => {
+			await runAddPrompt(projectDir, "test-prompt");
+
+			const unitDir = join(projectDir, "test", "unit", "prompts");
+			const integrationDir = join(
+				projectDir,
+				"test",
+				"integration",
+				"specs",
+				"prompts",
+			);
+
+			expect(existsSync(unitDir)).toBe(true);
+			expect(existsSync(integrationDir)).toBe(true);
+		});
+	});
+
+	describe("direct function tests (for coverage)", () => {
+		describe("toPascalCase", () => {
+			it("should convert single word to PascalCase", async () => {
+				const { toPascalCase } = await import("@/core/commands/add-prompt.js");
+				expect(toPascalCase("reviewer")).toBe("Reviewer");
+			});
+
+			it("should convert hyphenated words to PascalCase", async () => {
+				const { toPascalCase } = await import("@/core/commands/add-prompt.js");
+				expect(toPascalCase("my-prompt")).toBe("MyPrompt");
+				expect(toPascalCase("code-review-helper")).toBe("CodeReviewHelper");
 			});
 		});
 
-		it("should generate unit test file with correct structure", () => {
-			const promptName = "my-prompt";
-			const capitalizedName = "MyPrompt";
+		describe("generatePromptFile", () => {
+			it("should generate prompt file with correct structure", async () => {
+				const { generatePromptFile } = await import("@/core/commands/add-prompt.js");
+				const content = generatePromptFile("test-prompt", "TestPrompt", {
+					description: "Test description",
+					tests: true,
+					register: true,
+				});
 
-			// Test template should include these key elements
-			const expectedElements = [
-				`${capitalizedName} Prompt - Unit Tests`,
-				`from "../../../src/prompts/${promptName}.js"`,
-				`register${capitalizedName}Prompt`,
-				`describe("${promptName} prompt"`,
-				'it("should register the prompt"',
-				'it("should handle valid parameters"',
-			];
+				expect(content).toContain("export function registerTestPromptPrompt");
+				expect(content).toContain("Test description");
+				expect(content).toContain('"test-prompt"');
+				expect(content).toContain("TestPromptArgsSchema");
+			});
 
-			expectedElements.forEach((element) => {
-				expect(element).toBeDefined();
+			it("should include messages structure", async () => {
+				const { generatePromptFile } = await import("@/core/commands/add-prompt.js");
+				const content = generatePromptFile("reviewer", "Reviewer", {
+					description: "Code reviewer",
+					tests: true,
+					register: true,
+				});
+
+				expect(content).toContain("messages:");
+				expect(content).toContain('role: "user" as const');
+				expect(content).toContain('type: "text" as const');
 			});
 		});
 
-		it("should generate integration test YAML with correct structure", () => {
-			const promptName = "my-prompt";
-			const description = "My custom prompt";
+		describe("generateUnitTestFile", () => {
+			it("should generate unit test with correct imports", async () => {
+				const { generateUnitTestFile } = await import("@/core/commands/add-prompt.js");
+				const content = generateUnitTestFile("my-prompt", "MyPrompt");
 
-			// YAML should include these key elements
-			const expectedElements = [
-				"name:",
-				"description:",
-				`prompt: ${promptName}`,
-				"arguments:",
-				"assertions:",
-				'- type: "success"',
-			];
+				expect(content).toContain('from "../../../src/prompts/my-prompt.js"');
+				expect(content).toContain("registerMyPromptPrompt");
+			});
 
-			expectedElements.forEach((element) => {
-				expect(element).toBeDefined();
+			it("should include test describe blocks", async () => {
+				const { generateUnitTestFile } = await import("@/core/commands/add-prompt.js");
+				const content = generateUnitTestFile("test-prompt", "TestPrompt");
+
+				expect(content).toContain('describe("test-prompt prompt"');
 			});
 		});
-	});
 
-	describe("code generation patterns", () => {
-		it("should include proper prompt argument schema", () => {
-			const expectedPattern = `const PromptArgsSchema = z.object({
-\t// Add your string arguments here
-\t// Example: prompt: z.string().describe("Your prompt parameter"),
-});`;
+		describe("generateIntegrationTestYaml", () => {
+			it("should generate YAML with prompt name", async () => {
+				const { generateIntegrationTestYaml } = await import("@/core/commands/add-prompt.js");
+				const content = generateIntegrationTestYaml(
+					"reviewer",
+					"Code reviewer",
+				);
 
-			expect(expectedPattern).toContain("z.object");
-			expect(expectedPattern).toContain("// Add your string arguments here");
-		});
+				expect(content).toContain('prompt: "reviewer"');
+				expect(content).toContain('type: "success"');
+			});
 
-		it("should include prompt message structure", () => {
-			const expectedStructure = `return {
-\tmessages: [
-\t\t{
-\t\t\trole: "user" as const,
-\t\t\tcontent: {
-\t\t\t\ttype: "text" as const,
-\t\t\t\ttext: \`TODO: Replace with your prompt template\`,
-\t\t\t},
-\t\t},
-\t],
-};`;
+			it("should convert hyphens to spaces in name", async () => {
+				const { generateIntegrationTestYaml } = await import("@/core/commands/add-prompt.js");
+				const content = generateIntegrationTestYaml(
+					"code-reviewer",
+					"Code reviewer prompt",
+				);
 
-			expect(expectedStructure).toContain("messages:");
-			expect(expectedStructure).toContain('role: "user" as const');
-			expect(expectedStructure).toContain('type: "text" as const');
-		});
-
-		it("should include helpful TODO comments", () => {
-			const expectedComments = [
-				"// TODO: Implement your prompt logic here",
-				"// NOTE: Prompt arguments MUST be strings only (SDK limitation)",
-				"// Example: Return a simple prompt",
-			];
-
-			expectedComments.forEach((comment) => {
-				expect(comment).toBeDefined();
-				const hasKeyword = comment.includes("TODO") || comment.includes("NOTE") || comment.includes("Example");
-				expect(hasKeyword).toBe(true);
+				expect(content).toContain('name: "code reviewer - Basic"');
 			});
 		});
-	});
 
-	describe("registration logic", () => {
-		it("should generate import statement", () => {
-			const promptName = "my-prompt";
-			const capitalizedName = "MyPrompt";
+		describe("registerPromptInIndex", () => {
+			it("should add import and registration call to index.ts", async () => {
+				const { registerPromptInIndex } = await import("@/core/commands/add-prompt.js");
 
-			const expectedImport = `import { register${capitalizedName}Prompt } from "./prompts/${promptName}.js";`;
+				await registerPromptInIndex(projectDir, "test-prompt", "TestPrompt");
 
-			expect(expectedImport).toContain("import {");
-			expect(expectedImport).toContain(`register${capitalizedName}Prompt`);
-			expect(expectedImport).toContain(`./prompts/${promptName}.js`);
+				const indexPath = join(projectDir, "src", "index.ts");
+				const content = await readFile(indexPath, "utf-8");
+
+				expect(content).toContain(
+					'import { registerTestPromptPrompt } from "./prompts/test-prompt.js"'
+				);
+				expect(content).toContain("registerTestPromptPrompt(this.server)");
+			});
 		});
 
-		it("should generate registration call", () => {
-			const capitalizedName = "MyPrompt";
+		describe("updateTemplateMetadata", () => {
+			it("should add prompt to metadata file", async () => {
+				const { updateTemplateMetadata } = await import("@/core/commands/add-prompt.js");
 
-			const expectedCall = `register${capitalizedName}Prompt(server);`;
+				await updateTemplateMetadata(projectDir, "test-prompt", true);
 
-			expect(expectedCall).toContain(`register${capitalizedName}Prompt`);
-			expect(expectedCall).toContain("(server)");
-		});
-	});
+				const metadataPath = join(projectDir, ".mcp-template.json");
+				if (existsSync(metadataPath)) {
+					const content = await readFile(metadataPath, "utf-8");
+					const metadata = JSON.parse(content);
 
-	describe("metadata tracking", () => {
-		it("should include required prompt metadata fields", () => {
-			const metadata = {
-				name: "my-prompt",
-				description: "My custom prompt",
-				file: "src/prompts/my-prompt.ts",
-			};
+					const promptEntry = metadata.prompts?.find(
+						(p: any) => p.name === "test-prompt"
+					);
+					expect(promptEntry).toBeDefined();
+					expect(promptEntry?.file).toBe("src/prompts/test-prompt.ts");
+					expect(promptEntry?.registered).toBe(true);
+				}
+			});
 
-			expect(metadata).toHaveProperty("name");
-			expect(metadata).toHaveProperty("description");
-			expect(metadata).toHaveProperty("file");
-			expect(metadata.name).toBe("my-prompt");
-		});
-	});
+			it("should mark tests as created when hasTests is true", async () => {
+				const { updateTemplateMetadata } = await import("@/core/commands/add-prompt.js");
 
-	describe("prompt SDK constraints", () => {
-		it("should document string-only argument limitation", () => {
-			const documentation = `
-/**
- * NOTE: Prompt arguments MUST be strings only (SDK limitation)
- * For boolean-like options, use comma-separated strings or enums
- *
- * Example - String arguments:
- * const PromptArgsSchema = z.object({
- *   code: z.string().describe("Code to review"),
- *   language: z.string().optional().describe("Programming language"),
- *   options: z.string().optional().describe("Comma-separated options: fast,detailed,secure"),
- * });
- */
-			`;
+				await updateTemplateMetadata(projectDir, "with-tests", true);
 
-			expect(documentation).toContain("strings only");
-			expect(documentation).toContain("SDK limitation");
-			expect(documentation).toContain("Example");
+				const metadataPath = join(projectDir, ".mcp-template.json");
+				if (existsSync(metadataPath)) {
+					const content = await readFile(metadataPath, "utf-8");
+					const metadata = JSON.parse(content);
+
+					const promptEntry = metadata.prompts?.find(
+						(p: any) => p.name === "with-tests"
+					);
+					expect(promptEntry?.hasUnitTest).toBe(true);
+					expect(promptEntry?.hasIntegrationTest).toBe(true);
+				}
+			});
+
+			it("should mark tests as not created when hasTests is false", async () => {
+				const { updateTemplateMetadata } = await import("@/core/commands/add-prompt.js");
+
+				await updateTemplateMetadata(projectDir, "without-tests", false);
+
+				const metadataPath = join(projectDir, ".mcp-template.json");
+				if (existsSync(metadataPath)) {
+					const content = await readFile(metadataPath, "utf-8");
+					const metadata = JSON.parse(content);
+
+					const promptEntry = metadata.prompts?.find(
+						(p: any) => p.name === "without-tests"
+					);
+					expect(promptEntry?.hasUnitTest).toBe(false);
+					expect(promptEntry?.hasIntegrationTest).toBe(false);
+				}
+			});
 		});
 	});
 });

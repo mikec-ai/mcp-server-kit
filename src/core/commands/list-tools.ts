@@ -14,7 +14,7 @@ import path from "node:path";
 /**
  * Tool information
  */
-interface ToolInfo {
+export interface ToolInfo {
 	name: string;
 	file: string;
 	registered: boolean;
@@ -80,7 +80,7 @@ export function createListToolsCommand(): Command {
 /**
  * Discover all tools in the project
  */
-async function discoverTools(
+export async function discoverTools(
 	cwd: string,
 	includeExamples = false,
 ): Promise<ToolInfo[]> {
@@ -152,7 +152,7 @@ async function discoverTools(
 /**
  * Check which tools are registered in src/index.ts
  */
-async function checkToolRegistrations(indexPath: string): Promise<string[]> {
+export async function checkToolRegistrations(indexPath: string): Promise<string[]> {
 	try {
 		const content = await fs.readFile(indexPath, "utf-8");
 		const registered: string[] = [];
@@ -216,7 +216,7 @@ async function fileExists(filePath: string): Promise<boolean> {
 /**
  * Filter tools by status
  */
-function filterTools(tools: ToolInfo[], filter: string): ToolInfo[] {
+export function filterTools(tools: ToolInfo[], filter: string): ToolInfo[] {
 	switch (filter.toLowerCase()) {
 		case "registered":
 			return tools.filter((t) => t.registered);
@@ -289,7 +289,7 @@ function printToolsTable(tools: ToolInfo[]): void {
 /**
  * Convert PascalCase to kebab-case
  */
-function toKebabCase(str: string): string {
+export function toKebabCase(str: string): string {
 	return str
 		.replace(/([A-Z])/g, "-$1")
 		.toLowerCase()

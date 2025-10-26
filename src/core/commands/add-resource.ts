@@ -13,7 +13,7 @@ import { writeFile, readFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
 
-interface AddResourceOptions {
+export interface AddResourceOptions {
 	description?: string;
 	uriPattern?: string;
 	static?: boolean;
@@ -151,7 +151,7 @@ export function createAddResourceCommand(): Command {
 /**
  * Generate resource file content
  */
-function generateResourceFile(
+export function generateResourceFile(
 	name: string,
 	capitalizedName: string,
 	options: AddResourceOptions,
@@ -251,7 +251,7 @@ ${paramExtractionComment}
 /**
  * Generate unit test file content
  */
-function generateUnitTestFile(name: string, capitalizedName: string): string {
+export function generateUnitTestFile(name: string, capitalizedName: string): string {
 	return `/**
  * ${capitalizedName} Resource - Unit Tests
  */
@@ -297,7 +297,7 @@ describe("${name} resource", () => {
 /**
  * Generate integration test YAML content
  */
-function generateIntegrationTestYaml(
+export function generateIntegrationTestYaml(
 	name: string,
 	description: string,
 	uriPattern: string,
@@ -344,7 +344,7 @@ assertions:
 /**
  * Register resource in src/index.ts
  */
-async function registerResourceInIndex(
+export async function registerResourceInIndex(
 	cwd: string,
 	name: string,
 	capitalizedName: string,
@@ -475,7 +475,7 @@ async function registerResourceInIndex(
 /**
  * Update .mcp-template.json metadata
  */
-async function updateTemplateMetadata(
+export async function updateTemplateMetadata(
 	cwd: string,
 	name: string,
 	hasTests: boolean,
@@ -511,7 +511,7 @@ async function updateTemplateMetadata(
 /**
  * Convert kebab-case to PascalCase
  */
-function toPascalCase(str: string): string {
+export function toPascalCase(str: string): string {
 	return str
 		.split("-")
 		.map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())

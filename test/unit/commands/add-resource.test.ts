@@ -1,323 +1,694 @@
 /**
  * add-resource - Unit Tests
  *
- * Tests for the add resource command
- * Note: Similar to add-tool, this command is tightly coupled to fs operations.
- * We test the core logic and utility functions here.
+ * Comprehensive tests for the add resource command
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { rm, readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { createTestProject, getTempDir } from "../../helpers/project-setup.js";
+import { exec } from "node:child_process";
+import { promisify } from "node:util";
+
+const execAsync = promisify(exec);
 
 describe("add-resource command", () => {
+	let projectDir: string;
+	let tempDir: string;
+
+	beforeEach(async () => {
+		// Create a fresh test project for each test
+		projectDir = await createTestProject();
+		tempDir = getTempDir(projectDir);
+	});
+
+	afterEach(async () => {
+		// Clean up temp directory
+		if (tempDir && existsSync(tempDir)) {
+			await rm(tempDir, { recursive: true, force: true });
+		}
+	});
+
 	/**
-	 * The add-resource command scaffolds new resources with:
-	 * - Resource implementation file (src/resources/${name}.ts)
-	 * - Unit test file (test/unit/resources/${name}.test.ts)
-	 * - Integration test YAML (test/integration/specs/resources/${name}.yaml)
-	 * - Auto-registration in src/index.ts
-	 * - Metadata tracking in .mcp-template.json
-	 *
-	 * Full integration testing is done through:
-	 * 1. Template quality tests
-	 * 2. Real-world usage during development
-	 * 3. E2E tests
+	 * Helper function to run add resource command
 	 */
+	async function runAddResource(
+		cwd: string,
+		resourceName: string,
+		options: {
+			description?: string;
+			uriPattern?: string;
+			static?: boolean;
+			dynamic?: boolean;
+			noTests?: boolean;
+			noRegister?: boolean;
+		} = {},
+	): Promise<{ success: boolean; stdout: string; stderr: string }> {
+		const cliPath = join(process.cwd(), "bin", "mcp-server-kit.js");
+		const args = ["add", "resource", resourceName];
+
+		if (options.description) args.push("--description", `"${options.description}"`);
+		if (options.uriPattern) args.push("--uri-pattern", `"${options.uriPattern}"`);
+		if (options.static) args.push("--static");
+		if (options.dynamic) args.push("--dynamic");
+		if (options.noTests) args.push("--no-tests");
+		if (options.noRegister) args.push("--no-register");
+
+		try {
+			const { stdout, stderr } = await execAsync(
+				`node "${cliPath}" ${args.join(" ")}`,
+				{ cwd },
+			);
+			return { success: true, stdout, stderr };
+		} catch (error: any) {
+			return { success: false, stdout: error.stdout || "", stderr: error.stderr || "" };
+		}
+	}
 
 	describe("resource name validation", () => {
-		it("should accept kebab-case names", () => {
-			const validNameRegex = /^[a-z][a-z0-9-_]*$/;
+		it("should accept valid kebab-case names", async () => {
+			const result = await runAddResource(projectDir, "my-resource");
 
-			expect(validNameRegex.test("my-resource")).toBe(true);
-			expect(validNameRegex.test("config")).toBe(true);
-			expect(validNameRegex.test("test_resource")).toBe(true);
+			expect(result.success).toBe(true);
+			expect(result.stdout).toContain("created successfully");
 		});
 
-		it("should reject invalid names", () => {
-			const validNameRegex = /^[a-z][a-z0-9-_]*$/;
+		it("should accept single-word names", async () => {
+			const result = await runAddResource(projectDir, "config");
 
-			expect(validNameRegex.test("MyResource")).toBe(false); // Uppercase
-			expect(validNameRegex.test("123resource")).toBe(false); // Starts with number
-			expect(validNameRegex.test("my resource")).toBe(false); // Spaces
+			expect(result.success).toBe(true);
+			expect(result.stdout).toContain("created successfully");
+		});
+
+		it("should reject names with uppercase", async () => {
+			const result = await runAddResource(projectDir, "MyResource");
+
+			expect(result.success).toBe(false);
+			expect(result.stderr).toContain("lowercase with hyphens");
+		});
+
+		it("should reject names starting with numbers", async () => {
+			const result = await runAddResource(projectDir, "123resource");
+
+			expect(result.success).toBe(false);
+			expect(result.stderr).toContain("lowercase with hyphens");
+		});
+
+		it("should reject names with spaces", async () => {
+			const cliPath = join(process.cwd(), "bin", "mcp-server-kit.js");
+
+			try {
+				await execAsync(`node "${cliPath}" add resource "my resource"`, {
+					cwd: projectDir,
+				});
+				expect.fail("Should have rejected resource name with spaces");
+			} catch (error: any) {
+				expect(error.stderr).toContain("lowercase with hyphens");
+			}
+		});
+
+		it("should reject names with underscores only at start", async () => {
+			const result = await runAddResource(projectDir, "_resource");
+
+			expect(result.success).toBe(false);
+			expect(result.stderr).toContain("lowercase with hyphens");
 		});
 	});
 
-	describe("string conversion utilities", () => {
-		it("should convert kebab-case to PascalCase", () => {
-			const toPascalCase = (str: string): string => {
-				return str
-					.split(/[-_]/)
-					.map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-					.join("");
-			};
+	describe("resource file generation", () => {
+		it("should create resource file in correct location", async () => {
+			await runAddResource(projectDir, "test-resource");
 
-			expect(toPascalCase("my-resource")).toBe("MyResource");
-			expect(toPascalCase("app-config")).toBe("AppConfig");
-			expect(toPascalCase("simple")).toBe("Simple");
-			expect(toPascalCase("test_resource")).toBe("TestResource");
+			const resourcePath = join(projectDir, "src", "resources", "test-resource.ts");
+			expect(existsSync(resourcePath)).toBe(true);
 		});
 
-		it("should convert kebab-case to camelCase", () => {
-			const toCamelCase = (str: string): string => {
-				const words = str.split(/[-_]/);
-				return (
-					words[0].toLowerCase() +
-					words
-						.slice(1)
-						.map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-						.join("")
+		it("should generate resource with correct function name", async () => {
+			await runAddResource(projectDir, "my-resource");
+
+			const resourcePath = join(projectDir, "src", "resources", "my-resource.ts");
+			const content = await readFile(resourcePath, "utf-8");
+
+			expect(content).toContain("export function registerMyResourceResource");
+		});
+
+		it("should include resource description", async () => {
+			await runAddResource(projectDir, "test-resource", {
+				description: "Custom resource description",
+			});
+
+			const resourcePath = join(projectDir, "src", "resources", "test-resource.ts");
+			const content = await readFile(resourcePath, "utf-8");
+
+			expect(content).toContain("Custom resource description");
+		});
+
+		it("should use default URI pattern for static resources", async () => {
+			await runAddResource(projectDir, "config");
+
+			const resourcePath = join(projectDir, "src", "resources", "config.ts");
+			const content = await readFile(resourcePath, "utf-8");
+
+			expect(content).toContain('"config://config"');
+		});
+
+		it("should use custom URI pattern when provided", async () => {
+			await runAddResource(projectDir, "user", {
+				uriPattern: "user://{id}",
+			});
+
+			const resourcePath = join(projectDir, "src", "resources", "user.ts");
+			const content = await readFile(resourcePath, "utf-8");
+
+			expect(content).toContain("user://{id}");
+		});
+
+		it("should reject duplicate resource names", async () => {
+			await runAddResource(projectDir, "duplicate-resource");
+			const result = await runAddResource(projectDir, "duplicate-resource");
+
+			expect(result.success).toBe(false);
+			expect(result.stderr).toContain("already exists");
+		});
+	});
+
+	describe("unit test file generation", () => {
+		it("should create unit test file when tests enabled", async () => {
+			await runAddResource(projectDir, "test-resource");
+
+			const testPath = join(
+				projectDir,
+				"test",
+				"unit",
+				"resources",
+				"test-resource.test.ts",
+			);
+			expect(existsSync(testPath)).toBe(true);
+		});
+
+		it("should skip unit test file when --no-tests flag used", async () => {
+			await runAddResource(projectDir, "test-resource", { noTests: true });
+
+			const testPath = join(
+				projectDir,
+				"test",
+				"unit",
+				"resources",
+				"test-resource.test.ts",
+			);
+			expect(existsSync(testPath)).toBe(false);
+		});
+
+		it("should include correct import path in unit test", async () => {
+			await runAddResource(projectDir, "my-resource");
+
+			const testPath = join(
+				projectDir,
+				"test",
+				"unit",
+				"resources",
+				"my-resource.test.ts",
+			);
+			const content = await readFile(testPath, "utf-8");
+
+			expect(content).toContain(
+				'from "../../../src/resources/my-resource.js"',
+			);
+		});
+	});
+
+	describe("integration test YAML generation", () => {
+		it("should create integration test YAML when tests enabled", async () => {
+			await runAddResource(projectDir, "test-resource");
+
+			const yamlPath = join(
+				projectDir,
+				"test",
+				"integration",
+				"specs",
+				"resources",
+				"test-resource.yaml",
+			);
+			expect(existsSync(yamlPath)).toBe(true);
+		});
+
+		it("should skip integration test YAML when --no-tests flag used", async () => {
+			await runAddResource(projectDir, "test-resource", { noTests: true });
+
+			const yamlPath = join(
+				projectDir,
+				"test",
+				"integration",
+				"specs",
+				"resources",
+				"test-resource.yaml",
+			);
+			expect(existsSync(yamlPath)).toBe(false);
+		});
+
+		it("should include correct resource name in YAML", async () => {
+			await runAddResource(projectDir, "test-resource");
+
+			const yamlPath = join(
+				projectDir,
+				"test",
+				"integration",
+				"specs",
+				"resources",
+				"test-resource.yaml",
+			);
+			const content = await readFile(yamlPath, "utf-8");
+
+			expect(content).toContain('name: "test resource - Basic"');
+		});
+
+		it("should include success assertion in YAML", async () => {
+			await runAddResource(projectDir, "test-resource");
+
+			const yamlPath = join(
+				projectDir,
+				"test",
+				"integration",
+				"specs",
+				"resources",
+				"test-resource.yaml",
+			);
+			const content = await readFile(yamlPath, "utf-8");
+
+			expect(content).toContain('type: "success"');
+		});
+	});
+
+	describe("resource registration in index.ts", () => {
+		it("should add import statement to index.ts", async () => {
+			await runAddResource(projectDir, "my-resource");
+
+			const indexPath = join(projectDir, "src", "index.ts");
+			const content = await readFile(indexPath, "utf-8");
+
+			expect(content).toContain(
+				'import { registerMyResourceResource } from "./resources/my-resource.js"',
+			);
+		});
+
+		it("should add registration call in init method", async () => {
+			await runAddResource(projectDir, "my-resource");
+
+			const indexPath = join(projectDir, "src", "index.ts");
+			const content = await readFile(indexPath, "utf-8");
+
+			expect(content).toContain("registerMyResourceResource(this.server)");
+		});
+
+		it("should skip registration when --no-register flag used", async () => {
+			await runAddResource(projectDir, "my-resource", { noRegister: true });
+
+			const indexPath = join(projectDir, "src", "index.ts");
+			const content = await readFile(indexPath, "utf-8");
+
+			expect(content).not.toContain("registerMyResourceResource");
+		});
+
+		it("should handle multiple resources in sequence", async () => {
+			await runAddResource(projectDir, "first-resource");
+			await runAddResource(projectDir, "second-resource");
+
+			const indexPath = join(projectDir, "src", "index.ts");
+			const content = await readFile(indexPath, "utf-8");
+
+			expect(content).toContain("registerFirstResourceResource");
+			expect(content).toContain("registerSecondResourceResource");
+		});
+	});
+
+	describe("metadata updates", () => {
+		it("should add resource to metadata file", async () => {
+			await runAddResource(projectDir, "test-resource");
+
+			const metadataPath = join(projectDir, ".mcp-template.json");
+			if (existsSync(metadataPath)) {
+				const content = await readFile(metadataPath, "utf-8");
+				const metadata = JSON.parse(content);
+
+				const resourceEntry = metadata.resources?.find(
+					(r: any) => r.name === "test-resource",
 				);
-			};
-
-			expect(toCamelCase("my-resource")).toBe("myResource");
-			expect(toCamelCase("app-config")).toBe("appConfig");
-			expect(toCamelCase("simple")).toBe("simple");
-		});
-	});
-
-	describe("template generation", () => {
-		it("should generate resource file with correct structure", () => {
-			const resourceName = "my-resource";
-			const capitalizedName = "MyResource";
-			const description = "My custom resource";
-
-			// Template should include these key elements
-			const expectedElements = [
-				`${capitalizedName} Resource`,
-				description,
-				`export function register${capitalizedName}Resource`,
-				`server.resource(\n\t\t"${resourceName}"`,
-				"// TODO: Implement your resource logic here",
-				"contents:",
-				"uri:",
-				"mimeType:",
-			];
-
-			// All these elements should be present in generated template
-			expectedElements.forEach((element) => {
-				expect(element).toBeDefined();
-			});
+				expect(resourceEntry).toBeDefined();
+				expect(resourceEntry?.file).toBe("src/resources/test-resource.ts");
+			}
 		});
 
-		it("should generate unit test file with correct structure", () => {
-			const resourceName = "my-resource";
-			const capitalizedName = "MyResource";
+		it("should mark resource as registered in metadata", async () => {
+			await runAddResource(projectDir, "test-resource");
 
-			// Test template should include these key elements
-			const expectedElements = [
-				`${capitalizedName} Resource - Unit Tests`,
-				`from "../../../src/resources/${resourceName}.js"`,
-				`register${capitalizedName}Resource`,
-				`describe("${resourceName} resource"`,
-				'it("should register the resource"',
-				'it("should return valid content"',
-			];
+			const metadataPath = join(projectDir, ".mcp-template.json");
+			if (existsSync(metadataPath)) {
+				const content = await readFile(metadataPath, "utf-8");
+				const metadata = JSON.parse(content);
 
-			expectedElements.forEach((element) => {
-				expect(element).toBeDefined();
-			});
+				const resourceEntry = metadata.resources?.find(
+					(r: any) => r.name === "test-resource",
+				);
+				expect(resourceEntry?.registered).toBe(true);
+			}
 		});
 
-		it("should generate integration test YAML with correct structure", () => {
-			const resourceName = "my-resource";
-			const description = "My custom resource";
+		it("should mark tests as created when enabled", async () => {
+			await runAddResource(projectDir, "test-resource");
 
-			// YAML should include these key elements
-			const expectedElements = [
-				"name:",
-				"description:",
-				`resource: ${resourceName}`,
-				"uri:",
-				"assertions:",
-				'- type: "success"',
-			];
+			const metadataPath = join(projectDir, ".mcp-template.json");
+			if (existsSync(metadataPath)) {
+				const content = await readFile(metadataPath, "utf-8");
+				const metadata = JSON.parse(content);
 
-			expectedElements.forEach((element) => {
-				expect(element).toBeDefined();
-			});
-		});
-	});
-
-	describe("code generation patterns", () => {
-		it("should include proper URI structure", () => {
-			const expectedPattern = `server.resource(
-\t"resource-name",
-\t"resource://{id}",
-\t{
-\t\tdescription: "Description",
-\t\tmimeType: "application/json",
-\t},
-\tasync (uri) => {`;
-
-			expect(expectedPattern).toContain("server.resource");
-			expect(expectedPattern).toContain("resource://");
-			expect(expectedPattern).toContain("mimeType:");
-		});
-
-		it("should include resource response structure", () => {
-			const expectedStructure = `return {
-\tcontents: [
-\t\t{
-\t\t\turi: uri.href,
-\t\t\ttext: JSON.stringify(data, null, 2),
-\t\t\tmimeType: "application/json",
-\t\t},
-\t],
-};`;
-
-			expect(expectedStructure).toContain("contents:");
-			expect(expectedStructure).toContain("uri:");
-			expect(expectedStructure).toContain("text:");
-			expect(expectedStructure).toContain("mimeType:");
-		});
-
-		it("should include helpful TODO comments", () => {
-			const expectedComments = [
-				"// TODO: Implement your resource logic here",
-				"// TODO: Update MIME type as needed",
-				"// Example: Return resource content",
-			];
-
-			expectedComments.forEach((comment) => {
-				expect(comment).toBeDefined();
-				const hasKeyword = comment.includes("TODO") || comment.includes("Example");
-				expect(hasKeyword).toBe(true);
-			});
-		});
-	});
-
-	describe("default behavior", () => {
-		it("should default to static resources (simpler, more common)", () => {
-			// Test the default URI pattern generation logic
-			const resourceName = "server-status";
-
-			// When no flags provided, should generate static URI
-			const defaultUriPattern = `config://${resourceName}`;
-
-			expect(defaultUriPattern).toBe("config://server-status");
-			expect(defaultUriPattern).not.toContain("{");
-			expect(defaultUriPattern).not.toContain("}");
-		});
-
-		it("should use dynamic when --dynamic flag is provided", () => {
-			// When --dynamic flag is provided, should generate dynamic URI
-			const dynamicUriPattern = "resource://{id}";
-
-			expect(dynamicUriPattern).toContain("{id}");
-		});
-
-		it("should validate conflicting flags", () => {
-			// Cannot use both --static and --dynamic
-			const hasStaticFlag = true;
-			const hasDynamicFlag = true;
-
-			if (hasStaticFlag && hasDynamicFlag) {
-				expect(() => {
-					throw new Error("Cannot use both --static and --dynamic flags");
-				}).toThrow("Cannot use both --static and --dynamic flags");
+				const resourceEntry = metadata.resources?.find(
+					(r: any) => r.name === "test-resource",
+				);
+				expect(resourceEntry?.hasUnitTest).toBe(true);
+				expect(resourceEntry?.hasIntegrationTest).toBe(true);
 			}
 		});
 	});
 
-	describe("registration logic", () => {
-		it("should generate import statement", () => {
-			const resourceName = "my-resource";
-			const capitalizedName = "MyResource";
+	describe("static vs dynamic resources", () => {
+		it("should default to static resource pattern", async () => {
+			await runAddResource(projectDir, "config");
 
-			const expectedImport = `import { register${capitalizedName}Resource } from "./resources/${resourceName}.js";`;
+			const resourcePath = join(projectDir, "src", "resources", "config.ts");
+			const content = await readFile(resourcePath, "utf-8");
 
-			expect(expectedImport).toContain("import {");
-			expect(expectedImport).toContain(`register${capitalizedName}Resource`);
-			expect(expectedImport).toContain(`./resources/${resourceName}.js`);
+			expect(content).toContain("config://config");
+			expect(content).not.toContain("ResourceTemplate");
 		});
 
-		it("should generate registration call", () => {
-			const capitalizedName = "MyResource";
+		it("should create dynamic resource when --dynamic flag used", async () => {
+			await runAddResource(projectDir, "user", { dynamic: true });
 
-			const expectedCall = `register${capitalizedName}Resource(server);`;
+			const resourcePath = join(projectDir, "src", "resources", "user.ts");
+			const content = await readFile(resourcePath, "utf-8");
 
-			expect(expectedCall).toContain(`register${capitalizedName}Resource`);
-			expect(expectedCall).toContain("(server)");
+			expect(content).toContain("resource://{id}");
+		});
+
+		it("should create static resource when --static flag used", async () => {
+			await runAddResource(projectDir, "status", { static: true });
+
+			const resourcePath = join(projectDir, "src", "resources", "status.ts");
+			const content = await readFile(resourcePath, "utf-8");
+
+			expect(content).toContain("config://status");
+		});
+
+		it("should reject conflicting --static and --dynamic flags", async () => {
+			const result = await runAddResource(projectDir, "conflicting", {
+				static: true,
+				dynamic: true,
+			});
+
+			expect(result.success).toBe(false);
+			expect(result.stderr).toContain("Cannot use both --static and --dynamic");
 		});
 	});
 
-	describe("metadata tracking", () => {
-		it("should include required resource metadata fields", () => {
-			const metadata = {
-				name: "my-resource",
-				description: "My custom resource",
-				file: "src/resources/my-resource.ts",
-			};
+	describe("error scenarios", () => {
+		it("should fail when not in a project directory", async () => {
+			const nonProjectDir = join(tempDir, "not-a-project");
+			await import("node:fs/promises").then((fs) => fs.mkdir(nonProjectDir));
 
-			expect(metadata).toHaveProperty("name");
-			expect(metadata).toHaveProperty("description");
-			expect(metadata).toHaveProperty("file");
-			expect(metadata.name).toBe("my-resource");
+			const result = await runAddResource(nonProjectDir, "test-resource");
+
+			expect(result.success).toBe(false);
+			expect(result.stderr).toContain("Not in a valid project");
+		});
+
+		it("should provide helpful error messages", async () => {
+			const result = await runAddResource(projectDir, "Invalid-Name");
+
+			expect(result.success).toBe(false);
+			expect(result.stderr).toContain("lowercase with hyphens");
 		});
 	});
 
-	describe("URI patterns", () => {
-		it("should support static URIs", () => {
-			const staticURIs = [
-				"config://app/settings",
-				"docs://readme",
-				"status://server",
-				"help://guide",
-			];
+	describe("success output", () => {
+		it("should show success message", async () => {
+			const result = await runAddResource(projectDir, "test-resource");
 
-			staticURIs.forEach((uri) => {
-				expect(uri).toMatch(/^[a-z]+:\/\//);
+			expect(result.stdout).toContain("created successfully");
+		});
+
+		it("should show next steps", async () => {
+			const result = await runAddResource(projectDir, "test-resource");
+
+			expect(result.stdout).toContain("Next steps:");
+			expect(result.stdout).toContain("src/resources/test-resource.ts");
+		});
+
+		it("should show file creation confirmations", async () => {
+			const result = await runAddResource(projectDir, "test-resource");
+
+			expect(result.stdout).toContain("Created");
+			expect(result.stdout).toContain("Registered in src/index.ts");
+		});
+	});
+
+	describe("PascalCase conversion", () => {
+		it("should convert single-word names to PascalCase", async () => {
+			await runAddResource(projectDir, "config");
+
+			const resourcePath = join(projectDir, "src", "resources", "config.ts");
+			const content = await readFile(resourcePath, "utf-8");
+
+			expect(content).toContain("registerConfigResource");
+		});
+
+		it("should convert hyphenated names to PascalCase", async () => {
+			await runAddResource(projectDir, "my-resource");
+
+			const resourcePath = join(projectDir, "src", "resources", "my-resource.ts");
+			const content = await readFile(resourcePath, "utf-8");
+
+			expect(content).toContain("registerMyResourceResource");
+		});
+
+		it("should convert multi-word names to PascalCase", async () => {
+			await runAddResource(projectDir, "user-profile-data");
+
+			const resourcePath = join(projectDir, "src", "resources", "user-profile-data.ts");
+			const content = await readFile(resourcePath, "utf-8");
+
+			expect(content).toContain("registerUserProfileDataResource");
+		});
+	});
+
+	describe("file organization", () => {
+		it("should create src/resources directory if it doesn't exist", async () => {
+			await runAddResource(projectDir, "test-resource");
+
+			const resourcesDir = join(projectDir, "src", "resources");
+			expect(existsSync(resourcesDir)).toBe(true);
+		});
+
+		it("should create test directories if they don't exist", async () => {
+			await runAddResource(projectDir, "test-resource");
+
+			const unitDir = join(projectDir, "test", "unit", "resources");
+			const integrationDir = join(
+				projectDir,
+				"test",
+				"integration",
+				"specs",
+				"resources",
+			);
+
+			expect(existsSync(unitDir)).toBe(true);
+			expect(existsSync(integrationDir)).toBe(true);
+		});
+	});
+
+	describe("direct function tests (for coverage)", () => {
+		describe("toPascalCase", () => {
+			it("should convert single word to PascalCase", async () => {
+				const { toPascalCase } = await import("@/core/commands/add-resource.js");
+				expect(toPascalCase("config")).toBe("Config");
+			});
+
+			it("should convert hyphenated words to PascalCase", async () => {
+				const { toPascalCase } = await import("@/core/commands/add-resource.js");
+				expect(toPascalCase("my-resource")).toBe("MyResource");
+				expect(toPascalCase("user-profile-data")).toBe("UserProfileData");
 			});
 		});
 
-		it("should support dynamic URIs with parameters", () => {
-			const dynamicURIs = [
-				"user://{userId}",
-				"db://{table}/{id}",
-				"file:///{path}",
-				"logs://{date}/{level}",
-			];
+		describe("generateResourceFile", () => {
+			it("should generate static resource file with correct structure", async () => {
+				const { generateResourceFile } = await import("@/core/commands/add-resource.js");
+				const content = generateResourceFile("test-resource", "TestResource", {
+					description: "Test description",
+					uriPattern: "config://test",
+					tests: true,
+					register: true,
+				});
 
-			dynamicURIs.forEach((uri) => {
-				expect(uri).toContain("{");
-				expect(uri).toContain("}");
+				expect(content).toContain("export function registerTestResourceResource");
+				expect(content).toContain("Test description");
+				expect(content).toContain('"test-resource"');
+				expect(content).toContain('"config://test"');
+			});
+
+			it("should generate dynamic resource file with ResourceTemplate", async () => {
+				const { generateResourceFile } = await import("@/core/commands/add-resource.js");
+				const content = generateResourceFile("user", "User", {
+					description: "User resource",
+					uriPattern: "user://{id}",
+					tests: true,
+					register: true,
+				});
+
+				expect(content).toContain("ResourceTemplate");
+				expect(content).toContain("user://{id}");
+				expect(content).toContain("async (uri, variables)");
+			});
+
+			it("should include variable extraction for dynamic resources", async () => {
+				const { generateResourceFile } = await import("@/core/commands/add-resource.js");
+				const content = generateResourceFile("db-record", "DbRecord", {
+					description: "DB record",
+					uriPattern: "db://{table}/{id}",
+					tests: true,
+					register: true,
+				});
+
+				expect(content).toContain("const table = variables.table");
+				expect(content).toContain("const id = variables.id");
 			});
 		});
-	});
 
-	describe("MIME types", () => {
-		it("should support common MIME types", () => {
-			const mimeTypes = [
-				"application/json",
-				"text/plain",
-				"text/markdown",
-				"text/html",
-				"application/xml",
-			];
+		describe("generateUnitTestFile", () => {
+			it("should generate unit test with correct imports", async () => {
+				const { generateUnitTestFile } = await import("@/core/commands/add-resource.js");
+				const content = generateUnitTestFile("my-resource", "MyResource");
 
-			mimeTypes.forEach((mimeType) => {
-				expect(mimeType).toMatch(/^[a-z]+\/[a-z+-]+$/);
+				expect(content).toContain('from "../../../src/resources/my-resource.js"');
+				expect(content).toContain("registerMyResourceResource");
+			});
+
+			it("should include test describe blocks", async () => {
+				const { generateUnitTestFile } = await import("@/core/commands/add-resource.js");
+				const content = generateUnitTestFile("test-resource", "TestResource");
+
+				expect(content).toContain('describe("test-resource resource"');
 			});
 		});
-	});
 
-	describe("error handling patterns", () => {
-		it("should include error handling guidance", () => {
-			const errorHandlingExample = `try {
-\tconst data = await fetchResourceData(id);
-\treturn {
-\t\tcontents: [{
-\t\t\turi: uri.href,
-\t\t\ttext: JSON.stringify(data, null, 2),
-\t\t\tmimeType: "application/json",
-\t\t}],
-\t};
-} catch (error) {
-\tthrow new Error(\`Failed to load resource: \${error}\`);
-}`;
+		describe("generateIntegrationTestYaml", () => {
+			it("should generate YAML with static URI", async () => {
+				const { generateIntegrationTestYaml } = await import("@/core/commands/add-resource.js");
+				const content = generateIntegrationTestYaml(
+					"config",
+					"Config resource",
+					"config://app",
+				);
 
-			expect(errorHandlingExample).toContain("try {");
-			expect(errorHandlingExample).toContain("catch (error)");
-			expect(errorHandlingExample).toContain("throw new Error");
+				expect(content).toContain('uri: "config://app"');
+				expect(content).toContain('type: "success"');
+			});
+
+			it("should replace template variables with test values", async () => {
+				const { generateIntegrationTestYaml } = await import("@/core/commands/add-resource.js");
+				const content = generateIntegrationTestYaml(
+					"user",
+					"User resource",
+					"user://{id}",
+				);
+
+				expect(content).toContain('uri: "user://test-value"');
+			});
+
+			it("should convert hyphens to spaces in name", async () => {
+				const { generateIntegrationTestYaml } = await import("@/core/commands/add-resource.js");
+				const content = generateIntegrationTestYaml(
+					"user-profile",
+					"User profile",
+					"profile://test",
+				);
+
+				expect(content).toContain('name: "user profile - Basic"');
+			});
+		});
+
+		describe("registerResourceInIndex", () => {
+			it("should add import and registration call to index.ts", async () => {
+				const { registerResourceInIndex } = await import("@/core/commands/add-resource.js");
+
+				await registerResourceInIndex(projectDir, "test-resource", "TestResource");
+
+				const indexPath = join(projectDir, "src", "index.ts");
+				const content = await readFile(indexPath, "utf-8");
+
+				expect(content).toContain(
+					'import { registerTestResourceResource } from "./resources/test-resource.js"'
+				);
+				expect(content).toContain("registerTestResourceResource(this.server)");
+			});
+		});
+
+		describe("updateTemplateMetadata", () => {
+			it("should add resource to metadata file", async () => {
+				const { updateTemplateMetadata } = await import("@/core/commands/add-resource.js");
+
+				await updateTemplateMetadata(projectDir, "test-resource", true);
+
+				const metadataPath = join(projectDir, ".mcp-template.json");
+				if (existsSync(metadataPath)) {
+					const content = await readFile(metadataPath, "utf-8");
+					const metadata = JSON.parse(content);
+
+					const resourceEntry = metadata.resources?.find(
+						(r: any) => r.name === "test-resource"
+					);
+					expect(resourceEntry).toBeDefined();
+					expect(resourceEntry?.file).toBe("src/resources/test-resource.ts");
+					expect(resourceEntry?.registered).toBe(true);
+				}
+			});
+
+			it("should mark tests as created when hasTests is true", async () => {
+				const { updateTemplateMetadata } = await import("@/core/commands/add-resource.js");
+
+				await updateTemplateMetadata(projectDir, "with-tests", true);
+
+				const metadataPath = join(projectDir, ".mcp-template.json");
+				if (existsSync(metadataPath)) {
+					const content = await readFile(metadataPath, "utf-8");
+					const metadata = JSON.parse(content);
+
+					const resourceEntry = metadata.resources?.find(
+						(r: any) => r.name === "with-tests"
+					);
+					expect(resourceEntry?.hasUnitTest).toBe(true);
+					expect(resourceEntry?.hasIntegrationTest).toBe(true);
+				}
+			});
+
+			it("should mark tests as not created when hasTests is false", async () => {
+				const { updateTemplateMetadata } = await import("@/core/commands/add-resource.js");
+
+				await updateTemplateMetadata(projectDir, "without-tests", false);
+
+				const metadataPath = join(projectDir, ".mcp-template.json");
+				if (existsSync(metadataPath)) {
+					const content = await readFile(metadataPath, "utf-8");
+					const metadata = JSON.parse(content);
+
+					const resourceEntry = metadata.resources?.find(
+						(r: any) => r.name === "without-tests"
+					);
+					expect(resourceEntry?.hasUnitTest).toBe(false);
+					expect(resourceEntry?.hasIntegrationTest).toBe(false);
+				}
+			});
 		});
 	});
 });

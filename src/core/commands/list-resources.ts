@@ -14,7 +14,7 @@ import path from "node:path";
 /**
  * Resource information
  */
-interface ResourceInfo {
+export interface ResourceInfo {
 	name: string;
 	file: string;
 	registered: boolean;
@@ -63,7 +63,7 @@ export function createListResourcesCommand(): Command {
 /**
  * Discover all resources in the project
  */
-async function discoverResources(
+export async function discoverResources(
 	cwd: string,
 	includeExamples = false,
 ): Promise<ResourceInfo[]> {
@@ -136,7 +136,7 @@ async function discoverResources(
 /**
  * Check which resources are registered in src/index.ts
  */
-async function checkResourceRegistrations(indexPath: string): Promise<string[]> {
+export async function checkResourceRegistrations(indexPath: string): Promise<string[]> {
 	try {
 		const content = await fs.readFile(indexPath, "utf-8");
 		const registered: string[] = [];
@@ -200,7 +200,7 @@ async function fileExists(filePath: string): Promise<boolean> {
 /**
  * Filter resources by status
  */
-function filterResources(resources: ResourceInfo[], filter: string): ResourceInfo[] {
+export function filterResources(resources: ResourceInfo[], filter: string): ResourceInfo[] {
 	switch (filter.toLowerCase()) {
 		case "registered":
 			return resources.filter((r) => r.registered);
@@ -273,7 +273,7 @@ function printResourcesTable(resources: ResourceInfo[]): void {
 /**
  * Convert PascalCase to kebab-case
  */
-function toKebabCase(str: string): string {
+export function toKebabCase(str: string): string {
 	return str
 		.replace(/([A-Z])/g, "-$1")
 		.toLowerCase()

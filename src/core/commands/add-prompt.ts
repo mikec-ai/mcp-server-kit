@@ -13,7 +13,7 @@ import { writeFile, readFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
 
-interface AddPromptOptions {
+export interface AddPromptOptions {
 	description?: string;
 	tests: boolean;
 	register: boolean;
@@ -120,7 +120,7 @@ export function createAddPromptCommand(): Command {
 /**
  * Generate prompt file content
  */
-function generatePromptFile(
+export function generatePromptFile(
 	name: string,
 	capitalizedName: string,
 	options: AddPromptOptions,
@@ -212,7 +212,7 @@ Replace this entire text block with your actual prompt.\`;
 /**
  * Generate unit test file content
  */
-function generateUnitTestFile(name: string, capitalizedName: string): string {
+export function generateUnitTestFile(name: string, capitalizedName: string): string {
 	return `/**
  * ${capitalizedName} Prompt - Unit Tests
  */
@@ -259,7 +259,7 @@ describe("${name} prompt", () => {
 /**
  * Generate integration test YAML content
  */
-function generateIntegrationTestYaml(name: string, description: string): string {
+export function generateIntegrationTestYaml(name: string, description: string): string {
 	return `type: "prompt"
 name: "${name.replace(/-/g, " ")} - Basic"
 description: "${description || `Verify that ${name} prompt works correctly`}"
@@ -298,7 +298,7 @@ assertions:
 /**
  * Register prompt in src/index.ts
  */
-async function registerPromptInIndex(
+export async function registerPromptInIndex(
 	cwd: string,
 	name: string,
 	capitalizedName: string,
@@ -404,7 +404,7 @@ async function registerPromptInIndex(
 /**
  * Update .mcp-template.json metadata
  */
-async function updateTemplateMetadata(
+export async function updateTemplateMetadata(
 	cwd: string,
 	name: string,
 	hasTests: boolean,
@@ -440,7 +440,7 @@ async function updateTemplateMetadata(
 /**
  * Convert kebab-case to PascalCase
  */
-function toPascalCase(str: string): string {
+export function toPascalCase(str: string): string {
 	return str
 		.split("-")
 		.map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
