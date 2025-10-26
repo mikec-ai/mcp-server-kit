@@ -510,12 +510,12 @@ describe("add-resource command", () => {
 	describe("direct function tests (for coverage)", () => {
 		describe("toPascalCase", () => {
 			it("should convert single word to PascalCase", async () => {
-				const { toPascalCase } = await import("@/core/commands/add-resource.js");
+				const { toPascalCase } = await import("@/core/commands/shared/utils.js");
 				expect(toPascalCase("config")).toBe("Config");
 			});
 
 			it("should convert hyphenated words to PascalCase", async () => {
-				const { toPascalCase } = await import("@/core/commands/add-resource.js");
+				const { toPascalCase } = await import("@/core/commands/shared/utils.js");
 				expect(toPascalCase("my-resource")).toBe("MyResource");
 				expect(toPascalCase("user-profile-data")).toBe("UserProfileData");
 			});
@@ -636,9 +636,9 @@ describe("add-resource command", () => {
 
 		describe("updateTemplateMetadata", () => {
 			it("should add resource to metadata file", async () => {
-				const { updateTemplateMetadata } = await import("@/core/commands/add-resource.js");
+				const { updateTemplateMetadata } = await import("@/core/commands/shared/metadata.js");
 
-				await updateTemplateMetadata(projectDir, "test-resource", true);
+				await updateTemplateMetadata(projectDir, "resources", "test-resource", "src/resources/test-resource.ts", true);
 
 				const metadataPath = join(projectDir, ".mcp-template.json");
 				if (existsSync(metadataPath)) {
@@ -655,9 +655,9 @@ describe("add-resource command", () => {
 			});
 
 			it("should mark tests as created when hasTests is true", async () => {
-				const { updateTemplateMetadata } = await import("@/core/commands/add-resource.js");
+				const { updateTemplateMetadata } = await import("@/core/commands/shared/metadata.js");
 
-				await updateTemplateMetadata(projectDir, "with-tests", true);
+				await updateTemplateMetadata(projectDir, "resources", "with-tests", "src/resources/with-tests.ts", true);
 
 				const metadataPath = join(projectDir, ".mcp-template.json");
 				if (existsSync(metadataPath)) {
@@ -673,9 +673,9 @@ describe("add-resource command", () => {
 			});
 
 			it("should mark tests as not created when hasTests is false", async () => {
-				const { updateTemplateMetadata } = await import("@/core/commands/add-resource.js");
+				const { updateTemplateMetadata } = await import("@/core/commands/shared/metadata.js");
 
-				await updateTemplateMetadata(projectDir, "without-tests", false);
+				await updateTemplateMetadata(projectDir, "resources", "without-tests", "src/resources/without-tests.ts", false);
 
 				const metadataPath = join(projectDir, ".mcp-template.json");
 				if (existsSync(metadataPath)) {

@@ -14,6 +14,8 @@ import { join } from "node:path";
 import { existsSync } from "node:fs";
 import { createAddPromptCommand } from "./add-prompt.js";
 import { createAddResourceCommand } from "./add-resource.js";
+import { toPascalCase } from "./shared/utils.js";
+import { updateTemplateMetadata } from "./shared/metadata.js";
 
 interface AddToolOptions {
 	description?: string;
@@ -106,7 +108,7 @@ export function createAddToolCommand(): Command {
 				}
 
 				// 6. Update .mcp-template.json (if exists)
-				await updateTemplateMetadata(cwd, name, options.tests);
+				await updateTemplateMetadata(cwd, "tools", name, `src/tools/${name}.ts`, options.tests);
 
 				console.log(`\n✅ Tool '${name}' created successfully!\n`);
 				console.log("Next steps:");
@@ -361,52 +363,6 @@ async function registerToolInIndex(
 	}
 
 	await writeFile(indexPath, updatedContent, "utf-8");
-}
-
-/**
- * Update .mcp-template.json metadata
- */
-async function updateTemplateMetadata(
-	cwd: string,
-	name: string,
-	hasTests: boolean,
-): Promise<void> {
-	const metadataPath = join(cwd, ".mcp-template.json");
-
-	if (!existsSync(metadataPath)) {
-		return; // Optional file
-	}
-
-	try {
-		const content = await readFile(metadataPath, "utf-8");
-		const metadata = JSON.parse(content);
-
-		if (!metadata.tools) {
-			metadata.tools = [];
-		}
-
-		metadata.tools.push({
-			name,
-			file: `src/tools/${name}.ts`,
-			registered: true,
-			hasUnitTest: hasTests,
-			hasIntegrationTest: hasTests,
-		});
-
-		await writeFile(metadataPath, JSON.stringify(metadata, null, "\t"), "utf-8");
-	} catch (error) {
-		console.warn(`  ⚠️  Could not update .mcp-template.json: ${error}`);
-	}
-}
-
-/**
- * Convert kebab-case to PascalCase
- */
-function toPascalCase(str: string): string {
-	return str
-		.split("-")
-		.map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-		.join("");
 }
 
 /**

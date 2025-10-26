@@ -453,12 +453,12 @@ describe("add-prompt command", () => {
 	describe("direct function tests (for coverage)", () => {
 		describe("toPascalCase", () => {
 			it("should convert single word to PascalCase", async () => {
-				const { toPascalCase } = await import("@/core/commands/add-prompt.js");
+				const { toPascalCase } = await import("@/core/commands/shared/utils.js");
 				expect(toPascalCase("reviewer")).toBe("Reviewer");
 			});
 
 			it("should convert hyphenated words to PascalCase", async () => {
-				const { toPascalCase } = await import("@/core/commands/add-prompt.js");
+				const { toPascalCase } = await import("@/core/commands/shared/utils.js");
 				expect(toPascalCase("my-prompt")).toBe("MyPrompt");
 				expect(toPascalCase("code-review-helper")).toBe("CodeReviewHelper");
 			});
@@ -551,9 +551,9 @@ describe("add-prompt command", () => {
 
 		describe("updateTemplateMetadata", () => {
 			it("should add prompt to metadata file", async () => {
-				const { updateTemplateMetadata } = await import("@/core/commands/add-prompt.js");
+				const { updateTemplateMetadata } = await import("@/core/commands/shared/metadata.js");
 
-				await updateTemplateMetadata(projectDir, "test-prompt", true);
+				await updateTemplateMetadata(projectDir, "prompts", "test-prompt", "src/prompts/test-prompt.ts", true);
 
 				const metadataPath = join(projectDir, ".mcp-template.json");
 				if (existsSync(metadataPath)) {
@@ -570,9 +570,9 @@ describe("add-prompt command", () => {
 			});
 
 			it("should mark tests as created when hasTests is true", async () => {
-				const { updateTemplateMetadata } = await import("@/core/commands/add-prompt.js");
+				const { updateTemplateMetadata } = await import("@/core/commands/shared/metadata.js");
 
-				await updateTemplateMetadata(projectDir, "with-tests", true);
+				await updateTemplateMetadata(projectDir, "prompts", "with-tests", "src/prompts/with-tests.ts", true);
 
 				const metadataPath = join(projectDir, ".mcp-template.json");
 				if (existsSync(metadataPath)) {
@@ -588,9 +588,9 @@ describe("add-prompt command", () => {
 			});
 
 			it("should mark tests as not created when hasTests is false", async () => {
-				const { updateTemplateMetadata } = await import("@/core/commands/add-prompt.js");
+				const { updateTemplateMetadata } = await import("@/core/commands/shared/metadata.js");
 
-				await updateTemplateMetadata(projectDir, "without-tests", false);
+				await updateTemplateMetadata(projectDir, "prompts", "without-tests", "src/prompts/without-tests.ts", false);
 
 				const metadataPath = join(projectDir, ".mcp-template.json");
 				if (existsSync(metadataPath)) {

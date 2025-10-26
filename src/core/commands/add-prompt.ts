@@ -12,6 +12,8 @@ import { Command } from "commander";
 import { writeFile, readFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
+import { toPascalCase } from "./shared/utils.js";
+import { updateTemplateMetadata } from "./shared/metadata.js";
 
 export interface AddPromptOptions {
 	description?: string;
@@ -99,7 +101,7 @@ export function createAddPromptCommand(): Command {
 				}
 
 				// 6. Update .mcp-template.json (if exists)
-				await updateTemplateMetadata(cwd, name, options.tests);
+				await updateTemplateMetadata(cwd, "prompts", name, `src/prompts/${name}.ts`, options.tests);
 
 				console.log(`\n✅ Prompt '${name}' created successfully!\n`);
 				console.log("Next steps:");
@@ -401,48 +403,3 @@ export async function registerPromptInIndex(
 	await writeFile(indexPath, updatedContent, "utf-8");
 }
 
-/**
- * Update .mcp-template.json metadata
- */
-export async function updateTemplateMetadata(
-	cwd: string,
-	name: string,
-	hasTests: boolean,
-): Promise<void> {
-	const metadataPath = join(cwd, ".mcp-template.json");
-
-	if (!existsSync(metadataPath)) {
-		return; // Optional file
-	}
-
-	try {
-		const content = await readFile(metadataPath, "utf-8");
-		const metadata = JSON.parse(content);
-
-		if (!metadata.prompts) {
-			metadata.prompts = [];
-		}
-
-		metadata.prompts.push({
-			name,
-			file: `src/prompts/${name}.ts`,
-			registered: true,
-			hasUnitTest: hasTests,
-			hasIntegrationTest: hasTests,
-		});
-
-		await writeFile(metadataPath, JSON.stringify(metadata, null, "\t"), "utf-8");
-	} catch (error) {
-		console.warn(`  ⚠️  Could not update .mcp-template.json: ${error}`);
-	}
-}
-
-/**
- * Convert kebab-case to PascalCase
- */
-export function toPascalCase(str: string): string {
-	return str
-		.split("-")
-		.map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-		.join("");
-}
