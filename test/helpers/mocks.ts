@@ -58,9 +58,13 @@ export function createMockMCPClient(
 		readResource: async (uri: string) => {
 			// Default successful resource response
 			return {
-				uri,
-				text: JSON.stringify({ success: true, uri }, null, 2),
-				mimeType: "application/json",
+				contents: [
+					{
+						uri,
+						text: JSON.stringify({ success: true, uri }, null, 2),
+						mimeType: "application/json",
+					},
+				],
 			};
 		},
 		...overrides,
