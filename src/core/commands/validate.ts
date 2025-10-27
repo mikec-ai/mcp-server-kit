@@ -13,6 +13,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import yaml from "yaml";
+import { toKebabCase, capitalize } from "./shared/utils.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -704,41 +705,6 @@ function printValidationResults(result: ValidationResult): void {
 	} else {
 		console.log("❌ Validation failed (fix errors above)\n");
 	}
-}
-
-/**
- * Convert string to camelCase
- */
-function toCamelCase(str: string): string {
-	return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
-}
-
-/**
- * Convert string to snake_case
- */
-function toSnakeCase(str: string): string {
-	return str
-		.replace(/([A-Z])/g, "_$1")
-		.toLowerCase()
-		.replace(/^_/, "");
-}
-
-/**
- * Convert string to kebab-case
- * Handles PascalCase → kebab-case conversion for tool names
- */
-function toKebabCase(str: string): string {
-	return str
-		.replace(/([a-z])([A-Z])/g, "$1-$2")
-		.replace(/([A-Z])([A-Z][a-z])/g, "$1-$2")
-		.toLowerCase();
-}
-
-/**
- * Capitalize first letter
- */
-function capitalize(str: string): string {
-	return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 // ============================================================================

@@ -95,6 +95,34 @@ describe("validate command", () => {
 			expect(registrationIssues).toHaveLength(0);
 		});
 
+	it("should handle tool names with numbers correctly (e.g., base64-encode)", async () => {
+		projectDir = await createTestProject();
+
+		// Add tools with numbers in their names
+		await addToolToProject(projectDir, "base64-encode", {
+			registered: true,
+		});
+		await addToolToProject(projectDir, "json2csv", {
+			registered: true,
+		});
+		await addToolToProject(projectDir, "api2json", {
+			registered: true,
+		});
+
+		const result = await validateProject(projectDir, {});
+
+		// Should not have registration errors for these tools
+		const registrationIssues = result.issues.filter(
+			(issue) =>
+				issue.category === "Registration" &&
+				(issue.message.includes("base64-encode") ||
+					issue.message.includes("json2csv") ||
+					issue.message.includes("api2json")),
+		);
+
+		expect(registrationIssues).toHaveLength(0);
+	});
+
 		it("should skip example tools in validation", async () => {
 			projectDir = await createTestProject();
 
