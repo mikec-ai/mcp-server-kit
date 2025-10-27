@@ -13,18 +13,35 @@ Your package `@MikeC-A6/mcp-server-kit` version 1.0.0 is now published to GitHub
 
 ## Your Setup
 
-Your GitHub token is stored in `.env` (which is **not** committed to git), so you never need to type it in commands.
+### Option 1: Use GitHub CLI (Recommended)
+
+The best approach is to use your existing `gh` CLI authentication:
+
+**First time setup:**
+```bash
+# Add package scopes to your gh token
+./scripts/setup-gh-auth.sh
+```
+
+**That's it!** The publish script will automatically use `gh auth token`.
+
+### Option 2: Use .env file (Fallback)
+
+If you prefer a separate token, it's stored in `.env` (gitignored).
 
 **Files created:**
-- ✅ `.env` - Contains your GitHub token (gitignored)
+- ✅ `scripts/setup-gh-auth.sh` - Setup gh CLI auth
+- ✅ `scripts/publish.sh` - Publish script (uses gh or .env)
+- ✅ `.env` - Fallback token storage (gitignored)
 - ✅ `.env.example` - Template for others
-- ✅ `scripts/publish.sh` - Convenient publish script
 - ✅ `~/.npmrc` - npm registry configuration
 
-**To publish updates**, just run:
+**To publish updates:**
 ```bash
 ./scripts/publish.sh patch
 ```
+
+The script automatically tries `gh auth token` first, then falls back to `.env`.
 
 ---
 
@@ -66,45 +83,69 @@ That's it! Once added, they can install the package.
 
 Send these instructions to anyone you want to install the package:
 
-### 1. Create a GitHub Personal Access Token
+### Option A: Using GitHub CLI (Easiest)
 
-Go to https://github.com/settings/tokens/new and create a token with:
-- ✅ `read:packages` scope
-- ✅ `repo` scope (if repository is private)
+1. **Install GitHub CLI** (if not already installed):
+   - macOS: `brew install gh`
+   - Other: https://cli.github.com/
 
-Copy the token (starts with `ghp_...`)
+2. **Authenticate and add package scopes**:
+   ```bash
+   gh auth login
+   gh auth refresh -h github.com -s read:packages,write:packages
+   ```
 
-### 2. Configure npm
+3. **Configure npm** (one-time setup):
+   ```bash
+   # Create ~/.npmrc
+   echo "//npm.pkg.github.com/:_authToken=\${NODE_AUTH_TOKEN}" >> ~/.npmrc
+   echo "@MikeC-A6:registry=https://npm.pkg.github.com/" >> ~/.npmrc
+   echo "always-auth=true" >> ~/.npmrc
+   ```
 
-Create or update `~/.npmrc`:
+4. **Install the package**:
+   ```bash
+   # Set token from gh CLI
+   export NODE_AUTH_TOKEN=$(gh auth token)
 
-```ini
-//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
-@MikeC-A6:registry=https://npm.pkg.github.com/
-always-auth=true
-```
+   # Install in a project
+   npm install @MikeC-A6/mcp-server-kit
 
-Set the environment variable:
+   # Or install globally
+   npm install -g @MikeC-A6/mcp-server-kit
+   ```
 
-```bash
-# macOS/Linux (add to ~/.zshrc or ~/.bashrc for permanence)
-export NODE_AUTH_TOKEN=ghp_your_token_here
+5. **Make it permanent** (add to `~/.zshrc` or `~/.bashrc`):
+   ```bash
+   echo 'export NODE_AUTH_TOKEN=$(gh auth token)' >> ~/.zshrc
+   source ~/.zshrc
+   ```
 
-# Windows PowerShell
-$env:NODE_AUTH_TOKEN="ghp_your_token_here"
-```
+### Option B: Using Personal Access Token
 
-### 3. Install the Package
+If you don't want to use `gh` CLI:
 
-```bash
-# Install in a project
-npm install @MikeC-A6/mcp-server-kit
+1. Create a PAT at https://github.com/settings/tokens/new with:
+   - ✅ `read:packages` scope
+   - ✅ `repo` scope (for private repos)
 
-# Or install globally
-npm install -g @MikeC-A6/mcp-server-kit
-```
+2. Configure npm:
+   ```bash
+   # Create ~/.npmrc
+   echo "//npm.pkg.github.com/:_authToken=\${NODE_AUTH_TOKEN}" >> ~/.npmrc
+   echo "@MikeC-A6:registry=https://npm.pkg.github.com/" >> ~/.npmrc
+   echo "always-auth=true" >> ~/.npmrc
 
-### 4. Verify Installation
+   # Set token (add to ~/.zshrc for permanence)
+   export NODE_AUTH_TOKEN=ghp_your_token_here
+   ```
+
+3. Install:
+   ```bash
+   npm install @MikeC-A6/mcp-server-kit
+   ```
+
+### Verify Installation
 
 ```bash
 # Check CLI works
