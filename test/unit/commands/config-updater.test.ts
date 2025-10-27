@@ -69,7 +69,8 @@ compatibility_date = "2024-01-01"
 			expect(modified).toBe(true);
 
 			const result = await readFile(wranglerPath, "utf-8");
-			expect(result).toContain("# Authentication Configuration");
+			// TomlMerger uses structured merging (no comment injection)
+			expect(result).toContain("[vars]");
 			expect(result).toContain('STYTCH_PROJECT_ID = ""');
 			expect(result).toContain('STYTCH_SECRET = ""');
 			expect(result).toContain('STYTCH_ENV = ""');
