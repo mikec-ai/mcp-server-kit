@@ -1,35 +1,46 @@
 # Publishing Scripts
 
-## setup-gh-auth.sh
+## install-collaborator-setup.sh
 
-**One-time setup** to add package scopes to your GitHub CLI token.
+**One-command setup for collaborators** - Does everything automatically!
 
 **Usage:**
+
 ```bash
-./scripts/setup-gh-auth.sh
+# From the web (recommended for collaborators)
+curl -fsSL https://raw.githubusercontent.com/MikeC-A6/mcp-server-kit/master/scripts/install-collaborator-setup.sh | bash
+
+# Or if you've cloned the repo
+./scripts/install-collaborator-setup.sh
 ```
 
 **What it does:**
-1. Checks if `gh` CLI is installed
-2. Ensures you're authenticated with GitHub
-3. Adds `read:packages` and `write:packages` scopes to your token
-4. Opens browser for authorization (interactive)
+1. ✅ Installs/checks GitHub CLI (`gh`)
+2. ✅ Authenticates with GitHub if needed
+3. ✅ Adds `read:packages` and `write:packages` scopes
+4. ✅ Configures `~/.npmrc` for GitHub Packages
+5. ✅ Adds auto-export of `NODE_AUTH_TOKEN` to shell profile
+6. ✅ Works forever - no token management needed!
 
-**After running this once**, you can use `gh auth token` to get your token.
+**After running once**, collaborators can just:
+```bash
+npm install @MikeC-A6/mcp-server-kit
+```
 
 ---
 
 ## publish.sh
 
-Convenience script for publishing to GitHub Packages.
+**Publish new versions** to GitHub Packages.
 
 **Prerequisites:**
-Run the setup script once:
+Run the setup script once (already done if you can read this):
 ```bash
-./scripts/setup-gh-auth.sh
+./scripts/install-collaborator-setup.sh
 ```
 
 **Usage:**
+
 ```bash
 # Patch version (bug fixes: 1.0.0 -> 1.0.1)
 ./scripts/publish.sh patch
@@ -42,11 +53,11 @@ Run the setup script once:
 ```
 
 **What it does:**
-1. Tries to get token from `gh auth token` (preferred)
-2. Falls back to `.env` if gh CLI not available
-3. Validates token has required scopes
-4. Runs `npm version <type>` to bump version
-5. Runs `npm publish` to publish to GitHub Packages
+1. Gets token from `gh auth token` (or falls back to `.env`)
+2. Validates token has required scopes
+3. Bumps version in `package.json`
+4. Runs tests (`prepublishOnly` hook)
+5. Publishes to GitHub Packages
 6. Reminds you to push tags
 
 **After publishing:**
@@ -56,28 +67,9 @@ git push --tags
 
 ---
 
-## npm-use-gh-auth.sh
-
-Helper to export `NODE_AUTH_TOKEN` from GitHub CLI.
-
-**Usage:**
-```bash
-# Source it to set the variable
-source ./scripts/npm-use-gh-auth.sh
-
-# Or run before npm commands
-./scripts/npm-use-gh-auth.sh && npm install @MikeC-A6/mcp-server-kit
-```
-
-**What it does:**
-- Exports `NODE_AUTH_TOKEN=$(gh auth token)`
-- Validates gh CLI is authenticated
-
----
-
 ## Security
 
-- `.env` is in `.gitignore` and **never committed**
-- Scripts prefer `gh auth token` over stored tokens
-- No tokens are logged or printed
+- Token automatically loaded from `gh auth token` (via ~/.zshrc)
+- No manual token copying/pasting required
+- No tokens logged or printed
 - Required scopes: `read:packages`, `write:packages`, `repo`
