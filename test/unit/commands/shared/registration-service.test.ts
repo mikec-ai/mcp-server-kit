@@ -364,9 +364,31 @@ export class MCPServerAgent extends McpAgent<Env> {
 
 		it("should handle complex index.ts with multiple entity types", async () => {
 			const indexPath = join(tempDir, "src", "index.ts");
-			const initialContent = await readFile(
-				"/private/tmp/test-list-refactor/src/index.ts",
-			);
+			const initialContent = `
+import { McpAgent } from "agents/mcp";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { registerTestToolTool } from "./tools/test-tool.js";
+import { registerExamplePromptPrompt } from "./prompts/example-prompt.js";
+import { registerSampleResourceResource } from "./resources/sample-resource.js";
+
+export class MCPServerAgent extends McpAgent<Env> {
+	server = new McpServer({
+		name: "test-server",
+		version: "1.0.0",
+	});
+
+	async init() {
+		// Register tools
+		registerTestToolTool(this.server);
+
+		// Register prompts
+		registerExamplePromptPrompt(this.server);
+
+		// Register resources
+		registerSampleResourceResource(this.server);
+	}
+}
+`.trim();
 			await writeFile(indexPath, initialContent, "utf-8");
 
 			await service.registerEntity(

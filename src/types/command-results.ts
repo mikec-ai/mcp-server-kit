@@ -65,3 +65,43 @@ export interface NewServerResult {
 	/** Whether dev mode was enabled */
 	devMode?: boolean;
 }
+
+/**
+ * Result from adding authentication to a project
+ */
+export interface AddAuthResult {
+	/** Whether the operation succeeded */
+	success: boolean;
+	/** Auth provider that was added */
+	provider: string;
+	/** Platform that was detected */
+	platform: "cloudflare" | "vercel" | "unknown";
+	/** Files that were created */
+	filesCreated: string[];
+	/** Files that were modified */
+	filesModified: string[];
+	/** Error message if operation failed */
+	error?: string;
+	/** Warnings encountered during operation */
+	warnings?: string[];
+	/** Backup directory path (preserved on failure) */
+	backupDir?: string;
+}
+
+/**
+ * Options for adding authentication
+ */
+export interface AddAuthOptions {
+	/** Auth provider to use */
+	provider: "stytch" | "auth0" | "workos";
+	/** Platform override (auto-detected if not specified) */
+	platform?: "cloudflare" | "vercel";
+	/** Preview changes without applying them */
+	dryRun?: boolean;
+	/** Skip creating backup before modifications */
+	backup?: boolean;
+	/** Proceed even with warnings */
+	force?: boolean;
+	/** Current working directory */
+	cwd?: string;
+}

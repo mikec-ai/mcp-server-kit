@@ -27,7 +27,10 @@ function getVersion(): string {
 		const pkg = JSON.parse(content);
 		return pkg.version || "unknown";
 	} catch (error) {
-		console.error("Warning: Could not read version from package.json");
+		// Only log warning in non-test environments
+		if (process.env.NODE_ENV !== "test" && !process.env.VITEST) {
+			console.error("Warning: Could not read version from package.json");
+		}
 		return "unknown";
 	}
 }

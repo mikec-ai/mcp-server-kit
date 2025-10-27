@@ -2,7 +2,7 @@
  * Template Metadata Management - Unit Tests
  */
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
 	updateTemplateMetadata,
 	readTemplateMetadata,
@@ -155,6 +155,9 @@ describe("Metadata Utilities", () => {
 			const metadataPath = join(testDir, ".mcp-template.json");
 			await writeFile(metadataPath, "{ invalid json", "utf-8");
 
+			// Mock console.warn to suppress expected warning
+			const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
 			// Should not throw, just warn
 			await expect(
 				updateTemplateMetadata(
@@ -165,6 +168,8 @@ describe("Metadata Utilities", () => {
 					true,
 				),
 			).resolves.not.toThrow();
+
+			warnSpy.mockRestore();
 		});
 
 		it("should preserve existing metadata fields", async () => {
@@ -241,8 +246,13 @@ describe("Metadata Utilities", () => {
 			const metadataPath = join(testDir, ".mcp-template.json");
 			await writeFile(metadataPath, "{ invalid json", "utf-8");
 
+			// Mock console.warn to suppress expected warning
+			const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
 			const result = await readTemplateMetadata(testDir);
 			expect(result).toBeNull();
+
+			warnSpy.mockRestore();
 		});
 
 		it("should read complex metadata structures", async () => {

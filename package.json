@@ -54,7 +54,6 @@
 		"test": "vitest run",
 		"test:watch": "vitest watch",
 		"test:unit": "vitest run test/unit",
-		"test:integration": "vitest run test/integration",
 		"test:e2e": "tsx test/integration/template-quality.e2e.ts",
 		"test:templates": "tsx test/integration/template-quality.e2e.ts",
 		"test:all": "vitest run",
@@ -62,13 +61,14 @@
 		"prepublishOnly": "npm run build && npm run test:all"
 	},
 	"dependencies": {
+		"@modelcontextprotocol/sdk": "1.19.1",
 		"commander": "^12.1.0",
-		"handlebars": "^4.7.8",
-		"yaml": "^2.7.0",
-		"zod": "^3.25.76",
-		"jsonpath-plus": "^10.3.0",
 		"glob": "^11.0.3",
-		"@modelcontextprotocol/sdk": "1.19.1"
+		"handlebars": "^4.7.8",
+		"jsonpath-plus": "^10.3.0",
+		"strip-json-comments": "^5.0.3",
+		"yaml": "^2.7.0",
+		"zod": "^3.25.76"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.2.5",

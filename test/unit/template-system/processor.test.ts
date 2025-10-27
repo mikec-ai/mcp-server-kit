@@ -413,6 +413,17 @@ describe("TemplateProcessor", () => {
 	});
 
 	describe("smoke test execution", () => {
+		let warnSpy: any;
+
+		beforeEach(() => {
+			// Mock console.warn to suppress expected smoke test failure warnings
+			warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+		});
+
+		afterEach(() => {
+			if (warnSpy) warnSpy.mockRestore();
+		});
+
 		it("should skip smoke test when not configured", async () => {
 			const targetDir = join(tempDir, "no-smoke-test");
 

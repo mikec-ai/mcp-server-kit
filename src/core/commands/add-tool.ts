@@ -12,6 +12,7 @@ import { Command } from "commander";
 import { EntityScaffolder, type ScaffoldConfig } from "./shared/entity-scaffolder.js";
 import { createAddPromptCommand } from "./add-prompt.js";
 import { createAddResourceCommand } from "./add-resource.js";
+import { createAddAuthCommand } from "./add-auth.js";
 import { outputResult } from "./shared/json-output.js";
 import type { AddEntityResult } from "../../types/command-results.js";
 
@@ -122,6 +123,7 @@ export function createAddCommand(): Command {
 	addCmd.addCommand(createAddToolCommand());
 	addCmd.addCommand(createAddPromptCommand());
 	addCmd.addCommand(createAddResourceCommand());
+	addCmd.addCommand(createAddAuthCommand());
 
 	return addCmd;
 }
