@@ -81,69 +81,38 @@ That's it! Once added, they can install the package.
 
 ## Installation Instructions for Collaborators
 
-Send these instructions to anyone you want to install the package:
+**Super simple - just one command!**
 
-### Option A: Using GitHub CLI (Easiest)
+Send collaborators this one-liner:
 
-1. **Install GitHub CLI** (if not already installed):
-   - macOS: `brew install gh`
-   - Other: https://cli.github.com/
+```bash
+curl -fsSL https://raw.githubusercontent.com/MikeC-A6/mcp-server-kit/master/scripts/install-collaborator-setup.sh | bash
+```
 
-2. **Authenticate and add package scopes**:
-   ```bash
-   gh auth login
-   gh auth refresh -h github.com -s read:packages,write:packages
-   ```
+Or if they've cloned the repo:
 
-3. **Configure npm** (one-time setup):
-   ```bash
-   # Create ~/.npmrc
-   echo "//npm.pkg.github.com/:_authToken=\${NODE_AUTH_TOKEN}" >> ~/.npmrc
-   echo "@MikeC-A6:registry=https://npm.pkg.github.com/" >> ~/.npmrc
-   echo "always-auth=true" >> ~/.npmrc
-   ```
+```bash
+./scripts/install-collaborator-setup.sh
+```
 
-4. **Install the package**:
-   ```bash
-   # Set token from gh CLI
-   export NODE_AUTH_TOKEN=$(gh auth token)
+**That's it!** The script:
+- ✅ Installs/configures GitHub CLI
+- ✅ Adds package permissions
+- ✅ Configures npm automatically
+- ✅ Sets up their shell (zsh/bash)
+- ✅ Works forever - no token management needed
 
-   # Install in a project
-   npm install @MikeC-A6/mcp-server-kit
+### After Setup
 
-   # Or install globally
-   npm install -g @MikeC-A6/mcp-server-kit
-   ```
+Just open a new terminal and run:
 
-5. **Make it permanent** (add to `~/.zshrc` or `~/.bashrc`):
-   ```bash
-   echo 'export NODE_AUTH_TOKEN=$(gh auth token)' >> ~/.zshrc
-   source ~/.zshrc
-   ```
+```bash
+# Install in a project
+npm install @MikeC-A6/mcp-server-kit
 
-### Option B: Using Personal Access Token
-
-If you don't want to use `gh` CLI:
-
-1. Create a PAT at https://github.com/settings/tokens/new with:
-   - ✅ `read:packages` scope
-   - ✅ `repo` scope (for private repos)
-
-2. Configure npm:
-   ```bash
-   # Create ~/.npmrc
-   echo "//npm.pkg.github.com/:_authToken=\${NODE_AUTH_TOKEN}" >> ~/.npmrc
-   echo "@MikeC-A6:registry=https://npm.pkg.github.com/" >> ~/.npmrc
-   echo "always-auth=true" >> ~/.npmrc
-
-   # Set token (add to ~/.zshrc for permanence)
-   export NODE_AUTH_TOKEN=ghp_your_token_here
-   ```
-
-3. Install:
-   ```bash
-   npm install @MikeC-A6/mcp-server-kit
-   ```
+# Or install globally
+npm install -g @MikeC-A6/mcp-server-kit
+```
 
 ### Verify Installation
 
@@ -153,6 +122,28 @@ mcp-server-kit --version
 
 # Should show: 1.0.0
 ```
+
+### Manual Setup (Advanced)
+
+<details>
+<summary>Click if you prefer manual setup instead of the script</summary>
+
+1. Install GitHub CLI: `brew install gh`
+2. Authenticate: `gh auth login`
+3. Add package scopes: `gh auth refresh -h github.com -s read:packages`
+4. Configure npm:
+   ```bash
+   echo "//npm.pkg.github.com/:_authToken=\${NODE_AUTH_TOKEN}" >> ~/.npmrc
+   echo "@MikeC-A6:registry=https://npm.pkg.github.com/" >> ~/.npmrc
+   echo "always-auth=true" >> ~/.npmrc
+   ```
+5. Add to shell config (~/.zshrc or ~/.bashrc):
+   ```bash
+   echo 'export NODE_AUTH_TOKEN=$(gh auth token 2>/dev/null)' >> ~/.zshrc
+   ```
+6. Reload: `source ~/.zshrc`
+
+</details>
 
 ---
 
