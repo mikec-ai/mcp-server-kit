@@ -93,6 +93,12 @@ npm run dev
 mcp-server-kit new server --name test-project --dev
 ```
 
+**Scaffolding at git repository root?** Navigate there first:
+```bash
+cd $(git rev-parse --show-toplevel)
+mcp-server-kit new server --name my-server
+```
+
 ### Verify It Works
 
 ```bash

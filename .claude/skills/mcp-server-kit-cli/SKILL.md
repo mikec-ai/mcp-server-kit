@@ -171,6 +171,24 @@ npm run validate
 # Add actual credentials to wrangler.jsonc or .env
 ```
 
+### Workflow 5: Scaffold at Git Repository Root
+```bash
+# Problem: Creating nested subdirectories instead of at git root
+# Solution: Navigate to git root first
+
+# 1. Find and navigate to git root
+cd $(git rev-parse --show-toplevel)
+
+# 2. Scaffold project (will create at current directory)
+mcp-server-kit new server --name my-server --dev
+
+# 3. Result: Project created at /repo-root/my-server/
+cd my-server
+
+# Alternative: Use --output with git root
+mcp-server-kit new server --name my-server --output $(git rev-parse --show-toplevel) --dev
+```
+
 ---
 
 ## Flag Quick Reference
@@ -247,6 +265,7 @@ For comprehensive command documentation, see:
 ## Best Practices
 
 ✅ **Always use `--dev` when testing mcp-server-kit**
+✅ **Check your directory before scaffolding** - navigate to git root first
 ✅ **cf-typegen runs automatically - no manual step needed**
 ✅ **Use `validate` command to catch issues early**
 ✅ **Default to static resources (simpler)**
@@ -255,4 +274,5 @@ For comprehensive command documentation, see:
 
 ❌ **Don't commit without running `validate`**
 ❌ **Don't scaffold without considering `--dev`**
+❌ **Don't create projects in nested subdirectories**
 ❌ **Don't use dynamic resources for fixed URIs**

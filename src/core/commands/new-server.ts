@@ -24,7 +24,7 @@ export function createNewServerCommand(): Command {
 		.option("--template <id>", "Template ID to use", "cloudflare-remote")
 		.option("--description <desc>", "Project description")
 		.option("--port <port>", "Development server port", "8788")
-		.option("--output <path>", "Output directory (defaults to current directory)")
+		.option("--output <path>", "Output directory (defaults to current directory). Tip: Use $(git rev-parse --show-toplevel) for git root")
 		.option("--no-install", "Skip dependency installation")
 		.option("--pm <manager>", "Package manager (npm, pnpm, yarn, bun)", "npm")
 		.option("--dev", "Development mode: use local mcp-server-kit paths instead of published package")
