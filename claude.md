@@ -252,6 +252,27 @@ mcp-server-kit add-auth stytch
 
 **For Agents**: Auth scaffolding is fully validated - if something goes wrong, it automatically rolls back changes.
 
+### 7. Fixed Missing `agents` Package Dependency
+
+**What Changed**: Fixed cloudflare-remote template missing the `agents` npm package in dependencies.
+
+**The Bug**:
+- Template imports `McpAgent` from `agents/mcp` but didn't include `agents` in package.json
+- Caused "Could not resolve agents/mcp" build errors when deploying
+- Worked in Cloudflare's examples because they use monorepo workspace
+
+**The Fix**:
+- Added `"agents": "^0.2.17"` to template's package.json dependencies
+- Projects now install agents package automatically during `npm install`
+- Build and deployment succeed without module resolution errors
+
+**Impact**:
+- ✅ Scaffolded projects build successfully
+- ✅ No manual package installation required
+- ✅ `npm run deploy` works out of the box
+
+**For Agents**: If you encounter module resolution errors with any Cloudflare-specific imports, verify the required packages are in dependencies.
+
 ---
 
 ## Development Standards
