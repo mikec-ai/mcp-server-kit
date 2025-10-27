@@ -1,5 +1,7 @@
 # mcp-server-kit
 
+> **This is a command-line tool (CLI) for scaffolding MCP server projects. It is not a library to import into your code.** Install it with `npm install -g @MikeC-A6/mcp-server-kit` or run commands with `npx @MikeC-A6/mcp-server-kit`.
+
 **Extensible scaffolding tool and test harness for Model Context Protocol (MCP) servers**
 
 Create production-ready MCP servers in seconds with built-in testing infrastructure. Supports multiple deployment targets (Cloudflare Workers, Vercel Edge, Node.js) through an extensible template system.

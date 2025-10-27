@@ -1,7 +1,7 @@
 {
 	"name": "@MikeC-A6/mcp-server-kit",
 	"version": "1.0.2",
-	"description": "Extensible scaffolding tool and test harness for Model Context Protocol (MCP) servers",
+	"description": "CLI tool for scaffolding and testing Model Context Protocol (MCP) servers",
 	"publishConfig": {
 		"registry": "https://npm.pkg.github.com/",
 		"access": "restricted"
