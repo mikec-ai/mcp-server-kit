@@ -1,7 +1,19 @@
 {
-	"name": "mcp-server-kit",
+	"name": "@MikeC-A6/mcp-server-kit",
 	"version": "1.0.0",
 	"description": "Extensible scaffolding tool and test harness for Model Context Protocol (MCP) servers",
+	"publishConfig": {
+		"registry": "https://npm.pkg.github.com/",
+		"access": "restricted"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/MikeC-A6/mcp-server-kit.git"
+	},
+	"bugs": {
+		"url": "https://github.com/MikeC-A6/mcp-server-kit/issues"
+	},
+	"homepage": "https://github.com/MikeC-A6/mcp-server-kit#readme",
 	"keywords": [
 		"mcp",
 		"model-context-protocol",
@@ -58,7 +70,10 @@
 		"test:templates": "tsx test/integration/template-quality.e2e.ts",
 		"test:all": "vitest run",
 		"test:coverage": "vitest run --coverage",
-		"prepublishOnly": "npm run build && npm run test:all"
+		"prepublishOnly": "npm run build && npm run test:all",
+		"publish:patch": "npm version patch && npm publish",
+		"publish:minor": "npm version minor && npm publish",
+		"publish:major": "npm version major && npm publish"
 	},
 	"dependencies": {
 		"@iarna/toml": "^2.2.5",
