@@ -3,12 +3,16 @@
  *
  * Updates platform-specific config files to add authentication environment
  * variables. Handles wrangler.toml/wrangler.jsonc (Cloudflare) and vercel.json (Vercel).
+ *
+ * Uses TomlMerger for structured TOML operations (no regex).
+ * JSONC handling already robust using strip-json-comments.
  */
 
 import { readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import stripJsonComments from "strip-json-comments";
+import { TomlMerger } from "./toml-merger.js";
 
 export type AuthProvider = "stytch" | "auth0" | "workos";
 export type Platform = "cloudflare" | "vercel";
@@ -64,6 +68,7 @@ function formatJSON(obj: any): string {
 
 /**
  * Update wrangler.toml to add auth environment variables (TOML format)
+ * Uses TomlMerger for structured parsing (no regex)
  *
  * @param wranglerPath - Path to wrangler.toml file
  * @param provider - Auth provider
@@ -73,41 +78,33 @@ async function updateWranglerToml(
 	wranglerPath: string,
 	provider: AuthProvider,
 ): Promise<boolean> {
-
 	if (!existsSync(wranglerPath)) {
 		return false;
 	}
 
-	const content = await readFile(wranglerPath, "utf-8");
+	const tomlMerger = new TomlMerger();
+	const requiredVars = getRequiredEnvVars(provider);
 
 	// Check if auth vars already present
-	const requiredVars = getRequiredEnvVars(provider);
-	if (requiredVars.some((v) => content.includes(v))) {
+	const existingKeys = await tomlMerger.hasKeys(
+		wranglerPath,
+		"vars",
+		requiredVars,
+	);
+
+	if (Object.values(existingKeys).some((exists) => exists)) {
 		return false; // Already has auth config
 	}
 
-	// Add auth environment variables section
-	const envVars = requiredVars.map((v) => `${v} = ""`).join("\n");
-
-	const authSection = `
-# Authentication Configuration
-# Add your ${provider} credentials here or use wrangler secrets
-[vars]
-${envVars}
-`;
-
-	// Append to file (or insert after [vars] if exists)
-	let result: string;
-	if (content.includes("[vars]")) {
-		// Insert after existing [vars] section
-		result = content.replace(/\[vars\]\s*\n/, `[vars]\n${envVars}\n`);
-	} else {
-		// Append new [vars] section
-		result = content + "\n" + authSection;
+	// Merge auth environment variables into [vars] section
+	const updates: Record<string, string> = {};
+	for (const varName of requiredVars) {
+		updates[varName] = "";
 	}
 
-	await writeFile(wranglerPath, result, "utf-8");
-	return true;
+	const result = await tomlMerger.mergeSection(wranglerPath, "vars", updates);
+
+	return result.modified;
 }
 
 /**
@@ -254,6 +251,7 @@ export async function updateEnvExample(
 
 /**
  * Remove auth configuration from wrangler.toml (TOML format)
+ * Uses TomlMerger for structured removal (no regex)
  *
  * @param wranglerPath - Path to wrangler.toml file
  * @param provider - Auth provider
@@ -267,27 +265,17 @@ async function removeWranglerTomlAuthConfig(
 		return false;
 	}
 
-	const content = await readFile(wranglerPath, "utf-8");
-	let result = content;
-
-	// Remove auth environment variables
+	const tomlMerger = new TomlMerger();
 	const requiredVars = getRequiredEnvVars(provider);
-	for (const varName of requiredVars) {
-		result = result.replace(new RegExp(`${varName}\\s*=\\s*"[^"]*"\n?`, "g"), "");
-	}
 
-	// Remove empty auth comment sections
-	result = result.replace(
-		/# Authentication Configuration\s*\n# Add your [^#\n]*\n/g,
-		"",
+	// Remove auth environment variables from [vars] section
+	const result = await tomlMerger.removeKeys(
+		wranglerPath,
+		"vars",
+		requiredVars,
 	);
 
-	if (result !== content) {
-		await writeFile(wranglerPath, result, "utf-8");
-		return true;
-	}
-
-	return false;
+	return result.modified;
 }
 
 /**

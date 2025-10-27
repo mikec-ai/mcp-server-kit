@@ -8,6 +8,9 @@ import { McpAgent } from "agents/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerHealthTool } from "./tools/health.js";
 import { registerEchoTool } from "./tools/echo.js";
+// <mcp-auth:imports>
+// Auth imports will be added here by add-auth command
+// </mcp-auth:imports>
 
 /**
  * Main MCP Agent class
@@ -30,6 +33,10 @@ export class MCPServerAgent extends McpAgent<Env> {
  */
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+		// <mcp-auth:middleware>
+		// Auth middleware will be added here by add-auth command
+		// </mcp-auth:middleware>
+
 		const url = new URL(request.url);
 
 		// Route: Health check

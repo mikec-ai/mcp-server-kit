@@ -3,10 +3,14 @@
  *
  * Transforms entry point files (src/index.ts) to add authentication middleware.
  * Handles Cloudflare Workers and Vercel Next.js patterns.
+ *
+ * Uses anchor-based transformation for reliability, with regex fallback for
+ * backward compatibility with templates that don't have anchor blocks.
  */
 
 import { readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
+import { AnchorService, AUTH_ANCHORS } from "./anchor-service.js";
 
 export type Platform = "cloudflare" | "vercel";
 
@@ -29,7 +33,7 @@ export async function addAuthToEntryPoint(
 
 	let transformed: string;
 	if (platform === "cloudflare") {
-		transformed = addCloudflareAuth(content);
+		transformed = await addCloudflareAuth(filePath, content);
 	} else if (platform === "vercel") {
 		transformed = addVercelAuth(content);
 	} else {
@@ -48,12 +52,97 @@ export async function addAuthToEntryPoint(
 /**
  * Add authentication to Cloudflare Workers entry point
  */
-function addCloudflareAuth(content: string): string {
+async function addCloudflareAuth(
+	filePath: string,
+	content: string,
+): Promise<string> {
 	// Check if already has auth
 	if (content.includes("getAuthProvider") || content.includes("Authorization")) {
 		return content; // Already transformed
 	}
 
+	const anchorService = new AnchorService();
+
+	// Check if file has anchor blocks
+	const hasImportsAnchor = await anchorService.hasAnchor(
+		filePath,
+		AUTH_ANCHORS.IMPORTS,
+	);
+	const hasMiddlewareAnchor = await anchorService.hasAnchor(
+		filePath,
+		AUTH_ANCHORS.MIDDLEWARE,
+	);
+
+	// Auth imports content
+	const authImports = `import { getAuthProvider } from "./auth/config.js";
+import { AuthenticationError } from "./auth/types.js";`;
+
+	// Auth middleware content
+	const authMiddleware = `\t// Validate authentication
+\tconst authHeader = request.headers.get("Authorization");
+\tif (!authHeader) {
+\t\treturn new Response("Unauthorized: Missing Authorization header", {
+\t\t\tstatus: 401,
+\t\t\theaders: { "Content-Type": "text/plain" },
+\t\t});
+\t}
+
+\tconst token = authHeader.replace(/^Bearer\\s+/i, "");
+\ttry {
+\t\tconst provider = getAuthProvider(env);
+\t\tconst user = await provider.validateToken(token, env);
+
+\t\t// Attach user context to env for tools to use
+\t\t(env as any).user = user;
+\t} catch (error) {
+\t\tif (error instanceof AuthenticationError) {
+\t\t\treturn new Response(\`Unauthorized: \${error.message}\`, {
+\t\t\t\tstatus: 401,
+\t\t\t\theaders: { "Content-Type": "text/plain" },
+\t\t\t});
+\t\t}
+\t\tconsole.error("Authentication error:", error);
+\t\treturn new Response("Internal Server Error", {
+\t\t\tstatus: 500,
+\t\t\theaders: { "Content-Type": "text/plain" },
+\t\t});
+\t}`;
+
+	// If anchors are present, use anchor-based transformation
+	if (hasImportsAnchor && hasMiddlewareAnchor) {
+		// Insert imports at anchor
+		const importsResult = await anchorService.insertAtAnchor(
+			filePath,
+			AUTH_ANCHORS.IMPORTS,
+			authImports,
+		);
+
+		// Insert middleware at anchor
+		const middlewareResult = await anchorService.insertAtAnchor(
+			filePath,
+			AUTH_ANCHORS.MIDDLEWARE,
+			authMiddleware,
+		);
+
+		if (importsResult.success && middlewareResult.success) {
+			// Re-read file after anchor insertions
+			return await readFile(filePath, "utf-8");
+		}
+
+		// If anchor insertion failed, fall through to regex
+		console.warn(
+			"Anchor insertion failed, falling back to regex transformation",
+		);
+	}
+
+	// Fallback: Use regex-based transformation for backward compatibility
+	return addCloudflareAuthRegex(content);
+}
+
+/**
+ * Legacy regex-based auth transformation (backward compatibility)
+ */
+function addCloudflareAuthRegex(content: string): string {
 	// Add auth imports after existing imports
 	const authImports = `import { getAuthProvider } from "./auth/config.js";
 import { AuthenticationError } from "./auth/types.js";
@@ -233,6 +322,28 @@ export async function removeAuthFromEntryPoint(
 		return false;
 	}
 
+	const anchorService = new AnchorService();
+
+	// Check if file has anchor blocks
+	const hasAnchors =
+		(await anchorService.hasAnchor(filePath, AUTH_ANCHORS.IMPORTS)) &&
+		(await anchorService.hasAnchor(filePath, AUTH_ANCHORS.MIDDLEWARE));
+
+	if (hasAnchors) {
+		// Use anchor-based removal
+		const importsResult = await anchorService.clearAnchor(
+			filePath,
+			AUTH_ANCHORS.IMPORTS,
+		);
+		const middlewareResult = await anchorService.clearAnchor(
+			filePath,
+			AUTH_ANCHORS.MIDDLEWARE,
+		);
+
+		return importsResult.modified || middlewareResult.modified;
+	}
+
+	// Fallback: regex-based removal for backward compatibility
 	const content = await readFile(filePath, "utf-8");
 
 	// Remove auth imports
@@ -283,6 +394,28 @@ export async function hasAuthentication(filePath: string): Promise<boolean> {
 		return false;
 	}
 
+	const anchorService = new AnchorService();
+
+	// Check if file has anchors
+	const hasAnchors =
+		(await anchorService.hasAnchor(filePath, AUTH_ANCHORS.IMPORTS)) &&
+		(await anchorService.hasAnchor(filePath, AUTH_ANCHORS.MIDDLEWARE));
+
+	if (hasAnchors) {
+		// Check if anchors have content (not empty)
+		const importsEmpty = await anchorService.isAnchorEmpty(
+			filePath,
+			AUTH_ANCHORS.IMPORTS,
+		);
+		const middlewareEmpty = await anchorService.isAnchorEmpty(
+			filePath,
+			AUTH_ANCHORS.MIDDLEWARE,
+		);
+
+		return !importsEmpty && !middlewareEmpty;
+	}
+
+	// Fallback: check content directly
 	const content = await readFile(filePath, "utf-8");
 	return (
 		content.includes("getAuthProvider") &&

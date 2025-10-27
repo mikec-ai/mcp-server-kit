@@ -3,6 +3,8 @@
  *
  * Main orchestration class for adding authentication to MCP servers.
  * Coordinates all auth-related operations with rollback support.
+ *
+ * Now includes comprehensive validation with automatic rollback on failure.
  */
 
 import { mkdir, writeFile } from "node:fs/promises";
@@ -42,6 +44,7 @@ import {
 	updateEnvExample,
 	getWranglerConfigPath,
 } from "./config-updater.js";
+import { ValidationGate } from "./validation-gate.js";
 
 export class AuthScaffolder {
 	/**
@@ -120,6 +123,9 @@ export class AuthScaffolder {
 
 			// Step 9: Update config files
 			await this.updateConfigFiles(cwd, provider, platform, result);
+
+			// Step 10: Validate transformations
+			await this.validateTransformations(cwd, provider, backupDir, result);
 
 			// Success - remove backup if created
 			if (backupDir) {
@@ -284,6 +290,44 @@ export class AuthScaffolder {
 			} else {
 				result.filesCreated.push(envPath);
 			}
+		}
+	}
+
+	/**
+	 * Validate all transformations were successful
+	 */
+	private async validateTransformations(
+		cwd: string,
+		provider: AuthProvider,
+		backupDir: string | undefined,
+		result: AddAuthResult,
+	): Promise<void> {
+		const validationGate = new ValidationGate();
+
+		// Run quick validation (skip type check for speed)
+		// Type check can be run by user with npm run type-check
+		const validationResult = await validationGate.quickValidate({
+			cwd,
+			backupDir,
+			provider,
+			rollbackOnFailure: false, // We handle rollback in the catch block
+		});
+
+		// If critical checks failed, throw error to trigger rollback
+		if (!validationResult.passed) {
+			const errorMessage = [
+				"Auth transformation validation failed:",
+				...validationResult.errors,
+			].join("\n  - ");
+
+			throw new Error(errorMessage);
+		}
+
+		// Log passed checks as info (optional, could be verbose)
+		if (validationResult.passedChecks.length > 0) {
+			result.warnings?.push(
+				`✓ Validation passed: ${validationResult.passedChecks.join(", ")}`,
+			);
 		}
 	}
 }
