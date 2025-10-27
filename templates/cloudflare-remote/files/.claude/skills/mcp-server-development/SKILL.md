@@ -14,8 +14,11 @@ Expert guidance for building Model Context Protocol servers.
 ```bash
 # Add components (auto-scaffolds everything)
 mcp-server-kit add tool <name> --description "<desc>"
-mcp-server-kit add prompt <name> --description "<desc>"  
+mcp-server-kit add prompt <name> --description "<desc>"
 mcp-server-kit add resource <name> --description "<desc>"
+
+# Add authentication (Cloudflare Workers)
+mcp-server-kit add-auth <provider>  # stytch, auth0, or workos
 
 # Validate project health
 mcp-server-kit validate

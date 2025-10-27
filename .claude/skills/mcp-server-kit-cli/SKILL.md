@@ -82,6 +82,10 @@ mcp-server-kit add prompt <name> --description "<desc>"
 
 # Add resource (data exposure)
 mcp-server-kit add resource <name> [--static|--dynamic]
+
+# Add authentication
+mcp-server-kit add-auth <provider> [--platform cloudflare]
+# Providers: stytch, auth0, workos
 ```
 
 ### Validation & Discovery
@@ -145,6 +149,26 @@ npm run tools:add prompt code-review --description "Review code quality"
 # Resources (expose data)
 npm run tools:add resource api-docs --static
 npm run tools:add resource user-profile --dynamic
+```
+
+### Workflow 4: Add Authentication to Existing Project
+```bash
+# 1. Navigate to your MCP server project
+cd my-server
+
+# 2. Add authentication (choose provider)
+mcp-server-kit add-auth stytch    # or auth0, workos
+
+# 3. Verify scaffolding
+# - Check src/auth/ directory created
+# - Check auth imports added to src/index.ts
+# - Check environment variables in wrangler.jsonc
+
+# 4. Validate
+npm run validate
+
+# 5. Configure environment
+# Add actual credentials to wrangler.jsonc or .env
 ```
 
 ---

@@ -183,6 +183,40 @@ mcp-server-kit list resources [--json] [--filter <status>]
 
 **Affected Tools**: Any tool with hyphens (e.g., `api-client`, `data-processor`, `weather-api`)
 
+### 6. Authentication Scaffolding
+
+**What Changed**: New `add-auth` command scaffolds authentication code for MCP servers.
+
+**Syntax**:
+```bash
+mcp-server-kit add-auth <provider> [--platform cloudflare]
+```
+
+**Supported Providers**:
+- **Stytch** - Modern auth platform with passwordless options
+- **Auth0** - Enterprise identity platform
+- **WorkOS** - B2B authentication and SSO
+
+**What It Does**:
+- Generates auth middleware and provider-specific integration code
+- Adds required environment variables to wrangler.jsonc
+- Creates auth types and configuration files
+- Uses anchor-based code transformation (robust, not regex-based)
+- Includes comprehensive validation with automatic rollback on failure
+
+**Platform Support**:
+- ✅ Cloudflare Workers (production-ready)
+- ⏳ Vercel Edge (planned for future release)
+
+**Example**:
+```bash
+cd my-server
+mcp-server-kit add-auth stytch
+# Scaffolds auth files, updates config, validates changes
+```
+
+**For Agents**: Auth scaffolding is fully validated - if something goes wrong, it automatically rolls back changes.
+
 ---
 
 ## Development Standards

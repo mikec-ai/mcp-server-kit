@@ -429,6 +429,224 @@ mcp-server-kit add resource database-record \
 
 ---
 
+## add-auth
+
+**Purpose**: Add authentication scaffolding to your MCP server
+
+**Syntax**:
+```bash
+mcp-server-kit add-auth <provider> [options]
+```
+
+### Required Arguments
+
+| Argument | Options | Purpose |
+|----------|---------|---------|
+| `provider` | `stytch`, `auth0`, `workos` | Authentication provider to integrate |
+
+### Supported Providers
+
+#### Stytch
+Modern authentication platform with passwordless options, session management, and security features.
+
+**Use when**:
+- You want modern, passwordless authentication
+- You need flexible authentication methods (magic links, OAuth, biometrics)
+- You're building consumer-facing applications
+
+#### Auth0
+Enterprise-grade identity platform with extensive customization and integrations.
+
+**Use when**:
+- You need enterprise features (SSO, SAML, AD integration)
+- You require extensive customization
+- You're building B2B applications
+
+#### WorkOS
+B2B-focused authentication with SSO and directory sync.
+
+**Use when**:
+- You're building B2B SaaS applications
+- You need enterprise SSO (SAML, OIDC)
+- You require directory sync (SCIM)
+
+### Optional Flags
+
+| Flag | Default | Purpose |
+|------|---------|---------|
+| `--platform <platform>` | `cloudflare` | Target platform (currently only `cloudflare`) |
+| `--force` | false | Overwrite existing auth files |
+| `--backup` | true | Create backup before changes |
+| `--dry-run` | false | Preview changes without modifying files |
+| `--json` | false | Output results as JSON |
+
+### What It Generates
+
+**Auth Files Created**:
+1. `src/auth/types.ts` - TypeScript interfaces and error classes
+2. `src/auth/config.ts` - Provider configuration helpers
+3. `src/auth/providers/<provider>.ts` - Provider-specific integration
+
+**Code Modifications**:
+1. **src/index.ts** - Adds auth imports and middleware to fetch handler
+2. **wrangler.jsonc** - Adds required environment variables
+
+**Configuration Variables** (added to wrangler.jsonc):
+
+**Stytch**:
+```json
+{
+  "vars": {
+    "STYTCH_PROJECT_ID": "",
+    "STYTCH_SECRET": "",
+    "STYTCH_ENV": "test"
+  }
+}
+```
+
+**Auth0**:
+```json
+{
+  "vars": {
+    "AUTH0_DOMAIN": "",
+    "AUTH0_CLIENT_ID": "",
+    "AUTH0_CLIENT_SECRET": ""
+  }
+}
+```
+
+**WorkOS**:
+```json
+{
+  "vars": {
+    "WORKOS_API_KEY": "",
+    "WORKOS_CLIENT_ID": ""
+  }
+}
+```
+
+### Platform Support
+
+**✅ Cloudflare Workers** (production-ready)
+- Anchor-based code transformation
+- Comprehensive validation with rollback
+- Tested and production-ready
+
+**⏳ Vercel Edge** (planned)
+- Not yet implemented
+- Will be added in future release
+
+### How It Works
+
+**1. Pre-Validation**
+- Checks project structure
+- Verifies no existing auth code
+- Creates backup if requested
+
+**2. Code Transformation**
+- Uses anchor-based insertion (not regex)
+- Adds auth imports to src/index.ts
+- Inserts middleware at correct location
+- Updates wrangler.jsonc with environment variables
+
+**3. Post-Validation**
+- Verifies all auth files exist
+- Checks imports properly added
+- Validates middleware placement
+- Ensures environment variables configured
+- Runs TypeScript type checking
+
+**4. Automatic Rollback**
+If any validation fails, automatically restores from backup.
+
+### Examples
+
+**Add Stytch auth**:
+```bash
+mcp-server-kit add-auth stytch
+```
+
+**Add Auth0 with force overwrite**:
+```bash
+mcp-server-kit add-auth auth0 --force
+```
+
+**Preview WorkOS changes without applying**:
+```bash
+mcp-server-kit add-auth workos --dry-run
+```
+
+**Add auth with JSON output**:
+```bash
+mcp-server-kit add-auth stytch --json
+```
+
+### After Adding Auth
+
+**1. Configure Credentials**
+
+Edit `wrangler.jsonc` and add your actual credentials:
+
+```jsonc
+{
+  "vars": {
+    "STYTCH_PROJECT_ID": "project-test-...",
+    "STYTCH_SECRET": "secret_test_...",
+    "STYTCH_ENV": "test"
+  }
+}
+```
+
+**2. Customize Middleware** (optional)
+
+Edit `src/index.ts` to customize authentication behavior:
+- Add role-based access control
+- Customize error responses
+- Add custom claims validation
+
+**3. Test Authentication**
+
+```bash
+# Start dev server
+npm run dev
+
+# Test with auth header
+curl http://localhost:8788/sse \
+  -H "Authorization: Bearer <token>"
+```
+
+### Common Errors and Fixes
+
+**Error: "Auth already exists"**
+```bash
+# Use --force to overwrite
+mcp-server-kit add-auth stytch --force
+```
+
+**Error: "Platform not supported"**
+- Currently only Cloudflare Workers is supported
+- Vercel Edge support coming in future release
+
+**Error: "Validation failed"**
+- Changes are automatically rolled back
+- Check error messages for specific issues
+- Run `mcp-server-kit validate` for details
+
+### Best Practices
+
+✅ **DO**:
+- Use `--dry-run` first to preview changes
+- Keep backup enabled (default)
+- Configure actual credentials after scaffolding
+- Test authentication before deploying
+
+❌ **DON'T**:
+- Don't commit credentials to git (use .env or secrets)
+- Don't skip validation by forcing changes
+- Don't manually modify generated auth files unless necessary
+
+---
+
 ## validate
 
 **Purpose**: Validate project structure and configuration

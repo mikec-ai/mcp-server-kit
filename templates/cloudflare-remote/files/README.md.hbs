@@ -32,6 +32,9 @@ Expected: `{"status":"ok","service":"{{MCP_SERVER_NAME}}","version":"1.0.0"}`
 # Scaffold a new tool
 npm run tools:add my_tool -- --description "Tool description"
 
+# Add authentication
+mcp-server-kit add-auth <provider>  # stytch, auth0, or workos
+
 # List all tools
 npm run tools:list
 

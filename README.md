@@ -12,6 +12,7 @@ Create production-ready MCP servers in seconds with built-in testing infrastruct
 - 📦 **Production Ready** - Includes TypeScript, testing, linting, and deployment config
 - 🤖 **Agent-Optimized** - Built specifically for AI agents with auto-scaffolding, examples, and validation
 - 🛠️ **Development Tools** - Add tools/prompts/resources, validate projects, list components, all from CLI
+- 🔐 **Authentication Support** - Add auth scaffolding with provider-specific code (Stytch, Auth0, WorkOS)
 - 📚 **Rich Examples** - Comprehensive example tools and utilities showing best practices
 
 ## For AI Agents 🤖
@@ -36,13 +37,16 @@ mcp-server-kit add prompt code-reviewer --description "Review code quality"
 mcp-server-kit add resource snippet --description "Code snippet by ID"
 mcp-server-kit add resource config --static --description "App configuration"
 
-# 3. Implement (TODO markers show what to code)
+# 3. (Optional) Add authentication
+mcp-server-kit add-auth stytch  # or auth0, workos
+
+# 4. Implement (TODO markers show what to code)
 # Edit src/tools/weather.ts, src/prompts/code-reviewer.ts, etc.
 
-# 4. Validate (catches missed registrations, tests, etc.)
+# 5. Validate (catches missed registrations, tests, etc.)
 mcp-server-kit validate
 
-# 5. Test
+# 6. Test
 npm run test:unit
 npm run integration:run
 ```
@@ -191,6 +195,7 @@ mcp-server-kit new server --name <name> --template <template> [--output <path>] 
 mcp-server-kit add tool <name> --description "<desc>" [--json]
 mcp-server-kit add prompt <name> --description "<desc>" [--json]
 mcp-server-kit add resource <name> --description "<desc>" [--static] [--json]
+mcp-server-kit add-auth <provider> [--platform cloudflare] [--json]
 mcp-server-kit validate [--strict] [--fix] [--json]
 mcp-server-kit list tools [--json]
 mcp-server-kit list prompts [--json]
