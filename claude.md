@@ -66,6 +66,41 @@ mcp-server-kit new server --name my-test --dev
 
 ✅ **Best Practice**: Help → Test → Read errors → Adjust → Retry
 
+### Scaffolding Projects at Git Root
+
+**Problem**: Agents often create projects in nested subdirectories instead of at the repository root.
+
+**Example Issue**:
+```bash
+# Agent is in: /Users/name/my-repo/TEST_MCP_SERVER/
+mcp-server-kit new server --name demo
+
+# ❌ Creates: /Users/name/my-repo/TEST_MCP_SERVER/demo/
+# ✅ Wanted:   /Users/name/my-repo/demo/
+```
+
+**Solution**: Navigate to git root before scaffolding:
+
+```bash
+# Option 1: Navigate first (recommended)
+cd $(git rev-parse --show-toplevel)
+mcp-server-kit new server --name my-project --dev
+
+# Option 2: Use --output with git root
+mcp-server-kit new server --name my-project --output $(git rev-parse --show-toplevel) --dev
+```
+
+**Best Practice for Agents**:
+1. Before scaffolding, determine the desired parent directory
+2. If in a git repository, navigate to the root first
+3. Then run the `new server` command
+4. Verify the created directory structure matches expectations
+
+**Why This Matters**:
+- Projects belong at repository root, not in temporary subdirectories
+- Prevents nested project structures that confuse build tools
+- Makes it clear where the project is located
+
 ---
 
 ## Recent Features & Improvements
