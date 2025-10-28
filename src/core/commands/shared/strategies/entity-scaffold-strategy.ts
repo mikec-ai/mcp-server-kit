@@ -199,7 +199,8 @@ export class EntityScaffoldStrategy
 			const hasBindings =
 				bindings.kv.length > 0 ||
 				bindings.d1.length > 0 ||
-				bindings.r2.length > 0;
+				bindings.r2.length > 0 ||
+				!!bindings.ai;
 
 			if (hasBindings) {
 				const examples =
