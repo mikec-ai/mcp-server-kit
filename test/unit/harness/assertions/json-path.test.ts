@@ -505,4 +505,182 @@ describe("checkJsonPath", () => {
 			expect(result.message).toBeTruthy();
 		});
 	});
+
+	describe("optional expected field (existence checks)", () => {
+		it("should pass when path exists and expected is omitted", async () => {
+			const response: MCPToolResponse = {
+				content: [
+					{
+						type: "text",
+						text: JSON.stringify({ data: { id: "123" } }),
+					},
+				],
+			};
+
+			const result = await checkJsonPath(response, "$.data.id", undefined);
+
+			expect(result.passed).toBe(true);
+			expect(result.message).toContain("exists");
+			expect(result.actual).toBe("123");
+		});
+
+		it("should fail when path doesn't exist and expected is omitted", async () => {
+			const response: MCPToolResponse = {
+				content: [
+					{
+						type: "text",
+						text: JSON.stringify({ data: {} }),
+					},
+				],
+			};
+
+			const result = await checkJsonPath(response, "$.data.id", undefined);
+
+			expect(result.passed).toBe(false);
+			expect(result.message).toContain("does not exist");
+		});
+
+		it("should pass when path has null value and expected is omitted", async () => {
+			const response: MCPToolResponse = {
+				content: [
+					{
+						type: "text",
+						text: JSON.stringify({ data: { id: null } }),
+					},
+				],
+			};
+
+			const result = await checkJsonPath(response, "$.data.id", undefined);
+
+			expect(result.passed).toBe(true);
+			expect(result.message).toContain("exists");
+			expect(result.actual).toBeNull();
+		});
+
+		it("should pass when path has false value and expected is omitted", async () => {
+			const response: MCPToolResponse = {
+				content: [
+					{
+						type: "text",
+						text: JSON.stringify({ active: false }),
+					},
+				],
+			};
+
+			const result = await checkJsonPath(response, "$.active", undefined);
+
+			expect(result.passed).toBe(true);
+			expect(result.message).toContain("exists");
+			expect(result.actual).toBe(false);
+		});
+
+		it("should pass when path has zero value and expected is omitted", async () => {
+			const response: MCPToolResponse = {
+				content: [
+					{
+						type: "text",
+						text: JSON.stringify({ count: 0 }),
+					},
+				],
+			};
+
+			const result = await checkJsonPath(response, "$.count", undefined);
+
+			expect(result.passed).toBe(true);
+			expect(result.message).toContain("exists");
+			expect(result.actual).toBe(0);
+		});
+
+		it("should pass when path has empty string and expected is omitted", async () => {
+			const response: MCPToolResponse = {
+				content: [
+					{
+						type: "text",
+						text: JSON.stringify({ name: "" }),
+					},
+				],
+			};
+
+			const result = await checkJsonPath(response, "$.name", undefined);
+
+			expect(result.passed).toBe(true);
+			expect(result.message).toContain("exists");
+			expect(result.actual).toBe("");
+		});
+	});
+
+	describe("type mismatch error messages", () => {
+		it("should indicate type mismatch when comparing number to string", async () => {
+			const response: MCPToolResponse = {
+				content: [
+					{
+						type: "text",
+						text: JSON.stringify({ count: 42 }),
+					},
+				],
+			};
+
+			const result = await checkJsonPath(response, "$.count", "42");
+
+			expect(result.passed).toBe(false);
+			expect(result.message).toContain("type mismatch: number vs string");
+			expect(result.expected).toBe("42");
+			expect(result.actual).toBe(42);
+		});
+
+		it("should indicate type mismatch when comparing string to number", async () => {
+			const response: MCPToolResponse = {
+				content: [
+					{
+						type: "text",
+						text: JSON.stringify({ status: "200" }),
+					},
+				],
+			};
+
+			const result = await checkJsonPath(response, "$.status", 200);
+
+			expect(result.passed).toBe(false);
+			expect(result.message).toContain("type mismatch: string vs number");
+			expect(result.expected).toBe(200);
+			expect(result.actual).toBe("200");
+		});
+
+		it("should indicate type mismatch when comparing boolean to string", async () => {
+			const response: MCPToolResponse = {
+				content: [
+					{
+						type: "text",
+						text: JSON.stringify({ active: true }),
+					},
+				],
+			};
+
+			const result = await checkJsonPath(response, "$.active", "true");
+
+			expect(result.passed).toBe(false);
+			expect(result.message).toContain("type mismatch: boolean vs string");
+			expect(result.expected).toBe("true");
+			expect(result.actual).toBe(true);
+		});
+
+		it("should not show type mismatch hint for same type comparisons", async () => {
+			const response: MCPToolResponse = {
+				content: [
+					{
+						type: "text",
+						text: JSON.stringify({ name: "Alice" }),
+					},
+				],
+			};
+
+			const result = await checkJsonPath(response, "$.name", "Bob");
+
+			expect(result.passed).toBe(false);
+			expect(result.message).not.toContain("type mismatch");
+			expect(result.message).toContain("does not match expected");
+			expect(result.expected).toBe("Bob");
+			expect(result.actual).toBe("Alice");
+		});
+	});
 });

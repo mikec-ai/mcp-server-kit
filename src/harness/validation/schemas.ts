@@ -40,7 +40,7 @@ const ResponseTimeAssertionSchema = z.object({
 const JsonPathAssertionSchema = z.object({
 	type: z.literal("json_path"),
 	path: z.string(),
-	expected: z.any(),
+	expected: z.any().optional(),
 });
 
 const RegexMatchAssertionSchema = z.object({

@@ -144,6 +144,133 @@ Tests that error occurred.
   expectedMessage: "Invalid parameter"
 ```
 
+## Choosing the Right Assertion
+
+### json_path vs contains_text
+
+**Use `json_path` when**:
+- Testing structured JSON responses
+- Checking specific fields exist or have values
+- Verifying nested data structures
+- Need type-safe value checking (numbers, booleans, objects, arrays)
+
+**Use `contains_text` when**:
+- Testing unstructured text responses
+- Looking for keywords anywhere in response
+- Case-insensitive matching needed
+- Don't care about JSON structure
+
+### Common json_path Patterns
+
+**Existence checks** (omit `expected`):
+```yaml
+# Check if field exists (any value)
+- type: "json_path"
+  path: "$.data.id"
+
+# Check if array has elements
+- type: "json_path"
+  path: "$.results[0]"
+```
+
+**Value checks** (provide `expected`):
+```yaml
+# String value
+- type: "json_path"
+  path: "$.status"
+  expected: "success"
+
+# Number value (not string!)
+- type: "json_path"
+  path: "$.count"
+  expected: 42
+
+# Boolean value
+- type: "json_path"
+  path: "$.active"
+  expected: true
+
+# Array value
+- type: "json_path"
+  path: "$.tags"
+  expected: ["typescript", "mcp"]
+
+# Object value
+- type: "json_path"
+  path: "$.user"
+  expected:
+    name: "Alice"
+    role: "admin"
+```
+
+**Nested paths**:
+```yaml
+- type: "json_path"
+  path: "$.data.user.profile.email"
+  expected: "user@example.com"
+```
+
+**Array indexing**:
+```yaml
+- type: "json_path"
+  path: "$.items[0].name"
+  expected: "First Item"
+```
+
+## Troubleshooting
+
+### json_path Assertion Failures
+
+**Problem**: "Value at path does not match expected (type mismatch: number vs string)"
+
+**Cause**: Type mismatch between actual and expected values.
+
+**Fix**: Use correct type in YAML:
+```yaml
+❌ Wrong:
+- type: "json_path"
+  path: "$.count"
+  expected: "42"  # String
+
+✅ Right:
+- type: "json_path"
+  path: "$.count"
+  expected: 42  # Number
+```
+
+**Problem**: "Path does not exist in response"
+
+**Cause**: Path is incorrect or response structure differs.
+
+**Fix**:
+1. Check actual response structure
+2. Verify path syntax (use `$.` prefix)
+3. Check for typos in field names
+
+**Problem**: Deep equality fails for similar objects
+
+**Cause**: Extra fields or different field order.
+
+**Fix**: Ensure `expected` matches actual structure exactly:
+```yaml
+# Actual: {name: "Alice", age: 30, active: true}
+
+❌ Fails (missing field):
+- type: "json_path"
+  path: "$.user"
+  expected:
+    name: "Alice"
+    age: 30
+
+✅ Passes (exact match):
+- type: "json_path"
+  path: "$.user"
+  expected:
+    name: "Alice"
+    age: 30
+    active: true
+```
+
 ## Testing Patterns
 
 ### Test Valid Input

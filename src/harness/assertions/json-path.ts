@@ -92,13 +92,13 @@ function deepEqual(a: any, b: any): boolean {
  *
  * @param response - MCP response (tool, prompt, or resource)
  * @param path - JSON path expression
- * @param expected - Expected value at path
+ * @param expected - Expected value at path (optional - if omitted, checks path existence)
  * @returns Assertion result
  */
 export async function checkJsonPath(
 	response: MCPResponse,
 	path: string,
-	expected: any,
+	expected?: any,
 ): Promise<AssertionResult> {
 	try {
 		let responseData: any;
@@ -138,14 +138,35 @@ export async function checkJsonPath(
 		// Evaluate path
 		const actual = evaluateJsonPath(responseData, path);
 
-		// Compare with expected
+		// If expected is undefined, check path existence
+		if (expected === undefined) {
+			const exists = actual !== undefined;
+			return {
+				type: "json_path",
+				passed: exists,
+				message: exists
+					? `Path "${path}" exists with value: ${JSON.stringify(actual)}`
+					: `Path "${path}" does not exist in response`,
+				actual: exists ? actual : undefined,
+			};
+		}
+
+		// Compare with expected value
 		const matches = deepEqual(actual, expected);
 
 		if (!matches) {
+			// Provide helpful type mismatch hints
+			const actualType = typeof actual;
+			const expectedType = typeof expected;
+			const typeHint =
+				actualType !== expectedType
+					? ` (type mismatch: ${actualType} vs ${expectedType})`
+					: "";
+
 			return {
 				type: "json_path",
 				passed: false,
-				message: `Value at path "${path}" does not match expected`,
+				message: `Value at path "${path}" does not match expected${typeHint}`,
 				expected,
 				actual,
 			};
@@ -154,7 +175,9 @@ export async function checkJsonPath(
 		return {
 			type: "json_path",
 			passed: true,
-			message: `Value at path "${path}" matches expected`,
+			message: `Value at path "${path}" matches expected value`,
+			expected,
+			actual,
 		};
 	} catch (error) {
 		return {

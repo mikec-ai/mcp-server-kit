@@ -330,7 +330,7 @@ mcp-server-kit add-auth stytch
 
 **For Agents**: If you encounter module resolution errors with any Cloudflare-specific imports, verify the required packages are in dependencies.
 
-### 8. Cloudflare Bindings Support (Phase 1: KV, D1, R2)
+### 8. Cloudflare Bindings Support (Phase 1+2: KV, D1, R2, AI)
 
 **What Changed**: New `add binding` command scaffolds Cloudflare primitives for MCP servers.
 
@@ -346,8 +346,11 @@ mcp-server-kit add binding r2 --name FILES_BUCKET
 - **D1 Databases** - SQLite-based SQL databases with ACID transactions
 - **R2 Buckets** - S3-compatible object storage with zero egress fees
 
-**Phase 2+** (Planned):
-- Queues, Workers AI, Vectorize, Hyperdrive
+**Phase 2** (Production-Ready):
+- **Workers AI** - ML inference with RAG and vector search (auto-detected, no helper class)
+
+**Phase 3+** (Planned):
+- Queues, Vectorize, Hyperdrive
 
 **What It Does**:
 - Generates type-safe helper classes for KV/D1/R2 operations
@@ -433,9 +436,158 @@ const user = await cache.get<User>("user:123");
 
 **For Agents**:
 - Always use `UPPER_SNAKE_CASE` for binding names
-- KV is for simple key-value storage, D1 is for structured SQL data
+- KV is for simple key-value storage, D1 is for structured SQL data, R2 is for object storage
 - Helper classes provide type safety and convenience methods
 - Binding scaffolding is fully validated with automatic rollback on errors
+
+### 9. Workers AI Binding Support (Phase 2)
+
+**What Changed**: AI binding detection and auto-generated usage examples in tools.
+
+**How It Works**:
+- AI binding is **auto-detected** from `wrangler.jsonc` during tool scaffolding
+- No helper class needed - use `env.AI` directly
+- Tool templates include usage examples for both RAG and vector-only search
+- No `add binding` command - configure manually in wrangler.jsonc
+
+**Configuration** (Manual):
+```jsonc
+{
+  "ai": {
+    "binding": "AI"
+  }
+}
+```
+
+**Usage in Tools** (Auto-Generated Examples):
+```typescript
+export function registerSearchTool(server: McpServer, env?: Env): void {
+  server.tool("search", "Search documentation", schema, async (params) => {
+    // Available Cloudflare bindings: AI: AI
+    //
+    // RAG with LLM:
+    // const ragResult = await env.AI.aiSearch('my-instance', 'query text');
+    //
+    // Vector-only search:
+    // const searchResult = await env.AI.search('my-instance', 'query text');
+
+    // Your tool logic here
+    const result = await env.AI.aiSearch('docs-index', params.query);
+    return { content: [{ type: "text", text: JSON.stringify(result) }] };
+  });
+}
+```
+
+**Key Features**:
+- **RAG with LLM**: `.aiSearch(instanceName, query)` - Combines vector search with LLM response
+- **Vector-only**: `.search(instanceName, query)` - Returns raw search results without LLM
+- **Auto-detection**: Binding detected when generating tools, examples added automatically
+- **Instance names**: Runtime parameters (not config) - create in Cloudflare dashboard
+
+**Test Coverage**:
+- 21 unit tests for AI binding detection
+- Integration tested with real AI bindings
+- Zero regressions in existing binding tests
+
+**For Agents**:
+- AI binding is singleton (one binding, multiple instances)
+- Instance names are runtime parameters: `.aiSearch('my-instance', 'query')`
+- Create instances in Cloudflare dashboard (no wrangler commands available)
+- No helper class pattern - direct binding usage only
+
+### 10. Progress Reporting for Agents
+
+**What Changed**: Structured progress reporting with JSON mode support for long-running operations.
+
+**JSON Mode**:
+```bash
+mcp-server-kit new server --name my-project --json
+```
+
+**Output Format** (NDJSON - Newline-Delimited JSON):
+```json
+{"type":"start","operation":"Creating MCP server","steps":["Validating configuration","Loading template","Creating project structure","Installing dependencies","Finalizing project"],"timestamp":"2025-10-28T12:00:00.000Z"}
+{"type":"step","step":"validating-configuration","status":"in_progress","timestamp":"2025-10-28T12:00:00.100Z"}
+{"type":"step","step":"validating-configuration","status":"completed","duration":150,"timestamp":"2025-10-28T12:00:00.250Z"}
+{"type":"complete","success":true,"duration":15000,"result":{"projectName":"my-project","path":"/path/to/my-project"},"timestamp":"2025-10-28T12:00:15.000Z"}
+```
+
+**Step Statuses**:
+- `pending` - Step not yet started
+- `in_progress` - Step currently executing
+- `completed` - Step finished successfully
+- `failed` - Step encountered error
+
+**Text Mode** (Human-Readable):
+- Colored progress indicators with checkmarks
+- Real-time status updates
+- Duration tracking for each step
+- Visual operation summary
+
+**For Agents**:
+- Use `--json` flag for structured, parseable output
+- NDJSON format - one event per line
+- Parse incrementally as events arrive
+- Step IDs use kebab-case (e.g., `validating-configuration`)
+
+### 11. Error Handling Patterns
+
+**What Changed**: Structured error responses with exit codes for reliable programmatic usage.
+
+**Exit Codes**:
+```typescript
+0 - SUCCESS       - Operation completed successfully
+1 - VALIDATION    - Input validation failed (e.g., invalid name, missing config)
+2 - RUNTIME       - Runtime error during execution (e.g., network, permissions)
+3 - FILESYSTEM    - File system error (e.g., file not found, permissions)
+```
+
+**JSON Error Response**:
+```json
+{
+  "success": false,
+  "error": "Invalid tool name 'MyTool'. Tool names must be lowercase with hyphens.",
+  "errorCode": 1,
+  "errorType": "ValidationError",
+  "suggestion": "Use 'my-tool' instead",
+  "details": {
+    "field": "name",
+    "provided": "MyTool",
+    "expected": "lowercase-with-hyphens"
+  }
+}
+```
+
+**Error Types**:
+- **ValidationError** (exit 1) - User input validation failed
+- **RuntimeError** (exit 2) - Operation failed during execution
+- **FileSystemError** (exit 3) - File system operation failed
+- **CLIError** (base class) - All CLI errors inherit from this
+
+**For Agents**:
+- Check exit code to determine error category
+- Parse `errorType` field for specific error handling
+- Use `suggestion` field for recovery hints
+- `details` object provides structured context
+
+**Example Error Handling**:
+```typescript
+import { execSync } from 'child_process';
+
+try {
+  const output = execSync('mcp-server-kit add tool MyTool --json', { encoding: 'utf8' });
+  const result = JSON.parse(output);
+  if (!result.success) {
+    console.error(`Error: ${result.error}`);
+    if (result.suggestion) console.log(`Suggestion: ${result.suggestion}`);
+  }
+} catch (error) {
+  const exitCode = error.status;
+  if (exitCode === 1) console.log('Validation error - check input');
+  else if (exitCode === 2) console.log('Runtime error - check environment');
+  else if (exitCode === 3) console.log('Filesystem error - check permissions');
+}
+```
 
 ---
 
@@ -513,7 +665,9 @@ templates/                # Project scaffolding templates
 ## Critical Patterns & Gotchas
 
 ### Type Definitions
-- **JsonPathAssertion**: `expected` field is optional (checks path existence if omitted)
+- **JsonPathAssertion**: `expected` field is optional
+  - If omitted: Checks path exists (any value including null, false, 0, "")
+  - If provided: Deep equality check with strict type matching (42 ≠ "42")
 - **Template variables**: Must be `Record<string, string>` (convert booleans: `String(Boolean(value))`)
 - **ScaffoldOptions**: Variables must be strings, not booleans
 

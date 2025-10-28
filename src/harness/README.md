@@ -165,8 +165,15 @@ Verifies response time is within a maximum limit.
 
 ### `json_path`
 
-Verifies value at a JSON path matches expected value.
+Verifies value at a JSON path exists or matches expected value.
 
+**Existence check** (omit `expected`):
+```yaml
+- type: "json_path"
+  path: "$.data.id"
+```
+
+**Value check** (provide `expected`):
 ```yaml
 - type: "json_path"
   path: "$.data[0].name"
@@ -175,15 +182,22 @@ Verifies value at a JSON path matches expected value.
 
 **Parameters:**
 - `path` (required): JSON path expression (uses JSONPath syntax)
-- `expected` (required): Expected value at path
+- `expected` (optional): Expected value at path. If omitted, checks path existence only.
 
-**Passes when:** Value at JSON path equals expected value
+**Passes when:**
+- If `expected` omitted: Path exists in response (any value including null, false, 0, "")
+- If `expected` provided: Value at path deep equals expected value (strict type matching)
 
 **Supported paths:**
 - Root: `$`
 - Properties: `$.user.name`
 - Arrays: `$.items[0]`
 - Nested: `$.data.users[1].email`
+
+**Type matching:**
+- Uses strict type comparison: `42` ≠ `"42"`
+- Supports all JSON types: strings, numbers, booleans, null, objects, arrays
+- Uses deep equality for objects and arrays
 
 ---
 

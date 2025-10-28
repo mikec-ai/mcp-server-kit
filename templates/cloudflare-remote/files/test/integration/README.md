@@ -105,16 +105,29 @@ only: boolean          # Only run this test
 
 ### JSON Data Validation
 
+The `json_path` assertion supports two modes:
+
+**Existence Check** (when `expected` is omitted):
 ```yaml
-# Check JSON path exists
+# Check if path exists (any value including null, false, 0, "")
 - type: "json_path"
   path: "$.data.id"
+```
 
-# Check JSON path value
+**Value Check** (when `expected` is provided):
+```yaml
+# Check path has specific value (uses deep equality)
 - type: "json_path"
   path: "$.status"
   expected: "success"
+
+# Supports nested objects, arrays, and all JSON types
+- type: "json_path"
+  path: "$.items"
+  expected: [1, 2, 3]
 ```
+
+**Important**: Type matching is strict - `42` ≠ `"42"`. Use the correct type in your `expected` value.
 
 ---
 
