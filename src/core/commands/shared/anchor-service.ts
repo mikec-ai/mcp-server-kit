@@ -43,8 +43,8 @@ export const AUTH_ANCHORS = {
 	},
 	CONFIG_VARS: {
 		type: "auth:vars",
-		startMarker: "# <mcp-auth:vars>",
-		endMarker: "# </mcp-auth:vars>",
+		startMarker: "// <mcp-auth:vars>",
+		endMarker: "// </mcp-auth:vars>",
 		description: "Auth environment variables managed by mcp-server-kit",
 	},
 } as const;

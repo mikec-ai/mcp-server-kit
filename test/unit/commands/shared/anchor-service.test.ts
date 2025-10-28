@@ -505,8 +505,8 @@ export default {};`;
 
 		it("should have correct structure for CONFIG_VARS anchor", () => {
 			expect(AUTH_ANCHORS.CONFIG_VARS.type).toBe("auth:vars");
-			expect(AUTH_ANCHORS.CONFIG_VARS.startMarker).toBe("# <mcp-auth:vars>");
-			expect(AUTH_ANCHORS.CONFIG_VARS.endMarker).toBe("# </mcp-auth:vars>");
+			expect(AUTH_ANCHORS.CONFIG_VARS.startMarker).toBe("// <mcp-auth:vars>");
+			expect(AUTH_ANCHORS.CONFIG_VARS.endMarker).toBe("// </mcp-auth:vars>");
 			expect(AUTH_ANCHORS.CONFIG_VARS.description).toBeTruthy();
 		});
 	});

@@ -11,6 +11,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { TomlMerger } from "../toml-merger.js";
+import { AnchorService, AUTH_ANCHORS } from "../anchor-service.js";
 import {
 	getWranglerConfigPath,
 	parseJSONC,
@@ -82,6 +83,7 @@ async function updateWranglerToml(
 
 /**
  * Update wrangler.jsonc/json to add auth environment variables (JSON format)
+ * Uses anchor-based insertion to preserve comments and structure
  *
  * @param wranglerPath - Path to wrangler.jsonc or wrangler.json file
  * @param provider - Auth provider
@@ -97,7 +99,7 @@ async function updateWranglerJsonc(
 
 	const content = await readFile(wranglerPath, "utf-8");
 
-	// Parse JSONC (handles comments)
+	// Parse JSONC to check if vars already exist
 	const config = parseJSONC(content);
 
 	// Check if auth vars already present
@@ -106,18 +108,47 @@ async function updateWranglerJsonc(
 		return false; // Already has auth config
 	}
 
-	// Add auth environment variables to vars section
-	if (!config.vars) {
-		config.vars = {};
+	// Use anchor service to insert vars at the auth:vars anchor
+	const anchorService = new AnchorService();
+
+	// Check if anchor exists
+	const hasAnchor = await anchorService.hasAnchor(
+		wranglerPath,
+		AUTH_ANCHORS.CONFIG_VARS,
+	);
+
+	if (!hasAnchor) {
+		// Fallback to old method if no anchor (for backwards compatibility)
+		// Add auth environment variables to vars section
+		if (!config.vars) {
+			config.vars = {};
+		}
+
+		for (const varName of requiredVars) {
+			config.vars[varName] = "";
+		}
+
+		// Write back with proper formatting
+		await writeFile(wranglerPath, formatJSON(config) + "\n", "utf-8");
+		return true;
 	}
 
-	for (const varName of requiredVars) {
-		config.vars[varName] = "";
-	}
+	// Build vars JSON snippet
+	const varsEntries = requiredVars
+		.map((varName) => `\t\t"${varName}": ""`)
+		.join(",\n");
 
-	// Write back with proper formatting
-	await writeFile(wranglerPath, formatJSON(config) + "\n", "utf-8");
-	return true;
+	const varsJson = `"vars": {\n${varsEntries}\n\t},`;
+
+	// Insert at auth vars anchor
+	const result = await anchorService.insertAtAnchor(
+		wranglerPath,
+		AUTH_ANCHORS.CONFIG_VARS,
+		varsJson,
+		{ indent: "\t" },
+	);
+
+	return result.modified;
 }
 
 /**
