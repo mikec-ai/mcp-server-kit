@@ -182,52 +182,24 @@ import { validateProject } from '@MikeC-A6/mcp-server-kit/validation';
 
 ## Publishing Updates
 
-The token is stored in `.env` (which is gitignored), so you never need to type it in commands.
+Authentication is handled automatically via GitHub CLI (`gh auth token`).
 
-### Option 1: Using the Publish Script (Recommended)
-
-```bash
-# Patch version (1.0.0 -> 1.0.1) - bug fixes
-./scripts/publish.sh patch
-
-# Minor version (1.0.0 -> 1.1.0) - new features
-./scripts/publish.sh minor
-
-# Major version (1.0.0 -> 2.0.0) - breaking changes
-./scripts/publish.sh major
-
-# Then push tags
-git push --tags
-```
-
-### Option 2: Using npm Scripts
+### Publishing a New Version
 
 ```bash
-# Load .env first (macOS/Linux)
-export $(cat .env | grep -v '^#' | xargs)
+# 1. Bump version and create git tag
+npm version patch  # For bug fixes (1.0.0 -> 1.0.1)
+npm version minor  # For new features (1.0.0 -> 1.1.0)
+npm version major  # For breaking changes (1.0.0 -> 2.0.0)
 
-# Then publish
-npm run publish:patch  # or publish:minor, publish:major
-
-# Push tags
-git push --tags
-```
-
-### Option 3: Manual Steps
-
-```bash
-# Load .env
-export $(cat .env | grep -v '^#' | xargs)
-
-# Bump version
-npm version patch
-
-# Publish
+# 2. Publish to GitHub Packages (runs build and tests automatically)
 npm publish
 
-# Push tags
-git push --tags
+# 3. Push changes and tags
+git push && git push --tags
 ```
+
+**Note**: The `prepublishOnly` script automatically runs `npm run build && npm run test:all` before publishing, ensuring only tested code is published.
 
 ---
 
@@ -301,8 +273,8 @@ gh repo add-collaborator MikeC-A6/mcp-server-kit USERNAME --permission read
 # Add collaborator
 gh repo add-collaborator MikeC-A6/mcp-server-kit USERNAME --permission read
 
-# Publish update (token loaded from .env)
-./scripts/publish.sh patch
+# Publish update
+npm version patch && npm publish && git push --tags
 
 # Install package
 npm install @MikeC-A6/mcp-server-kit

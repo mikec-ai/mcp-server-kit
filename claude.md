@@ -719,6 +719,27 @@ npm run type-check && npm run test:unit
 ```
 Both must pass with zero errors.
 
+### Publishing Package to GitHub Packages
+
+When ready to publish a new version:
+
+```bash
+# 1. Bump version (creates commit and tag)
+npm version patch  # Bug fixes (1.0.0 -> 1.0.1)
+npm version minor  # New features (1.0.0 -> 1.1.0)
+npm version major  # Breaking changes (1.0.0 -> 2.0.0)
+
+# 2. Publish (runs prepublishOnly: build + tests automatically)
+npm publish
+
+# 3. Push changes and tags
+git push && git push --tags
+```
+
+**Authentication**: Uses GitHub CLI token automatically (`gh auth token`). Ensure scopes include `read:packages` and `write:packages`.
+
+**Automated checks**: The `prepublishOnly` script runs `npm run build && npm run test:all` before publishing.
+
 ---
 
 ## Key Files Reference
