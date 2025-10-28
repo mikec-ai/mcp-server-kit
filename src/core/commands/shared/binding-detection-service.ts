@@ -1,13 +1,13 @@
 /**
  * Binding Detection Service
  *
- * Detects Cloudflare bindings (KV, D1, R2) configured in wrangler.jsonc.
+ * Detects Cloudflare bindings (KV, D1, R2, AI) configured in wrangler.jsonc.
  * Used by tool scaffolding to generate context-aware templates with binding usage examples.
  */
 
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import type { Phase1BindingType } from "@/types/binding-types.js";
+import type { Phase1BindingType, Phase2BindingType } from "@/types/binding-types.js";
 import { getWranglerConfigPath, parseJSONC } from "./config/wrangler-utils.js";
 import { toPascalCase } from "./utils.js";
 
@@ -18,16 +18,17 @@ export interface DetectedBindings {
 	kv: string[]; // e.g., ['MY_CACHE', 'SESSION_STORE']
 	d1: string[]; // e.g., ['USER_DB', 'ANALYTICS_DB']
 	r2: string[]; // e.g., ['MY_BUCKET', 'UPLOADS']
+	ai?: string; // e.g., 'AI' (singleton binding)
 }
 
 /**
  * Binding usage example with import and usage code
  */
 export interface BindingExample {
-	type: Phase1BindingType;
+	type: Phase1BindingType | Phase2BindingType;
 	bindingName: string;
-	helperClass: string;
-	importStatement: string;
+	helperClass?: string; // Optional for AI (no helper class)
+	importStatement?: string; // Optional for AI (no import needed)
 	usageExample: string;
 }
 
@@ -77,6 +78,11 @@ export class BindingDetectionService {
 					.map((bucket: any) => bucket.binding)
 					.filter((b: any) => typeof b === "string" && b.length > 0);
 			}
+
+			// Detect AI binding (singleton)
+			if (config.ai && typeof config.ai.binding === "string" && config.ai.binding.length > 0) {
+				bindings.ai = config.ai.binding;
+			}
 		} catch (error) {
 			// Graceful fallback: If parsing fails, return empty bindings
 			// Don't throw - we don't want to break tool scaffolding
@@ -99,7 +105,8 @@ export class BindingDetectionService {
 		return (
 			bindings.kv.length > 0 ||
 			bindings.d1.length > 0 ||
-			bindings.r2.length > 0
+			bindings.r2.length > 0 ||
+			!!bindings.ai
 		);
 	}
 
@@ -166,12 +173,27 @@ export class BindingDetectionService {
 			});
 		}
 
+		// Generate AI examples (no helper class - direct binding usage)
+		if (bindings.ai) {
+			examples.push({
+				type: "ai",
+				bindingName: bindings.ai,
+				usageExample: [
+					`// RAG with LLM:`,
+					`const ragResult = await env.${bindings.ai}.aiSearch('my-instance', 'query text');`,
+					``,
+					`// Vector-only search:`,
+					`const searchResult = await env.${bindings.ai}.search('my-instance', 'query text');`,
+				].join("\n// "),
+			});
+		}
+
 		return examples;
 	}
 
 	/**
 	 * Generate compact binding summary for template comments
-	 * Format: "KV: MY_CACHE, SESSION_STORE | D1: USER_DB | R2: UPLOADS"
+	 * Format: "KV: MY_CACHE, SESSION_STORE | D1: USER_DB | R2: UPLOADS | AI: AI"
 	 *
 	 * @param bindings - Detected bindings
 	 * @returns Compact summary string
@@ -187,6 +209,9 @@ export class BindingDetectionService {
 		}
 		if (bindings.r2.length > 0) {
 			parts.push(`R2: ${bindings.r2.join(", ")}`);
+		}
+		if (bindings.ai) {
+			parts.push(`AI: ${bindings.ai}`);
 		}
 
 		return parts.join(" | ");
