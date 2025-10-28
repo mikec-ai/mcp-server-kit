@@ -13,6 +13,7 @@ import { createTemplateCommand } from "../commands/template.js";
 import { createAddCommand } from "../commands/add-tool.js";
 import { createValidateCommand } from "../commands/validate.js";
 import { createListCommand } from "../commands/list.js";
+import { ExitCode, CLIErrorResponse } from "../../types/cli-errors.js";
 
 /**
  * Read version from package.json
@@ -38,10 +39,80 @@ function getVersion(): string {
 const VERSION = getVersion();
 
 /**
+ * Check if JSON mode is requested in arguments
+ */
+function isJsonMode(): boolean {
+	return process.argv.includes("--json");
+}
+
+/**
+ * Configure a command and all its subcommands for JSON error handling
+ */
+function configureCommandForJson(cmd: Command): void {
+	// Configure output for this command
+	cmd.configureOutput({
+		writeErr: (str) => {
+			// Extract error message from Commander's output
+			const errorMatch = str.match(/error: (.+)/);
+			const errorMessage = errorMatch ? errorMatch[1].trim() : str.trim();
+
+			const response: CLIErrorResponse = {
+				success: false,
+				error: errorMessage,
+				errorCode: ExitCode.VALIDATION_ERROR,
+				errorType: "ArgumentError",
+			};
+
+			// Output to stdout (not stderr) for consistent JSON handling
+			console.log(JSON.stringify(response, null, 2));
+		},
+		writeOut: (str) => {
+			// Suppress normal output in JSON mode
+			// (commands will output their own JSON)
+		},
+	});
+
+	// Override exit to use consistent exit codes
+	cmd.exitOverride((err) => {
+		// For help display, exit with success
+		if (err.code === "commander.helpDisplayed") {
+			process.exit(ExitCode.SUCCESS);
+		}
+
+		// For all other errors, exit with validation error code
+		process.exit(ExitCode.VALIDATION_ERROR);
+	});
+
+	// Recursively configure all subcommands
+	cmd.commands.forEach((subCmd) => configureCommandForJson(subCmd));
+}
+
+/**
+ * Configure a command and all its subcommands for text error handling
+ */
+function configureCommandForText(cmd: Command): void {
+	// Configure this command
+	cmd.showHelpAfterError("\n💡 Tip: Run with --help to see all available commands and options");
+
+	cmd.configureOutput({
+		writeErr: (str) => {
+			process.stderr.write(str);
+		},
+		writeOut: (str) => {
+			process.stdout.write(str);
+		},
+	});
+
+	// Recursively configure all subcommands
+	cmd.commands.forEach((subCmd) => configureCommandForText(subCmd));
+}
+
+/**
  * Create and configure the CLI program
  */
 function createProgram(): Command {
 	const program = new Command();
+	const jsonMode = isJsonMode();
 
 	program
 		.name("mcp-server-kit")
@@ -61,24 +132,21 @@ AI Agent Tips:
   • Check --help on any command for detailed options`)
 		.version(VERSION, "-v, --version", "Output the current version");
 
-	// Configure enhanced error handling
-	program
-		.showHelpAfterError('\n💡 Tip: Run with --help to see all available commands and options')
-		.configureOutput({
-			writeErr: (str) => {
-				process.stderr.write(str);
-			},
-			writeOut: (str) => {
-				process.stdout.write(str);
-			}
-		});
-
-	// Add commands
+	// Add commands first
 	program.addCommand(createNewCommand());
 	program.addCommand(createTemplateCommand());
 	program.addCommand(createAddCommand());
 	program.addCommand(createValidateCommand());
 	program.addCommand(createListCommand());
+
+	// Configure based on JSON mode
+	if (jsonMode) {
+		// Apply JSON configuration to all commands recursively
+		configureCommandForJson(program);
+	} else {
+		// Apply text configuration to all commands recursively
+		configureCommandForText(program);
+	}
 
 	return program;
 }

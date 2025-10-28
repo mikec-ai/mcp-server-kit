@@ -50,6 +50,70 @@ export const AUTH_ANCHORS = {
 } as const;
 
 /**
+ * Predefined anchor blocks for Cloudflare binding transformation
+ */
+export const BINDING_ANCHORS = {
+	// Phase 1: KV and D1
+	KV: {
+		type: "bindings:kv",
+		startMarker: "// <mcp-bindings:kv>",
+		endMarker: "// </mcp-bindings:kv>",
+		description: "KV namespace bindings managed by mcp-server-kit",
+	},
+	D1: {
+		type: "bindings:d1",
+		startMarker: "// <mcp-bindings:d1>",
+		endMarker: "// </mcp-bindings:d1>",
+		description: "D1 database bindings managed by mcp-server-kit",
+	},
+	IMPORTS: {
+		type: "bindings:imports",
+		startMarker: "// <mcp-bindings:imports>",
+		endMarker: "// </mcp-bindings:imports>",
+		description: "Binding helper imports will be added here by add binding command",
+	},
+	// Phase 2: R2 and Queues (coming soon)
+	R2: {
+		type: "bindings:r2",
+		startMarker: "// <mcp-bindings:r2>",
+		endMarker: "// </mcp-bindings:r2>",
+		description: "R2 bucket bindings managed by mcp-server-kit",
+	},
+	QUEUES_PRODUCERS: {
+		type: "bindings:queues:producers",
+		startMarker: "// <mcp-bindings:queues:producers>",
+		endMarker: "// </mcp-bindings:queues:producers>",
+		description: "Queue producer bindings managed by mcp-server-kit",
+	},
+	QUEUES_CONSUMERS: {
+		type: "bindings:queues:consumers",
+		startMarker: "// <mcp-bindings:queues:consumers>",
+		endMarker: "// </mcp-bindings:queues:consumers>",
+		description: "Queue consumer bindings managed by mcp-server-kit",
+	},
+	// Phase 3: Workers AI and Vectorize (coming soon)
+	AI: {
+		type: "bindings:ai",
+		startMarker: "// <mcp-bindings:ai>",
+		endMarker: "// </mcp-bindings:ai>",
+		description: "Workers AI binding managed by mcp-server-kit",
+	},
+	VECTORIZE: {
+		type: "bindings:vectorize",
+		startMarker: "// <mcp-bindings:vectorize>",
+		endMarker: "// </mcp-bindings:vectorize>",
+		description: "Vectorize index bindings managed by mcp-server-kit",
+	},
+	// Phase 4: Hyperdrive (coming soon)
+	HYPERDRIVE: {
+		type: "bindings:hyperdrive",
+		startMarker: "// <mcp-bindings:hyperdrive>",
+		endMarker: "// </mcp-bindings:hyperdrive>",
+		description: "Hyperdrive config bindings managed by mcp-server-kit",
+	},
+} as const;
+
+/**
  * Result of anchor operation
  */
 export interface AnchorOperationResult {
