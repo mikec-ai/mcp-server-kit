@@ -202,6 +202,189 @@ return {
 };
 ```
 
+## Using Cloudflare Bindings in Tools
+
+### Automatic Binding Detection
+
+When you run `mcp-server-kit add tool`, the CLI automatically detects configured Cloudflare bindings and adds usage examples as comments in your tool file.
+
+**Supported Bindings**:
+- **KV Namespaces** - Type-safe helper classes
+- **D1 Databases** - Type-safe helper classes
+- **R2 Buckets** - Type-safe helper classes
+- **Workers AI** - Direct `env.AI` usage (no helper class)
+
+### Adding Bindings
+
+```bash
+# Add bindings before creating tools
+mcp-server-kit add binding kv --name SESSION_CACHE
+mcp-server-kit add binding d1 --name USER_DB --database users
+mcp-server-kit add binding r2 --name FILE_STORAGE
+mcp-server-kit add binding ai --name AI
+
+# Now create tools - binding examples appear automatically
+mcp-server-kit add tool user-manager
+```
+
+### KV Namespace Example
+
+```typescript
+import { SessionCacheKV } from "./utils/bindings/kv-session-cache.js";
+
+server.tool(
+  "cache-user",
+  "Cache user data",
+  { userId: z.string(), data: z.object({}) },
+  async ({ userId, data }, { env }) => {
+    const cache = new SessionCacheKV(env.SESSION_CACHE);
+
+    await cache.set(`user:${userId}`, data, {
+      expirationTtl: 3600  // 1 hour
+    });
+
+    return {
+      content: [{
+        type: "text",
+        text: `User ${userId} cached successfully`
+      }]
+    };
+  }
+);
+```
+
+### D1 Database Example
+
+```typescript
+import { UserDbD1 } from "./utils/bindings/d1-user-db.js";
+
+server.tool(
+  "find-users",
+  "Find users by criteria",
+  { active: z.boolean().optional() },
+  async ({ active }, { env }) => {
+    const db = new UserDbD1(env.USER_DB);
+
+    const users = await db.query(
+      "SELECT * FROM users WHERE active = ?",
+      [active ?? true]
+    );
+
+    return {
+      content: [{
+        type: "text",
+        text: JSON.stringify(users, null, 2)
+      }]
+    };
+  }
+);
+```
+
+### R2 Bucket Example
+
+```typescript
+import { FileStorageR2 } from "./utils/bindings/r2-file-storage.js";
+
+server.tool(
+  "upload-file",
+  "Upload file to storage",
+  { filename: z.string(), content: z.string() },  // base64
+  async ({ filename, content }, { env }) => {
+    const storage = new FileStorageR2(env.FILE_STORAGE);
+
+    const buffer = Buffer.from(content, 'base64');
+    await storage.put(`uploads/${filename}`, buffer, {
+      httpMetadata: { contentType: 'application/octet-stream' }
+    });
+
+    return {
+      content: [{
+        type: "text",
+        text: `File uploaded: ${filename} (${buffer.length} bytes)`
+      }]
+    };
+  }
+);
+```
+
+### Workers AI Example
+
+**No helper class** - use `env.AI` directly:
+
+```typescript
+server.tool(
+  "semantic-search",
+  "Search using AI-powered semantic search",
+  { query: z.string() },
+  async ({ query }, { env }) => {
+    // RAG with LLM (vector search + generated answer)
+    const ragResult = await env.AI.aiSearch('docs-index', query);
+
+    return {
+      content: [{
+        type: "text",
+        text: JSON.stringify({
+          answer: ragResult.response,
+          sources: ragResult.context
+        }, null, 2)
+      }]
+    };
+  }
+);
+```
+
+**Vector-only search**:
+
+```typescript
+server.tool(
+  "vector-search",
+  "Search using vector similarity only",
+  { query: z.string() },
+  async ({ query }, { env }) => {
+    // Raw search results without LLM
+    const searchResults = await env.AI.search('docs-index', query);
+
+    return {
+      content: [{
+        type: "text",
+        text: JSON.stringify(searchResults.matches, null, 2)
+      }]
+    };
+  }
+);
+```
+
+### Env Parameter
+
+All tools receive an optional `{ env }` second parameter:
+
+```typescript
+server.tool(
+  "my-tool",
+  "Description",
+  ParamsSchema.shape,
+  async (params, { env }) => {
+    // Access bindings via env
+    if (env?.SESSION_CACHE) {
+      const cache = new SessionCacheKV(env.SESSION_CACHE);
+      // ...
+    }
+  }
+);
+```
+
+**Note**: `env` is optional during testing (unit tests don't provide it).
+
+### Complete Binding Documentation
+
+See `CLOUDFLARE-BINDINGS.md` for:
+- Complete binding patterns
+- Configuration examples
+- Best practices
+- Error handling
+
+---
+
 ## Testing Tools
 
 ### Unit Test Pattern

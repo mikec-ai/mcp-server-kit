@@ -17,6 +17,12 @@ mcp-server-kit add tool <name> --description "<desc>"
 mcp-server-kit add prompt <name> --description "<desc>"
 mcp-server-kit add resource <name> --description "<desc>"
 
+# Add Cloudflare bindings (KV, D1, R2, AI)
+mcp-server-kit add binding kv --name SESSION_CACHE
+mcp-server-kit add binding d1 --name USER_DB --database users
+mcp-server-kit add binding r2 --name FILE_STORAGE
+mcp-server-kit add binding ai --name AI
+
 # Add authentication (Cloudflare Workers)
 mcp-server-kit add-auth <provider>  # stytch, auth0, or workos
 
@@ -28,6 +34,33 @@ mcp-server-kit list tools
 mcp-server-kit list prompts
 mcp-server-kit list resources
 ```
+
+### Automatic Binding Detection
+
+**When you create tools/prompts/resources**, the CLI automatically detects configured Cloudflare bindings and adds usage examples as comments in your generated files.
+
+**Supported Bindings**:
+- **KV** - Type-safe helper classes (e.g., `SessionCacheKV`)
+- **D1** - Type-safe helper classes (e.g., `UserDbD1`)
+- **R2** - Type-safe helper classes (e.g., `FileStorageR2`)
+- **AI** - Direct `env.AI` usage (no helper class)
+
+**Example** (generated tool with AI binding):
+```typescript
+server.tool("search", "Search docs", schema, async (params, { env }) => {
+  // Available Cloudflare bindings: AI: AI
+  //
+  // RAG with LLM:
+  // const ragResult = await env.AI.aiSearch('docs-index', 'query text');
+  //
+  // Vector-only search:
+  // const searchResult = await env.AI.search('docs-index', 'query text');
+
+  // Your implementation here
+});
+```
+
+**See**: [CLOUDFLARE-BINDINGS.md](CLOUDFLARE-BINDINGS.md) for complete binding documentation
 
 ### When to Use What
 
@@ -132,6 +165,7 @@ See [EXAMPLES.md](EXAMPLES.md) for detailed walkthroughs.
 - [TOOLS.md](TOOLS.md) - Complete tool development
 - [PROMPTS.md](PROMPTS.md) - Prompt engineering for MCP
 - [RESOURCES.md](RESOURCES.md) - Resource patterns and URIs
+- [CLOUDFLARE-BINDINGS.md](CLOUDFLARE-BINDINGS.md) - KV, D1, R2, AI bindings
 
 **Quality:**
 - [TESTING.md](TESTING.md) - Testing strategies

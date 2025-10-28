@@ -429,6 +429,300 @@ mcp-server-kit add resource database-record \
 
 ---
 
+## add binding
+
+**Purpose**: Add Cloudflare binding scaffolding to your MCP server
+
+**Syntax**:
+```bash
+mcp-server-kit add binding <type> --name <BINDING_NAME> [options]
+```
+
+### Required Arguments
+
+| Argument | Format | Options | Example |
+|----------|--------|---------|---------|
+| `type` | lowercase | `kv`, `d1`, `r2`, `ai` | `kv`, `d1` |
+| `--name` | UPPER_SNAKE_CASE | - | `MY_CACHE`, `USER_DATA` |
+
+### Supported Binding Types
+
+**Phase 1 - Storage Primitives** (Production-Ready):
+- **kv** - Workers KV (eventually consistent key-value storage)
+- **d1** - D1 Database (SQLite with ACID transactions)
+- **r2** - R2 Storage (S3-compatible object storage)
+
+**Phase 2 - AI/ML Primitives** (Production-Ready):
+- **ai** - Workers AI (ML inference with RAG and vector search)
+
+### Optional Flags
+
+| Flag | Default | Purpose |
+|------|---------|---------|
+| `--database <name>` | binding name in kebab-case | D1 database name (D1 only) |
+| `--skip-helper` | false | Skip generating helper class |
+| `--skip-typegen` | false | Skip running cf-typegen |
+| `--json` | false | Output results as JSON |
+
+### What It Generates
+
+**For KV, D1, R2** (Phase 1):
+1. **src/utils/bindings/{type}-{name}.ts** - Type-safe helper class
+2. **Updates wrangler.jsonc** - Adds binding configuration
+3. **Updates src/index.ts** - Adds helper import
+4. **Runs cf-typegen** - Updates worker-configuration.d.ts
+
+**For AI** (Phase 2):
+1. **Updates wrangler.jsonc** - Adds AI binding configuration
+2. **Runs cf-typegen** - Updates worker-configuration.d.ts
+3. **No helper class** - Use `env.AI` directly in tools
+
+### KV Namespace Binding
+
+**When to use**: Simple key-value storage, caching, session management
+
+**Command**:
+```bash
+mcp-server-kit add binding kv --name SESSION_CACHE
+```
+
+**Generated Helper** (src/utils/bindings/kv-session-cache.ts):
+```typescript
+export class SessionCacheKV {
+  async get<T>(key: string): Promise<T | null>
+  async set<T>(key: string, value: T, options?: KVPutOptions): Promise<void>
+  async delete(key: string): Promise<void>
+  async list(options?: KVListOptions): Promise<KVListResult>
+  // + getText, getArrayBuffer, getStream, has, deleteMany, listAll
+}
+```
+
+**Usage in Tools**:
+```typescript
+import { SessionCacheKV } from "./utils/bindings/kv-session-cache.js";
+
+const cache = new SessionCacheKV(env.SESSION_CACHE);
+await cache.set("user:123", { name: "Alice" }, { expirationTtl: 3600 });
+const user = await cache.get<User>("user:123");
+```
+
+**Next Steps**:
+```bash
+# 1. Create namespace in Cloudflare
+wrangler kv namespace create SESSION_CACHE
+
+# 2. Update wrangler.jsonc with namespace ID from step 1
+# 3. Use the helper class in your tools
+```
+
+### D1 Database Binding
+
+**When to use**: Structured SQL data, relational queries, ACID transactions
+
+**Command**:
+```bash
+mcp-server-kit add binding d1 --name USER_DB --database user-data
+```
+
+**Generated Helper** (src/utils/bindings/d1-user-db.ts):
+```typescript
+export class UserDbD1 {
+  async query<T>(sql: string, params?: any[]): Promise<T[]>
+  async queryFirst<T>(sql: string, params?: any[]): Promise<T | null>
+  async execute(sql: string, params?: any[]): Promise<D1QueryResult>
+  async batch(statements: D1Statement[]): Promise<D1QueryResult[]>
+  // + insert, update, deleteWhere, count, exists, hasTable
+}
+```
+
+**Usage in Tools**:
+```typescript
+import { UserDbD1 } from "./utils/bindings/d1-user-db.js";
+
+const db = new UserDbD1(env.USER_DB);
+const users = await db.query<User>("SELECT * FROM users WHERE active = ?", [true]);
+await db.insert("users", { name: "Alice", email: "alice@example.com" });
+```
+
+**Next Steps**:
+```bash
+# 1. Create database in Cloudflare
+wrangler d1 create user-data
+
+# 2. Update wrangler.jsonc with database ID from step 1
+# 3. Create schema with migrations
+# 4. Use the helper class in your tools
+```
+
+### R2 Bucket Binding
+
+**When to use**: Object storage, file uploads, large binary data, S3-compatible storage
+
+**Command**:
+```bash
+mcp-server-kit add binding r2 --name FILE_STORAGE
+```
+
+**Generated Helper** (src/utils/bindings/r2-file-storage.ts):
+```typescript
+export class FileStorageR2 {
+  async get(key: string): Promise<R2ObjectBody | null>
+  async put(key: string, value: ReadableStream | ArrayBuffer | string, options?: R2PutOptions): Promise<void>
+  async delete(key: string): Promise<void>
+  async list(options?: R2ListOptions): Promise<R2Objects>
+  // + head, exists, deleteMany, listAll
+}
+```
+
+**Usage in Tools**:
+```typescript
+import { FileStorageR2 } from "./utils/bindings/r2-file-storage.js";
+
+const storage = new FileStorageR2(env.FILE_STORAGE);
+await storage.put("uploads/image.png", imageBuffer, {
+  httpMetadata: { contentType: "image/png" }
+});
+const file = await storage.get("uploads/image.png");
+```
+
+**Next Steps**:
+```bash
+# 1. Create bucket in Cloudflare
+wrangler r2 bucket create file-storage
+
+# 2. Binding already configured in wrangler.jsonc
+# 3. Use the helper class in your tools
+```
+
+### Workers AI Binding
+
+**When to use**: ML inference, RAG (Retrieval-Augmented Generation), semantic search, vector search
+
+**Command**:
+```bash
+mcp-server-kit add binding ai --name AI
+```
+
+**No Helper Class**: AI binding is used directly via `env.AI`
+
+**Configuration Added** (wrangler.jsonc):
+```jsonc
+{
+  "ai": {
+    "binding": "AI"
+  }
+}
+```
+
+**Usage in Tools** (auto-detected and shown as comments):
+```typescript
+export function registerSearchTool(server: McpServer, env?: Env): void {
+  server.tool("search", "Search documentation", schema, async (params) => {
+    // Available Cloudflare bindings: AI: AI
+    //
+    // RAG with LLM:
+    // const ragResult = await env.AI.aiSearch('my-instance', 'query text');
+    //
+    // Vector-only search:
+    // const searchResult = await env.AI.search('my-instance', 'query text');
+
+    const result = await env.AI.aiSearch('docs-index', params.query);
+    return { content: [{ type: "text", text: JSON.stringify(result) }] };
+  });
+}
+```
+
+**Key Features**:
+- **RAG with LLM**: `.aiSearch(instanceName, query)` - Vector search + LLM response
+- **Vector-only**: `.search(instanceName, query)` - Raw search results without LLM
+- **Auto-detection**: Binding examples appear automatically in generated tools
+- **Instance names**: Runtime parameters (create in Cloudflare dashboard)
+
+**Next Steps**:
+```bash
+# 1. Binding already configured in wrangler.jsonc
+# 2. Create AI instance in Cloudflare dashboard
+# 3. Use env.AI.aiSearch() or env.AI.search() in your tools
+```
+
+### Naming Convention
+
+**Binding Names** (UPPER_SNAKE_CASE):
+- ✅ `SESSION_CACHE`, `USER_DATA`, `FILE_STORAGE`, `AI`
+- ❌ `sessionCache`, `user-data`, `FileStorage`
+
+**Helper Classes** (PascalCase with type suffix):
+- `SessionCacheKV`, `UserDataD1`, `FileStorageR2`
+
+**File Names** (kebab-case):
+- `kv-session-cache.ts`, `d1-user-data.ts`, `r2-file-storage.ts`
+
+### Complete Examples
+
+**Add multiple bindings**:
+```bash
+# KV for caching
+mcp-server-kit add binding kv --name SESSION_CACHE
+
+# D1 for database
+mcp-server-kit add binding d1 --name USER_DB --database users
+
+# R2 for file storage
+mcp-server-kit add binding r2 --name FILE_STORAGE
+
+# AI for semantic search
+mcp-server-kit add binding ai --name AI
+```
+
+**Skip helper generation** (manual implementation):
+```bash
+mcp-server-kit add binding kv --name MY_CACHE --skip-helper
+```
+
+**JSON output**:
+```bash
+mcp-server-kit add binding d1 --name MY_DB --json
+```
+
+### Common Errors and Fixes
+
+**Error: "Invalid binding name"**
+```bash
+# ❌ Wrong: lowercase
+mcp-server-kit add binding kv --name my_cache
+
+# ✅ Right: UPPER_SNAKE_CASE
+mcp-server-kit add binding kv --name MY_CACHE
+```
+
+**Error: "Binding already exists"**
+- Check wrangler.jsonc for duplicate bindings
+- Remove existing binding or use different name
+
+**Error: "Helper class already exists"**
+```bash
+# Use --skip-helper to skip file generation
+mcp-server-kit add binding kv --name MY_CACHE --skip-helper
+```
+
+### Validation and Rollback
+
+**Pre-Validation**:
+- Checks project structure
+- Validates binding name format
+- Checks for duplicate bindings
+
+**Post-Validation**:
+- Verifies files created successfully
+- Validates wrangler.jsonc syntax
+- Runs cf-typegen and checks for errors
+- Runs TypeScript type checking
+
+**Automatic Rollback**:
+If any validation fails, all changes are automatically rolled back.
+
+---
+
 ## add-auth
 
 **Purpose**: Add authentication scaffolding to your MCP server
@@ -878,6 +1172,226 @@ cd test-feature
 npm run type-check
 npm test
 mcp-server-kit list tools
+```
+
+---
+
+## JSON Mode and Error Handling
+
+### JSON Output Mode
+
+**Purpose**: Machine-readable output for CI/CD, automation, and agent workflows
+
+**How to Enable**:
+```bash
+# Add --json flag to any command
+mcp-server-kit new server --name my-project --json
+mcp-server-kit add tool search --json
+mcp-server-kit add binding kv --name MY_CACHE --json
+mcp-server-kit list tools --json
+```
+
+### Progress Reporting (NDJSON)
+
+**Format**: Newline-Delimited JSON (NDJSON) - one event per line
+
+**Event Types**:
+
+**1. Start Event**:
+```json
+{
+  "type": "start",
+  "operation": "Creating MCP server",
+  "steps": ["validating-configuration", "creating-files", "installing-dependencies"],
+  "timestamp": "2025-10-28T12:00:00.000Z"
+}
+```
+
+**2. Step Update Events**:
+```json
+{"type":"step","step":"validating-configuration","status":"in_progress","timestamp":"2025-10-28T12:00:00.100Z"}
+{"type":"step","step":"validating-configuration","status":"completed","duration":150,"timestamp":"2025-10-28T12:00:00.250Z"}
+{"type":"step","step":"creating-files","status":"in_progress","timestamp":"2025-10-28T12:00:00.260Z"}
+```
+
+**3. Complete Event**:
+```json
+{
+  "type": "complete",
+  "success": true,
+  "duration": 15000,
+  "result": {
+    "projectName": "my-project",
+    "path": "/path/to/my-project",
+    "files": ["src/index.ts", "package.json", "wrangler.jsonc"]
+  },
+  "timestamp": "2025-10-28T12:00:15.000Z"
+}
+```
+
+**4. Error Event**:
+```json
+{
+  "type": "error",
+  "step": "installing-dependencies",
+  "error": "npm install failed",
+  "timestamp": "2025-10-28T12:00:10.500Z"
+}
+```
+
+**Step Statuses**:
+- `pending` - Step not yet started
+- `in_progress` - Step currently executing
+- `completed` - Step finished successfully
+- `failed` - Step encountered error
+
+### Error Handling
+
+**Exit Codes**:
+```
+0 - SUCCESS       Operation completed successfully
+1 - VALIDATION    Input validation failed
+2 - RUNTIME       Runtime error during execution
+3 - FILESYSTEM    File system error
+```
+
+**JSON Error Response Format**:
+```json
+{
+  "success": false,
+  "error": "Invalid tool name 'MyTool'. Tool names must be lowercase with hyphens.",
+  "errorCode": 1,
+  "errorType": "ValidationError",
+  "suggestion": "Use 'my-tool' instead",
+  "details": {
+    "field": "name",
+    "provided": "MyTool",
+    "expected": "lowercase-with-hyphens"
+  }
+}
+```
+
+**Error Types**:
+
+**ValidationError** (Exit Code 1):
+- Invalid command arguments
+- Malformed names (not kebab-case or UPPER_SNAKE_CASE)
+- Missing required files (package.json, wrangler.jsonc)
+- Duplicate bindings or tools
+
+**RuntimeError** (Exit Code 2):
+- Command execution failed
+- npm install failed
+- cf-typegen failed
+- TypeScript type-check failed
+
+**FileSystemError** (Exit Code 3):
+- Permission denied
+- Directory not found
+- File already exists
+- Disk full
+
+### Using JSON Output in Scripts
+
+**Bash Example**:
+```bash
+#!/bin/bash
+
+# Create project with JSON output
+OUTPUT=$(mcp-server-kit new server --name my-project --json 2>&1)
+EXIT_CODE=$?
+
+# Parse result
+if [ $EXIT_CODE -eq 0 ]; then
+  PROJECT_PATH=$(echo "$OUTPUT" | jq -r '.result.path')
+  echo "Project created at: $PROJECT_PATH"
+else
+  ERROR=$(echo "$OUTPUT" | jq -r '.error')
+  echo "Error: $ERROR"
+  exit $EXIT_CODE
+fi
+```
+
+**Node.js Example**:
+```javascript
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
+
+async function createProject(name) {
+  try {
+    const { stdout } = await execAsync(
+      `mcp-server-kit new server --name ${name} --json`
+    );
+
+    // Parse NDJSON stream
+    const events = stdout.trim().split('\n').map(JSON.parse);
+    const result = events.find(e => e.type === 'complete');
+
+    console.log('Project created:', result.result.path);
+    return result;
+  } catch (error) {
+    const errorEvent = JSON.parse(error.stdout);
+    console.error('Error:', errorEvent.error);
+    throw error;
+  }
+}
+```
+
+**Python Example**:
+```python
+import subprocess
+import json
+import sys
+
+def create_project(name):
+    result = subprocess.run(
+        ['mcp-server-kit', 'new', 'server', '--name', name, '--json'],
+        capture_output=True,
+        text=True
+    )
+
+    if result.returncode == 0:
+        # Parse NDJSON output
+        events = [json.loads(line) for line in result.stdout.strip().split('\n')]
+        complete = next(e for e in events if e['type'] == 'complete')
+        print(f"Project created: {complete['result']['path']}")
+        return complete
+    else:
+        error = json.loads(result.stdout)
+        print(f"Error: {error['error']}", file=sys.stderr)
+        sys.exit(result.returncode)
+
+create_project('my-project')
+```
+
+### Monitoring Progress in Real-Time
+
+**Bash with jq**:
+```bash
+mcp-server-kit new server --name my-project --json | while read -r line; do
+  TYPE=$(echo "$line" | jq -r '.type')
+
+  case "$TYPE" in
+    "start")
+      echo "Starting operation..."
+      ;;
+    "step")
+      STEP=$(echo "$line" | jq -r '.step')
+      STATUS=$(echo "$line" | jq -r '.status')
+      echo "[$STATUS] $STEP"
+      ;;
+    "complete")
+      echo "Operation completed successfully"
+      ;;
+    "error")
+      ERROR=$(echo "$line" | jq -r '.error')
+      echo "Error: $ERROR"
+      exit 1
+      ;;
+  esac
+done
 ```
 
 ---

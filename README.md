@@ -14,8 +14,10 @@ Create production-ready MCP servers in seconds with built-in testing infrastruct
 - 📦 **Production Ready** - Includes TypeScript, testing, linting, and deployment config
 - 🤖 **Agent-Optimized** - Built specifically for AI agents with auto-scaffolding, examples, and validation
 - 🛠️ **Development Tools** - Add tools/prompts/resources, validate projects, list components, all from CLI
+- ☁️ **Cloudflare Bindings** - Scaffold KV, D1, R2, and Workers AI bindings with type-safe helpers
 - 🔐 **Authentication Support** - Add auth scaffolding with provider-specific code (Stytch, Auth0, WorkOS)
 - 📚 **Rich Examples** - Comprehensive example tools and utilities showing best practices
+- 🤖 **JSON Mode** - Machine-readable output with NDJSON progress reporting for automation
 
 ## For AI Agents 🤖
 
@@ -39,16 +41,23 @@ mcp-server-kit add prompt code-reviewer --description "Review code quality"
 mcp-server-kit add resource snippet --description "Code snippet by ID"
 mcp-server-kit add resource config --static --description "App configuration"
 
-# 3. (Optional) Add authentication
+# 3. (Optional) Add Cloudflare bindings
+mcp-server-kit add binding kv --name SESSION_CACHE
+mcp-server-kit add binding d1 --name USER_DB --database users
+mcp-server-kit add binding r2 --name FILE_STORAGE
+mcp-server-kit add binding ai --name AI
+
+# 4. (Optional) Add authentication
 mcp-server-kit add-auth stytch  # or auth0, workos
 
-# 4. Implement (TODO markers show what to code)
+# 5. Implement (TODO markers show what to code)
 # Edit src/tools/weather.ts, src/prompts/code-reviewer.ts, etc.
+# Binding examples appear automatically in generated tools
 
-# 5. Validate (catches missed registrations, tests, etc.)
+# 6. Validate (catches missed registrations, tests, etc.)
 mcp-server-kit validate
 
-# 6. Test
+# 7. Test
 npm run test:unit
 npm run integration:run
 ```
@@ -203,6 +212,7 @@ mcp-server-kit new server --name <name> --template <template> [--output <path>] 
 mcp-server-kit add tool <name> --description "<desc>" [--json]
 mcp-server-kit add prompt <name> --description "<desc>" [--json]
 mcp-server-kit add resource <name> --description "<desc>" [--static] [--json]
+mcp-server-kit add binding <type> --name <BINDING_NAME> [--database <name>] [--json]
 mcp-server-kit add-auth <provider> [--platform cloudflare] [--json]
 mcp-server-kit validate [--strict] [--fix] [--json]
 mcp-server-kit list tools [--json]
@@ -252,6 +262,12 @@ import { TemplateProcessor, TemplateRegistry } from 'mcp-server-kit';
 
 // Test Harness API - Run integration tests
 import { TestRunner, loadTestSpec } from 'mcp-server-kit/harness';
+
+// Progress Reporter API - Track operation progress
+import { ProgressReporter } from 'mcp-server-kit/reporting';
+
+// Error Handling API - Structured error management
+import { CLIError, ValidationError, RuntimeError } from 'mcp-server-kit/errors';
 ```
 
 ### Scaffolding API
@@ -405,6 +421,103 @@ await runner.disconnect();
 - Performance testing
 - Monitoring and alerts
 
+### Progress Reporter API
+
+Track operation progress with machine-readable events:
+
+```typescript
+import { ProgressReporter } from 'mcp-server-kit/reporting';
+
+const reporter = new ProgressReporter({
+  format: 'json', // or 'text'
+  output: process.stdout,
+});
+
+// Start operation
+reporter.start('Creating MCP server', [
+  'validating-configuration',
+  'creating-files',
+  'installing-dependencies',
+]);
+
+// Update step status
+reporter.stepInProgress('validating-configuration');
+reporter.stepCompleted('validating-configuration', 150);
+
+reporter.stepInProgress('creating-files');
+reporter.stepCompleted('creating-files', 300);
+
+// Complete operation
+reporter.complete(true, {
+  projectName: 'my-server',
+  path: '/path/to/my-server',
+});
+```
+
+**Output (NDJSON)**:
+```json
+{"type":"start","operation":"Creating MCP server","steps":[...],"timestamp":"..."}
+{"type":"step","step":"validating-configuration","status":"in_progress","timestamp":"..."}
+{"type":"step","step":"validating-configuration","status":"completed","duration":150,"timestamp":"..."}
+{"type":"complete","success":true,"duration":450,"result":{...},"timestamp":"..."}
+```
+
+**Use Cases**:
+- CI/CD progress tracking
+- Real-time operation monitoring
+- Custom progress UI
+- Automation workflows
+
+### Error Handling API
+
+Handle errors with structured, typed error classes:
+
+```typescript
+import { ValidationError, RuntimeError, CLIError } from 'mcp-server-kit/errors';
+
+// Validation errors (exit code 1)
+throw new ValidationError(
+  'Invalid tool name',
+  {
+    field: 'name',
+    provided: 'MyTool',
+    expected: 'lowercase-with-hyphens',
+  },
+  'Use "my-tool" instead',
+);
+
+// Runtime errors (exit code 2)
+throw new RuntimeError(
+  'npm install failed',
+  { command: 'npm install', exitCode: 1 },
+  'Check your package.json for syntax errors',
+);
+
+// Catch and handle
+try {
+  await scaffolder.scaffold(options);
+} catch (error) {
+  if (error instanceof CLIError) {
+    console.error(`Error: ${error.message}`);
+    if (error.suggestion) console.error(`Suggestion: ${error.suggestion}`);
+    process.exit(error.exitCode);
+  }
+  throw error;
+}
+```
+
+**Error Types**:
+- `ValidationError` - Input validation failures (exit code 1)
+- `RuntimeError` - Execution failures (exit code 2)
+- `FileSystemError` - File/directory errors (exit code 3)
+- `CLIError` - Base class for all CLI errors
+
+**Use Cases**:
+- Consistent error handling
+- Machine-readable error output
+- CI/CD error parsing
+- User-friendly error messages
+
 ### TypeScript Type Safety
 
 All APIs are fully typed:
@@ -415,6 +528,8 @@ import type {
   ValidationResult,
   EntityInfo,
   TestResult,
+  ProgressEvent,
+  ErrorDetails,
 } from 'mcp-server-kit/scaffolding';
 ```
 
@@ -432,6 +547,8 @@ import type {
     "mcp-server-kit/harness": "Test harness (portable)",
     "mcp-server-kit/scaffolding": "Entity scaffolding services",
     "mcp-server-kit/validation": "Project validation",
+    "mcp-server-kit/reporting": "Progress reporting (NDJSON)",
+    "mcp-server-kit/errors": "Structured error classes",
     "mcp-server-kit/commands": "CLI commands (Commander.js)"
   }
 }

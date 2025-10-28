@@ -18,11 +18,29 @@ Guidance for using Cloudflare primitives (KV, D1, R2, Queues, Workers AI, Vector
 
 ---
 
-## Current Status (Manual Setup)
+## Binding Support Status
 
-**Automated scaffolding** for bindings is planned but not yet implemented. For now, bindings must be configured manually following the patterns below.
+**Automated Scaffolding Available:**
 
-**See**: `docs/cloudflare-primitives-reference.md` for comprehensive details on each primitive.
+**Phase 1 - Storage Primitives** (✅ Production-Ready):
+- **KV Namespaces** - Type-safe helper classes with `add binding kv`
+- **D1 Databases** - Type-safe helper classes with `add binding d1`
+- **R2 Buckets** - Type-safe helper classes with `add binding r2`
+
+**Phase 2 - AI/ML Primitives** (✅ Production-Ready):
+- **Workers AI** - Direct `env.AI` usage with `add binding ai` (no helper class)
+
+**Manual Setup Required**:
+- **Queues**, **Vectorize**, **Hyperdrive** - Not yet automated (follow patterns below)
+
+**Usage**:
+```bash
+# Add bindings with automated scaffolding
+mcp-server-kit add binding kv --name SESSION_CACHE
+mcp-server-kit add binding d1 --name USER_DB --database users
+mcp-server-kit add binding r2 --name FILE_STORAGE
+mcp-server-kit add binding ai --name AI
+```
 
 ---
 
@@ -439,12 +457,19 @@ server.tool(
 - ✅ Text generation (chatbots, content creation)
 - ✅ Text embeddings (for RAG, semantic search)
 - ✅ Text classification, sentiment analysis
+- ✅ **RAG with LLM** - `.aiSearch()` for retrieval + generation
+- ✅ **Vector search** - `.search()` for semantic search only
 - ❌ Training models (inference only)
 - ❌ Very long documents (token limits apply)
 
 ### Configuration
 
-**wrangler.jsonc**:
+**Automated Setup**:
+```bash
+mcp-server-kit add binding ai --name AI
+```
+
+This updates `wrangler.jsonc`:
 ```jsonc
 {
   "ai": {
@@ -453,7 +478,32 @@ server.tool(
 }
 ```
 
+**Note**: AI binding doesn't generate a helper class. Use `env.AI` directly in your tools.
+
 ### Code Patterns
+
+**RAG with LLM** (`.aiSearch()` method):
+```typescript
+// Combines vector search with LLM response
+const ragResult = await env.AI.aiSearch('docs-index', 'how to deploy');
+
+// Returns: { response: "To deploy...", context: [...] }
+console.log(ragResult.response);  // Generated answer
+console.log(ragResult.context);   // Retrieved documents
+```
+
+**Vector-Only Search** (`.search()` method):
+```typescript
+// Returns raw search results without LLM
+const searchResults = await env.AI.search('docs-index', 'deployment guide');
+
+// Returns: { matches: [{id, score, metadata}, ...] }
+for (const match of searchResults.matches) {
+  console.log(match.id, match.score, match.metadata);
+}
+```
+
+**Note**: Instance names (`'docs-index'`) are runtime parameters created in Cloudflare dashboard, not config entries.
 
 **Text Generation**:
 ```typescript
@@ -827,30 +877,6 @@ if (object === null) {
 
 ## Additional Resources
 
-- **Comprehensive Reference**: `docs/cloudflare-primitives-reference.md`
-- **Architecture Analysis**: `docs/cloudflare-architecture-analysis.md`
-- **Implementation Plan**: `docs/cloudflare-primitives-implementation-plan.md`
 - **Cloudflare Docs**: https://developers.cloudflare.com/workers/
 - **MCP SDK Docs**: https://modelcontextprotocol.io/
-
----
-
-## Future: Automated Scaffolding
-
-The planned `mcp-server-kit add binding` command will automate binding setup:
-
-```bash
-# Future commands (not yet implemented)
-mcp-server-kit add binding kv --name MY_CACHE
-mcp-server-kit add binding d1 --name DB --database-name my-database
-mcp-server-kit add binding ai
-mcp-server-kit add binding vectorize --name VECTORS --dimensions 768
-```
-
-This will:
-- Generate helper utilities
-- Update `wrangler.jsonc` via anchors
-- Run `cf-typegen` automatically
-- Provide next-step instructions
-
-**Track progress**: See implementation plan for timeline.
+- **CLI Commands**: See `.claude/skills/mcp-server-kit-cli/CLI-COMMANDS.md` for complete `add binding` documentation
