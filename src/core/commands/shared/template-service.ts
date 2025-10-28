@@ -16,14 +16,14 @@ import { fileURLToPath } from "node:url";
 export interface BindingContext {
 	/** Whether the project has any bindings configured */
 	hasBindings: boolean;
-	/** Compact binding summary (e.g., "KV: MY_CACHE | D1: USER_DB") */
+	/** Compact binding summary (e.g., "KV: MY_CACHE | D1: USER_DB | AI: AI") */
 	bindingSummary?: string;
 	/** Array of binding examples with imports and usage */
 	bindingExamples?: Array<{
 		type: string;
 		bindingName: string;
-		helperClass: string;
-		importStatement: string;
+		helperClass?: string; // Optional for AI (no helper class)
+		importStatement?: string; // Optional for AI (no import needed)
 		usageExample: string;
 	}>;
 }
