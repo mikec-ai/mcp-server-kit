@@ -13,6 +13,7 @@ import { EntityScaffolder, type ScaffoldConfig } from "./shared/entity-scaffolde
 import { createAddPromptCommand } from "./add-prompt.js";
 import { createAddResourceCommand } from "./add-resource.js";
 import { createAddAuthCommand } from "./add-auth.js";
+import { createAddBindingCommand } from "./add-binding.js";
 import { outputResult } from "./shared/json-output.js";
 import type { AddEntityResult } from "../../types/command-results.js";
 
@@ -124,6 +125,7 @@ export function createAddCommand(): Command {
 	addCmd.addCommand(createAddPromptCommand());
 	addCmd.addCommand(createAddResourceCommand());
 	addCmd.addCommand(createAddAuthCommand());
+	addCmd.addCommand(createAddBindingCommand());
 
 	return addCmd;
 }

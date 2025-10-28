@@ -10,6 +10,7 @@ import { TemplateProcessor } from "../template-system/processor.js";
 import type { PackageManager } from "../template-system/types.js";
 import type { NewServerResult } from "../../types/command-results.js";
 import { outputResult } from "./shared/json-output.js";
+import { ProgressReporter } from "../../services/progress-reporter.js";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -30,11 +31,38 @@ export function createNewServerCommand(): Command {
 		.option("--dev", "Development mode: use local mcp-server-kit paths instead of published package")
 		.option("--json", "Output result as JSON")
 		.action(async (options) => {
+			// Initialize progress reporter (outside try block for catch access)
+			let progress: ProgressReporter | undefined;
+
 			try {
+				progress = new ProgressReporter(!!options.json);
+
+				// Define scaffolding steps
+				const steps = [
+					"Validating configuration",
+					"Loading template",
+					"Creating project structure",
+				];
+
+				// Add dependency installation step if enabled
+				if (options.install) {
+					steps.push("Installing dependencies");
+					steps.push("Running post-install commands");
+				}
+
+				steps.push("Finalizing project");
+
+				progress.start(steps);
+
+				// Step 1: Validating configuration
+				progress.updateStep("step-1", "in_progress");
+
 				// Validate package manager
 				const validPMs = ["npm", "pnpm", "yarn", "bun"];
 				if (!validPMs.includes(options.pm)) {
 					const errorMessage = `Invalid package manager '${options.pm}'. Valid options: ${validPMs.join(", ")}`;
+					progress.updateStep("step-1", "failed", errorMessage);
+					progress.complete();
 
 					if (options.json) {
 						const result: NewServerResult = {
@@ -56,12 +84,20 @@ export function createNewServerCommand(): Command {
 				const registry = new TemplateRegistry();
 				const processor = new TemplateProcessor(registry);
 
+				progress.updateStep("step-1", "completed");
+
+				// Step 2: Loading template
+				progress.updateStep("step-2", "in_progress");
+
 				// Check if template exists
 				const templateExists = await registry.templateExists(options.template);
 				if (!templateExists) {
 					const templates = await registry.listTemplates();
 					const availableTemplates = templates.map((t) => `${t.id}: ${t.name}`).join(", ");
 					const errorMessage = `Template '${options.template}' not found. Available: ${availableTemplates}`;
+
+					progress.updateStep("step-2", "failed", errorMessage);
+					progress.complete();
 
 					if (options.json) {
 						const result: NewServerResult = {
@@ -88,7 +124,7 @@ export function createNewServerCommand(): Command {
 					PROJECT_NAME: options.name,
 					MCP_SERVER_NAME: options.description || options.name,
 					PORT: options.port,
-					};
+				};
 
 				if (options.description) {
 					variables.DESCRIPTION = options.description;
@@ -100,9 +136,11 @@ export function createNewServerCommand(): Command {
 					const __dirname = path.dirname(__filename);
 					const mcpKitRoot = path.resolve(__dirname, "../");
 					variables.DEV_MODE = "true";
-				variables.MCP_KIT_PATH = mcpKitRoot;
+					variables.MCP_KIT_PATH = mcpKitRoot;
 					if (!options.json) {
-						console.log(`📦 Development mode: Using local mcp-server-kit at ${mcpKitRoot}\n`);
+						console.log(
+							`📦 Development mode: Using local mcp-server-kit at ${mcpKitRoot}\n`,
+						);
 					}
 				}
 
@@ -111,7 +149,12 @@ export function createNewServerCommand(): Command {
 					? path.join(options.output, options.name)
 					: `./${options.name}`;
 
-				// Scaffold the project
+				progress.updateStep("step-2", "completed");
+
+				// Step 3: Creating project structure
+				progress.updateStep("step-3", "in_progress");
+
+				// Scaffold the project (this handles steps 3-5 internally)
 				const scaffoldResult = await processor.scaffold({
 					template: options.template,
 					targetDir,
@@ -120,8 +163,29 @@ export function createNewServerCommand(): Command {
 					packageManager: options.pm as PackageManager,
 				});
 
+				// Note: The scaffold operation internally handles:
+				// - Creating project structure (step 3)
+				// - Installing dependencies (step 4, if enabled)
+				// - Running post-install commands (step 5, if enabled)
+
+				// Mark appropriate steps as completed based on what scaffold did
+				progress.updateStep("step-3", "completed");
+
+				if (options.install) {
+					progress.updateStep("step-4", "completed");
+					progress.updateStep("step-5", "completed");
+					progress.updateStep("step-6", "in_progress");
+				} else {
+					progress.updateStep("step-4", "in_progress");
+				}
+
 				// Handle result
 				if (scaffoldResult.success) {
+					// Mark final step as completed
+					const finalStepId = options.install ? "step-6" : "step-4";
+					progress.updateStep(finalStepId, "completed");
+					progress.complete();
+
 					const nextSteps = [];
 					nextSteps.push(`cd ${targetDir}`);
 					if (!options.install) {
@@ -142,7 +206,9 @@ export function createNewServerCommand(): Command {
 						console.log(`\n🚀 Creating MCP server: ${options.name}\n`);
 						console.log(`\n✅ Successfully created ${options.name}!\n`);
 						if (options.dev) {
-							console.log("📦 Development mode enabled - using local mcp-server-kit\n");
+							console.log(
+								"📦 Development mode enabled - using local mcp-server-kit\n",
+							);
 						}
 						console.log("Next steps:");
 						for (const step of r.nextSteps) {
@@ -151,6 +217,11 @@ export function createNewServerCommand(): Command {
 						console.log("\nHappy coding! 🎉\n");
 					});
 				} else {
+					// Mark current step as failed
+					const currentStepId = "step-3";
+					progress.updateStep(currentStepId, "failed", scaffoldResult.error);
+					progress.complete();
+
 					const result: NewServerResult = {
 						success: false,
 						projectName: options.name,
