@@ -215,7 +215,7 @@ Create separate YAML files for different scenarios:
 
 - **Full Harness Documentation**: See [mcp-server-kit harness README](https://github.com/MikeC-A6/mcp-server-kit/blob/master/src/harness/README.md)
 - **Example Tests**: Check `specs/health.yaml` and `specs/echo.yaml`
-- **CLI Reference**: Run `npx @mikec/mcp-server-kit --help`
+- **CLI Reference**: Run `npx mcp-server-kit --help`
 
 ---
 
@@ -236,7 +236,7 @@ Create separate YAML files for different scenarios:
 
 ### Tool not found
 - Verify tool is registered in `src/index.ts`
-- Run `npx @mikec/mcp-server-kit list tools` to see registered tools
+- Run `npx mcp-server-kit list tools` to see registered tools
 - Check tool name matches exactly (case-sensitive)
 
 ---

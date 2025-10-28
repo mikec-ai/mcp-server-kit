@@ -41,8 +41,8 @@ import { TestRunner, loadTestSpec, formatAsJSON, printConsole } from "{{{MCP_KIT
 import type { TestSpec } from "{{{MCP_KIT_PATH}}}/dist/harness/index.js";
 {{else}}
 // Production: import from published package
-import { TestRunner, loadTestSpec, formatAsJSON, printConsole } from "@mikec/mcp-server-kit/harness";
-import type { TestSpec } from "@mikec/mcp-server-kit/harness";
+import { TestRunner, loadTestSpec, formatAsJSON, printConsole } from "mcp-server-kit/harness";
+import type { TestSpec } from "mcp-server-kit/harness";
 {{/if}}
 import { createClient, DEFAULT_SERVER_URL } from "./config.js";
 import { glob } from "glob";

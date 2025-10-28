@@ -1,9 +1,9 @@
 # mcp-server-kit
 
-[![npm version](https://img.shields.io/npm/v/@mikec/mcp-server-kit.svg)](https://www.npmjs.com/package/@mikec/mcp-server-kit)
-[![npm downloads](https://img.shields.io/npm/dm/@mikec/mcp-server-kit.svg)](https://www.npmjs.com/package/@mikec/mcp-server-kit)
+[![npm version](https://img.shields.io/npm/v/mcp-server-kit.svg)](https://www.npmjs.com/package/mcp-server-kit)
+[![npm downloads](https://img.shields.io/npm/dm/mcp-server-kit.svg)](https://www.npmjs.com/package/mcp-server-kit)
 
-> **This is a command-line tool (CLI) for scaffolding MCP server projects. It is not a library to import into your code.** Install it with `npm install -g @mikec/mcp-server-kit` or run commands with `npx @mikec/mcp-server-kit`.
+> **This is a command-line tool (CLI) for scaffolding MCP server projects. It is not a library to import into your code.** Install it with `npm install -g mcp-server-kit` or run commands with `npx mcp-server-kit`.
 
 **Extensible scaffolding tool and test harness for Model Context Protocol (MCP) servers**
 

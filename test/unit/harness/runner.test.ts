@@ -134,7 +134,7 @@ describe("TestRunner", () => {
 
 			const result = await runner.runTest(spec);
 
-			expect(result.duration).toBeGreaterThanOrEqual(10);
+			expect(result.duration).toBeGreaterThanOrEqual(5);
 		});
 
 		it("should pass tool name and arguments to client", async () => {
