@@ -178,7 +178,7 @@ describe("BindingValidator", () => {
 
 		it("should reject unimplemented binding types", async () => {
 			const config: BindingScaffoldConfig = {
-				bindingType: "r2",
+				bindingType: "queues",
 				bindingName: "MY_BUCKET",
 			};
 

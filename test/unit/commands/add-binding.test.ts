@@ -224,7 +224,7 @@ describe("add-binding command", () => {
 		it("should reject Phase 2+ binding types", async () => {
 			projectDir = await createTestProject();
 
-			const result = await runAddBinding(projectDir, "r2", {
+			const result = await runAddBinding(projectDir, "queues", {
 				name: "MY_BUCKET",
 			});
 

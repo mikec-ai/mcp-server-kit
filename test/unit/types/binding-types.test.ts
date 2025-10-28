@@ -190,8 +190,8 @@ describe('binding-types', () => {
       expect(isPhase1Binding('d1')).toBe(true);
     });
 
-    it('should return false for r2 binding', () => {
-      expect(isPhase1Binding('r2')).toBe(false);
+    it('should return true for r2 binding', () => {
+      expect(isPhase1Binding('r2')).toBe(true);
     });
 
     it('should return false for queues binding', () => {

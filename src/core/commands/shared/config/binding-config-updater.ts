@@ -136,6 +136,72 @@ export async function addD1Binding(
 }
 
 /**
+ * Add R2 bucket binding to wrangler.jsonc using anchor service
+ *
+ * @param cwd - Project root directory
+ * @param bindingName - Binding name (e.g., MY_BUCKET)
+ * @param bucketName - Bucket name (e.g., my-bucket)
+ * @param previewBucketName - Optional preview bucket name
+ * @returns True if binding was added
+ */
+export async function addR2Binding(
+	cwd: string,
+	bindingName: string,
+	bucketName: string,
+	previewBucketName?: string,
+): Promise<boolean> {
+	const wranglerPath = getWranglerConfigPath(cwd);
+
+	if (!wranglerPath || !wranglerPath.endsWith(".jsonc")) {
+		throw new Error(
+			"wrangler.jsonc not found. R2 bindings require wrangler.jsonc format.",
+		);
+	}
+
+	const anchorService = new AnchorService();
+
+	// Check if anchor exists
+	const hasAnchor = await anchorService.hasAnchor(
+		wranglerPath,
+		BINDING_ANCHORS.R2,
+	);
+	if (!hasAnchor) {
+		throw new Error(
+			"Missing R2 anchor block in wrangler.jsonc. Your project may be outdated.",
+		);
+	}
+
+	// Build R2 binding entry
+	let r2Binding: string;
+	if (previewBucketName) {
+		r2Binding = `"r2_buckets": [
+		{
+			"binding": "${bindingName}",
+			"bucket_name": "${bucketName}",
+			"preview_bucket_name": "${previewBucketName}"
+		}
+	],`;
+	} else {
+		r2Binding = `"r2_buckets": [
+		{
+			"binding": "${bindingName}",
+			"bucket_name": "${bucketName}"
+		}
+	],`;
+	}
+
+	// Insert at R2 anchor
+	const result = await anchorService.insertAtAnchor(
+		wranglerPath,
+		BINDING_ANCHORS.R2,
+		r2Binding,
+		{ indent: "\t" },
+	);
+
+	return result.modified;
+}
+
+/**
  * Add helper import to src/index.ts using anchor service
  *
  * @param cwd - Project root directory

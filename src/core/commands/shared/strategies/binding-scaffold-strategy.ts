@@ -18,6 +18,7 @@ import { BindingTemplateService } from "../binding-template-service.js";
 import {
 	addKVBinding,
 	addD1Binding,
+	addR2Binding,
 	addBindingImport,
 } from "../config/binding-config-updater.js";
 import type {
@@ -197,6 +198,9 @@ export class BindingScaffoldStrategy
 			const databaseName =
 				config.databaseName || toKebabCase(config.bindingName);
 			modified = await addD1Binding(cwd, config.bindingName, databaseName);
+		} else if (config.bindingType === "r2") {
+			const bucketName = config.bucketName || toKebabCase(config.bindingName);
+			modified = await addR2Binding(cwd, config.bindingName, bucketName);
 		} else {
 			throw new Error(
 				`Binding type '${config.bindingType}' is not yet implemented`,
@@ -277,6 +281,15 @@ export class BindingScaffoldStrategy
 			);
 			steps.push(
 				`4. Use the helper class in your tools: new ${templateVars.HELPER_CLASS_NAME}(env.${config.bindingName})`,
+			);
+		} else if (config.bindingType === "r2") {
+			const bucketName = config.bucketName || toKebabCase(config.bindingName);
+			steps.push(`1. Create an R2 bucket: wrangler r2 bucket create ${bucketName}`);
+			steps.push(
+				`2. Use the helper class in your tools: new ${templateVars.HELPER_CLASS_NAME}(env.${config.bindingName})`,
+			);
+			steps.push(
+				`3. Upload objects: await bucket.put('path/to/file.txt', fileData)`,
 			);
 		}
 

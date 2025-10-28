@@ -8,8 +8,8 @@
 /**
  * Supported Cloudflare binding types
  *
- * Phase 1: kv, d1
- * Phase 2: r2, queues
+ * Phase 1: kv, d1, r2
+ * Phase 2: queues
  * Phase 3: ai, vectorize
  * Phase 4: hyperdrive
  */
@@ -18,7 +18,7 @@ export type BindingType = 'kv' | 'd1' | 'r2' | 'queues' | 'ai' | 'vectorize' | '
 /**
  * Phase 1 binding types (currently implemented)
  */
-export type Phase1BindingType = Extract<BindingType, 'kv' | 'd1'>;
+export type Phase1BindingType = Extract<BindingType, 'kv' | 'd1' | 'r2'>;
 
 /**
  * Configuration for scaffolding a Cloudflare binding
@@ -285,7 +285,7 @@ export interface WranglerBindingConfig {
  * Type guard to check if a binding type is implemented in Phase 1
  */
 export function isPhase1Binding(type: BindingType): type is Phase1BindingType {
-  return type === 'kv' || type === 'd1';
+  return type === 'kv' || type === 'd1' || type === 'r2';
 }
 
 /**

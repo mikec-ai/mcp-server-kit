@@ -104,6 +104,17 @@ export class BindingTemplateService {
 	}
 
 	/**
+	 * Generate R2 helper file content
+	 *
+	 * @param vars - Template variables
+	 * @returns Generated TypeScript code
+	 */
+	generateR2Helper(vars: BindingTemplateVars): string {
+		const template = this.loadTemplate("r2-helper.hbs");
+		return template(vars);
+	}
+
+	/**
 	 * Generate helper file content based on binding type
 	 *
 	 * @param bindingType - Type of binding (kv, d1)
@@ -120,6 +131,7 @@ export class BindingTemplateService {
 			case "d1":
 				return this.generateD1Helper(vars);
 			case "r2":
+				return this.generateR2Helper(vars);
 			case "queues":
 			case "ai":
 			case "vectorize":

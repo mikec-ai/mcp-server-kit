@@ -2,9 +2,9 @@
  * Add Binding Command
  *
  * Adds Cloudflare bindings to an existing MCP server project.
- * Supports KV namespaces, D1 databases, and other Cloudflare primitives.
- * Phase 1: KV and D1 support
- * Phase 2+: R2, Queues, AI, Vectorize, Hyperdrive
+ * Supports KV namespaces, D1 databases, R2 buckets, and other Cloudflare primitives.
+ * Phase 1: KV, D1, and R2 support
+ * Phase 2+: Queues, AI, Vectorize, Hyperdrive
  */
 
 import { Command } from "commander";
@@ -53,7 +53,7 @@ function validateAddBindingOptions(
 	// Check if Phase 1 binding type
 	if (!isPhase1Binding(bindingType as BindingType)) {
 		throw new Error(
-			`Binding type '${bindingType}' is not yet supported. Phase 1 supports: kv, d1`,
+			`Binding type '${bindingType}' is not yet supported. Phase 1 supports: kv, d1, r2`,
 		);
 	}
 
@@ -177,8 +177,8 @@ function printHumanReadableResult(result: BindingScaffoldResult): void {
  */
 export function createAddBindingCommand(): Command {
 	const command = new Command("binding")
-		.description("Add a Cloudflare binding to your MCP server (Phase 1: kv, d1)")
-		.argument("<type>", "Binding type: kv or d1")
+		.description("Add a Cloudflare binding to your MCP server (Phase 1: kv, d1, r2)")
+		.argument("<type>", "Binding type: kv, d1, or r2")
 		.requiredOption("--name <NAME>", "Binding name in UPPER_SNAKE_CASE")
 		.option(
 			"--database <name>",
@@ -186,7 +186,7 @@ export function createAddBindingCommand(): Command {
 		)
 		.option(
 			"--bucket <name>",
-			"Bucket name (for R2 only, Phase 2+)",
+			"Bucket name (for R2 only, defaults to binding name in kebab-case)",
 		)
 		.option("--skip-helper", "Skip generating helper class")
 		.option("--skip-typegen", "Skip running cf-typegen")

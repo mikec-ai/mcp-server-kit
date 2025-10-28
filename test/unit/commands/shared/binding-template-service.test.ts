@@ -248,7 +248,7 @@ describe("BindingTemplateService", () => {
 			expect(content).toContain("export class MyDbD1");
 		});
 
-		it("should throw error for unimplemented binding types", () => {
+		it("should generate R2 helper", () => {
 			const vars: BindingTemplateVars = {
 				BINDING_NAME: "MY_BUCKET",
 				HELPER_CLASS_NAME: "MyBucketR2",
@@ -257,9 +257,9 @@ describe("BindingTemplateService", () => {
 				TYPE_SUFFIX: "R2",
 			};
 
-			expect(() => service.generateHelper("r2", vars)).toThrow(
-				/not yet implemented/i,
-			);
+			const result = service.generateHelper("r2", vars);
+			expect(result).toContain("export class MyBucketR2");
+			expect(result).toContain("MY_BUCKET");
 		});
 
 		it("should throw error for unknown binding types", () => {

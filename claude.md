@@ -273,7 +273,7 @@ mcp-server-kit add-auth stytch
 
 **For Agents**: If you encounter module resolution errors with any Cloudflare-specific imports, verify the required packages are in dependencies.
 
-### 8. Cloudflare Bindings Support (Phase 1: KV & D1)
+### 8. Cloudflare Bindings Support (Phase 1: KV, D1, R2)
 
 **What Changed**: New `add binding` command scaffolds Cloudflare primitives for MCP servers.
 
@@ -281,17 +281,19 @@ mcp-server-kit add-auth stytch
 ```bash
 mcp-server-kit add binding kv --name MY_CACHE
 mcp-server-kit add binding d1 --name MY_DB --database my-database
+mcp-server-kit add binding r2 --name FILES_BUCKET
 ```
 
 **Phase 1 Support** (Production-Ready):
 - **KV Namespaces** - Eventually consistent key-value storage
 - **D1 Databases** - SQLite-based SQL databases with ACID transactions
+- **R2 Buckets** - S3-compatible object storage with zero egress fees
 
 **Phase 2+** (Planned):
-- R2 Buckets, Queues, Workers AI, Vectorize, Hyperdrive
+- Queues, Workers AI, Vectorize, Hyperdrive
 
 **What It Does**:
-- Generates type-safe helper classes for KV/D1 operations
+- Generates type-safe helper classes for KV/D1/R2 operations
 - Updates `wrangler.jsonc` with binding configuration
 - Adds imports to `src/index.ts`
 - Runs `cf-typegen` to update types
@@ -316,6 +318,16 @@ export class MyDbD1 {
   async execute(sql: string, params?: any[]): Promise<D1QueryResult> { /* ... */ }
   async batch(statements: D1Statement[]): Promise<D1QueryResult[]> { /* ... */ }
   // + insert, update, deleteWhere, count, exists, hasTable
+}
+
+// R2 helper (src/utils/bindings/r2-files-bucket.ts)
+export class FilesBucketR2 {
+  async put(key: string, value: string | ArrayBuffer | ReadableStream, options?: R2PutOptions): Promise<R2Object | null> { /* ... */ }
+  async get(key: string): Promise<R2ObjectBody | null> { /* ... */ }
+  async delete(key: string | string[]): Promise<void> { /* ... */ }
+  async list(options?: R2ListOptions): Promise<R2ListResult> { /* ... */ }
+  async head(key: string): Promise<R2Object | null> { /* ... */ }
+  // + getText, getJSON, putText, putJSON, has, listAll, createMultipartUpload
 }
 ```
 
