@@ -273,6 +273,101 @@ mcp-server-kit add-auth stytch
 
 **For Agents**: If you encounter module resolution errors with any Cloudflare-specific imports, verify the required packages are in dependencies.
 
+### 8. Cloudflare Bindings Support (Phase 1: KV & D1)
+
+**What Changed**: New `add binding` command scaffolds Cloudflare primitives for MCP servers.
+
+**Syntax**:
+```bash
+mcp-server-kit add binding kv --name MY_CACHE
+mcp-server-kit add binding d1 --name MY_DB --database my-database
+```
+
+**Phase 1 Support** (Production-Ready):
+- **KV Namespaces** - Eventually consistent key-value storage
+- **D1 Databases** - SQLite-based SQL databases with ACID transactions
+
+**Phase 2+** (Planned):
+- R2 Buckets, Queues, Workers AI, Vectorize, Hyperdrive
+
+**What It Does**:
+- Generates type-safe helper classes for KV/D1 operations
+- Updates `wrangler.jsonc` with binding configuration
+- Adds imports to `src/index.ts`
+- Runs `cf-typegen` to update types
+- Uses anchor-based code transformation (robust, not regex-based)
+- Includes comprehensive validation with automatic rollback on failure
+
+**Helper Classes Generated**:
+```typescript
+// KV helper (src/utils/bindings/kv-my-cache.ts)
+export class MyCacheKV {
+  async get<T>(key: string): Promise<T | null> { /* ... */ }
+  async set<T>(key: string, value: T, options?: KVPutOptions): Promise<void> { /* ... */ }
+  async delete(key: string): Promise<void> { /* ... */ }
+  async list(options?: KVListOptions): Promise<KVListResult> { /* ... */ }
+  // + getText, getArrayBuffer, getStream, has, deleteMany, listAll
+}
+
+// D1 helper (src/utils/bindings/d1-my-db.ts)
+export class MyDbD1 {
+  async query<T>(sql: string, params?: any[]): Promise<T[]> { /* ... */ }
+  async queryFirst<T>(sql: string, params?: any[]): Promise<T | null> { /* ... */ }
+  async execute(sql: string, params?: any[]): Promise<D1QueryResult> { /* ... */ }
+  async batch(statements: D1Statement[]): Promise<D1QueryResult[]> { /* ... */ }
+  // + insert, update, deleteWhere, count, exists, hasTable
+}
+```
+
+**Naming Convention**:
+- Binding names must be `UPPER_SNAKE_CASE` (e.g., `MY_CACHE`, `USER_DATA`)
+- Helper classes use `PascalCase` with type suffix (e.g., `MyCacheKV`, `UserDataD1`)
+- File names use `kebab-case` (e.g., `kv-my-cache.ts`, `d1-user-data.ts`)
+
+**Options**:
+- `--skip-helper` - Skip generating helper class (only update config)
+- `--skip-typegen` - Skip running cf-typegen
+- `--database <name>` - Specify D1 database name (defaults to binding name in kebab-case)
+- `--json` - Output result as JSON
+
+**Example Workflow**:
+```bash
+# 1. Add KV binding
+mcp-server-kit add binding kv --name SESSION_CACHE
+
+# 2. Create namespace in Cloudflare
+wrangler kv namespace create SESSION_CACHE
+
+# 3. Update wrangler.jsonc with namespace ID from step 2
+
+# 4. Use in your tools
+import { SessionCacheKV } from "./utils/bindings/kv-session-cache.js";
+
+const cache = new SessionCacheKV(env.SESSION_CACHE);
+await cache.set("user:123", { name: "Alice" }, { expirationTtl: 3600 });
+const user = await cache.get<User>("user:123");
+```
+
+**Architecture**:
+- **BindingValidator** - Validates project structure, binding names, checks for duplicates
+- **BindingTemplateService** - Loads Handlebars templates, generates helper files
+- **BindingScaffolder** - Orchestrates all operations with rollback support
+- **Anchor-based transformation** - Safe code insertion using comment markers
+
+**Test Coverage**:
+- 41 tests for binding types
+- 32 tests for binding validator
+- 30 tests for binding template service
+- 21 tests for binding scaffolder
+- 19 tests for CLI command
+- Total: 143+ tests for binding support
+
+**For Agents**:
+- Always use `UPPER_SNAKE_CASE` for binding names
+- KV is for simple key-value storage, D1 is for structured SQL data
+- Helper classes provide type safety and convenience methods
+- Binding scaffolding is fully validated with automatic rollback on errors
+
 ---
 
 ## Development Standards
