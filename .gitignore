@@ -36,3 +36,6 @@ temp/
 # Scaffolding test output
 test-output/
 scaffolded-*/
+
+# Documentation (planning/research notes)
+docs/
