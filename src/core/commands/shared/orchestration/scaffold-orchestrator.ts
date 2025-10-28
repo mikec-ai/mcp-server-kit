@@ -27,7 +27,7 @@ import type {
  *
  * Uses Strategy Pattern to delegate specific logic while handling common orchestration
  */
-export class ScaffoldOrchestrator<TConfig = any, TResult = any> {
+export class ScaffoldOrchestrator<TConfig = any, TResult extends Record<string, any> = any> {
 	/**
 	 * Execute scaffolding with given strategy
 	 *
