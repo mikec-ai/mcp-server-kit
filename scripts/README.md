@@ -24,7 +24,7 @@ curl -fsSL https://raw.githubusercontent.com/MikeC-A6/mcp-server-kit/master/scri
 
 **After running once**, collaborators can just:
 ```bash
-npm install @MikeC-A6/mcp-server-kit
+npm install @MikeC/mcp-server-kit
 ```
 
 ---

@@ -1,5 +1,5 @@
 {
-	"name": "@MikeC-A6/mcp-server-kit",
+	"name": "@MikeC/mcp-server-kit",
 	"version": "1.0.8",
 	"description": "CLI tool for scaffolding and testing Model Context Protocol (MCP) servers",
 	"publishConfig": {

@@ -2,13 +2,13 @@
 
 ## Package Published to npmjs.org! ✅
 
-Your package `@MikeC-A6/mcp-server-kit` is published to npmjs.org as a **public package**.
+Your package `@MikeC/mcp-server-kit` is published to npmjs.org as a **public package**.
 
-- **Package Name**: `@MikeC-A6/mcp-server-kit`
+- **Package Name**: `@MikeC/mcp-server-kit`
 - **Registry**: npmjs.org (public npm registry)
 - **Visibility**: Public (anyone can install)
 - **Repository**: https://github.com/MikeC-A6/mcp-server-kit
-- **npm Page**: https://www.npmjs.com/package/@MikeC-A6/mcp-server-kit
+- **npm Page**: https://www.npmjs.com/package/@MikeC/mcp-server-kit
 
 ---
 
@@ -20,13 +20,13 @@ Anyone can install your package globally or as a project dependency:
 
 ```bash
 # Install globally
-npm install -g @MikeC-A6/mcp-server-kit
+npm install -g @MikeC/mcp-server-kit
 
 # Or use as a project dependency
-npm install --save-dev @MikeC-A6/mcp-server-kit
+npm install --save-dev @MikeC/mcp-server-kit
 
 # Or use with npx (no installation required)
-npx @MikeC-A6/mcp-server-kit new server --name my-server
+npx @MikeC/mcp-server-kit new server --name my-server
 ```
 
 ### Verify Installation
@@ -62,16 +62,16 @@ mcp-server-kit list tools
 
 ```typescript
 // Main exports
-import { TemplateProcessor, TemplateRegistry } from '@MikeC-A6/mcp-server-kit';
+import { TemplateProcessor, TemplateRegistry } from '@MikeC/mcp-server-kit';
 
 // Test harness
-import { TestRunner, loadTestSpec } from '@MikeC-A6/mcp-server-kit/harness';
+import { TestRunner, loadTestSpec } from '@MikeC/mcp-server-kit/harness';
 
 // Scaffolding
-import { EntityScaffolder } from '@MikeC-A6/mcp-server-kit/scaffolding';
+import { EntityScaffolder } from '@MikeC/mcp-server-kit/scaffolding';
 
 // Validation
-import { validateProject } from '@MikeC-A6/mcp-server-kit/validation';
+import { validateProject } from '@MikeC/mcp-server-kit/validation';
 ```
 
 ---
@@ -81,7 +81,7 @@ import { validateProject } from '@MikeC-A6/mcp-server-kit/validation';
 ### First-Time Setup
 
 1. **Create npmjs.org account** at https://www.npmjs.com/signup
-   - Username should match your scope: `MikeC-A6`
+   - Username: `mikec.ai` (scope `@MikeC` can be claimed separately)
    - Verify your email address
 
 2. **Enable Two-Factor Authentication** (required for publishing)
@@ -97,7 +97,7 @@ import { validateProject } from '@MikeC-A6/mcp-server-kit/validation';
 4. **Verify authentication**
    ```bash
    npm whoami
-   # Should show: MikeC-A6
+   # Should show: mikec.ai
    ```
 
 ### Publishing a New Version
@@ -133,16 +133,16 @@ The `--access public` flag is only needed once for scoped packages. Subsequent p
 
 ```bash
 # View package details
-npm view @MikeC-A6/mcp-server-kit
+npm view @MikeC/mcp-server-kit
 
 # List published versions
-npm view @MikeC-A6/mcp-server-kit versions
+npm view @MikeC/mcp-server-kit versions
 
 # Check download stats
-npm view @MikeC-A6/mcp-server-kit downloads
+npm view @MikeC/mcp-server-kit downloads
 
 # View on npmjs.org
-open https://www.npmjs.com/package/@MikeC-A6/mcp-server-kit
+open https://www.npmjs.com/package/@MikeC/mcp-server-kit
 ```
 
 ---
@@ -154,8 +154,8 @@ open https://www.npmjs.com/package/@MikeC-A6/mcp-server-kit
 Add these to your README.md to show package status:
 
 ```markdown
-[![npm version](https://img.shields.io/npm/v/@MikeC-A6/mcp-server-kit.svg)](https://www.npmjs.com/package/@MikeC-A6/mcp-server-kit)
-[![npm downloads](https://img.shields.io/npm/dm/@MikeC-A6/mcp-server-kit.svg)](https://www.npmjs.com/package/@MikeC-A6/mcp-server-kit)
+[![npm version](https://img.shields.io/npm/v/@MikeC/mcp-server-kit.svg)](https://www.npmjs.com/package/@MikeC/mcp-server-kit)
+[![npm downloads](https://img.shields.io/npm/dm/@MikeC/mcp-server-kit.svg)](https://www.npmjs.com/package/@MikeC/mcp-server-kit)
 ```
 
 ### Package Keywords
@@ -189,7 +189,7 @@ Your package is discoverable via these keywords on npmjs.org:
 ### "403 Forbidden" error
 
 **Solution**:
-- Verify the scope `@MikeC-A6` matches your npm username
+- Verify the scope `@MikeC` matches your npm username
 - Ensure you have publishing rights to this scope
 - For first publish, use `npm publish --access public`
 
@@ -216,8 +216,8 @@ Your package is discoverable via these keywords on npmjs.org:
 To transfer the package to another npm user:
 
 ```bash
-npm owner add USERNAME @MikeC-A6/mcp-server-kit
-npm owner rm YOUR_USERNAME @MikeC-A6/mcp-server-kit
+npm owner add USERNAME @MikeC/mcp-server-kit
+npm owner rm YOUR_USERNAME @MikeC/mcp-server-kit
 ```
 
 ### Add Collaborators
@@ -225,19 +225,19 @@ npm owner rm YOUR_USERNAME @MikeC-A6/mcp-server-kit
 To allow others to publish updates:
 
 ```bash
-npm owner add USERNAME @MikeC-A6/mcp-server-kit
+npm owner add USERNAME @MikeC/mcp-server-kit
 ```
 
 ### Remove Collaborators
 
 ```bash
-npm owner rm USERNAME @MikeC-A6/mcp-server-kit
+npm owner rm USERNAME @MikeC/mcp-server-kit
 ```
 
 ### View Current Owners
 
 ```bash
-npm owner ls @MikeC-A6/mcp-server-kit
+npm owner ls @MikeC/mcp-server-kit
 ```
 
 ---
@@ -248,16 +248,16 @@ npm owner ls @MikeC-A6/mcp-server-kit
 
 ```bash
 # Unpublish a specific version (within 72 hours of publish)
-npm unpublish @MikeC-A6/mcp-server-kit@1.0.8
+npm unpublish @MikeC/mcp-server-kit@1.0.8
 
 # Unpublish entire package (within 72 hours)
-npm unpublish @MikeC-A6/mcp-server-kit --force
+npm unpublish @MikeC/mcp-server-kit --force
 ```
 
 **Best Practice**: Instead of unpublishing, publish a new version with fixes. Use `npm deprecate` to warn users about problematic versions:
 
 ```bash
-npm deprecate @MikeC-A6/mcp-server-kit@1.0.8 "Bug in this version, please upgrade to 1.0.9"
+npm deprecate @MikeC/mcp-server-kit@1.0.8 "Bug in this version, please upgrade to 1.0.9"
 ```
 
 ---
@@ -273,11 +273,11 @@ npm publish --access public
 npm version patch && npm publish && git push --tags
 
 # Check status
-npm view @MikeC-A6/mcp-server-kit
+npm view @MikeC/mcp-server-kit
 npm whoami
 
 # View on web
-open https://www.npmjs.com/package/@MikeC-A6/mcp-server-kit
+open https://www.npmjs.com/package/@MikeC/mcp-server-kit
 ```
 
 ---
@@ -286,7 +286,7 @@ open https://www.npmjs.com/package/@MikeC-A6/mcp-server-kit
 
 1. ✅ Package published to npmjs.org
 2. Add npm badges to README.md (see "Package Metadata" section above)
-3. Share the package: `npm install @MikeC-A6/mcp-server-kit`
+3. Share the package: `npm install @MikeC/mcp-server-kit`
 4. Monitor downloads and issues on npmjs.org
 
 The package is now publicly available for anyone to install and use!

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# One-command setup for collaborators to install @MikeC-A6/mcp-server-kit
+# One-command setup for collaborators to install @MikeC/mcp-server-kit
 # Run once, works forever - no token management needed!
 
 set -e
 
-echo "🚀 Setting up npm to work with @MikeC-A6/mcp-server-kit"
+echo "🚀 Setting up npm to work with @MikeC/mcp-server-kit"
 echo ""
 
 # Check if gh is installed
@@ -66,10 +66,10 @@ mkdir -p "$(dirname "$NPMRC")"
 touch "$NPMRC"
 
 # Add registry config if not present
-if ! grep -q "@MikeC-A6:registry" "$NPMRC" 2>/dev/null; then
+if ! grep -q "@MikeC:registry" "$NPMRC" 2>/dev/null; then
   {
     echo "//npm.pkg.github.com/:_authToken=\${NODE_AUTH_TOKEN}"
-    echo "@MikeC-A6:registry=https://npm.pkg.github.com/"
+    echo "@MikeC:registry=https://npm.pkg.github.com/"
     echo "always-auth=true"
   } >> "$NPMRC"
   echo "✓ Configured ~/.npmrc"
@@ -89,7 +89,7 @@ echo "To use immediately in THIS terminal:"
 echo "  source $SHELL_RC"
 echo ""
 echo "Or just open a NEW terminal and run:"
-echo "  npm install @MikeC-A6/mcp-server-kit"
+echo "  npm install @MikeC/mcp-server-kit"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
