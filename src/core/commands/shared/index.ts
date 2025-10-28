@@ -29,7 +29,15 @@ export { TemplateService } from "./template-service.js";
 export type {
 	TemplateConfig,
 	ResourceTemplateOptions,
+	BindingContext,
 } from "./template-service.js";
+
+// Binding Detection Service
+export { BindingDetectionService } from "./binding-detection-service.js";
+export type {
+	DetectedBindings,
+	BindingExample,
+} from "./binding-detection-service.js";
 
 // Schemas (Zod validation)
 export {

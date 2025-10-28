@@ -10,6 +10,7 @@ import { join } from "node:path";
 import { RegistrationService } from "../registration-service.js";
 import { ValidationService } from "../validation-service.js";
 import { TemplateService } from "../template-service.js";
+import { BindingDetectionService } from "../binding-detection-service.js";
 import { updateTemplateMetadata } from "../metadata.js";
 import { toPascalCase } from "../utils.js";
 import { ScaffoldConfigSchema, type ScaffoldConfig } from "../schemas.js";
@@ -47,11 +48,13 @@ export class EntityScaffoldStrategy
 	private registrationService: RegistrationService;
 	private validationService: ValidationService;
 	private templateService: TemplateService;
+	private bindingDetectionService: BindingDetectionService;
 
 	constructor() {
 		this.registrationService = new RegistrationService();
 		this.validationService = new ValidationService();
 		this.templateService = new TemplateService();
+		this.bindingDetectionService = new BindingDetectionService();
 	}
 
 	/**
@@ -189,6 +192,33 @@ export class EntityScaffoldStrategy
 		// Create directory if it doesn't exist
 		await mkdir(dirPath, { recursive: true });
 
+		// Detect bindings for tools (only tools need env parameter for bindings)
+		let bindingContext;
+		if (entityType === "tool") {
+			const bindings = await this.bindingDetectionService.detectBindings(cwd);
+			const hasBindings =
+				bindings.kv.length > 0 ||
+				bindings.d1.length > 0 ||
+				bindings.r2.length > 0;
+
+			if (hasBindings) {
+				const examples =
+					this.bindingDetectionService.generateBindingExamples(bindings);
+				const summary =
+					this.bindingDetectionService.generateBindingSummary(bindings);
+
+				bindingContext = {
+					hasBindings: true,
+					bindingSummary: summary,
+					bindingExamples: examples,
+				};
+			} else {
+				bindingContext = {
+					hasBindings: false,
+				};
+			}
+		}
+
 		let content: string;
 
 		if (entityType === "resource" && resourceOptions) {
@@ -213,6 +243,7 @@ export class EntityScaffoldStrategy
 				name,
 				capitalizedName,
 				description,
+				bindingContext,
 			});
 		}
 

@@ -55,9 +55,19 @@ export class RegistrationService {
 			return;
 		}
 
+		// Detect if function needs env parameter by reading the tool file
+		const needsEnv = await this.functionNeedsEnv(
+			cwd,
+			name,
+			functionName,
+			config,
+		);
+
 		// Add import and registration call
 		const importStatement = `import { ${functionName} } from "${config.directory}${name}.js";`;
-		const registrationCall = `\t\t${functionName}(this.server);`;
+		const registrationCall = needsEnv
+			? `\t\t${functionName}(this.server, this.env);`
+			: `\t\t${functionName}(this.server);`;
 
 		let updatedContent = this.addImport(content, importStatement, config);
 		updatedContent = this.addRegistrationCall(
@@ -240,5 +250,44 @@ export class RegistrationService {
 			`import\\s+\\{[^}]+\\}\\s+from\\s+["']${escapedDir}[^"']+["'];`,
 			"g",
 		);
+	}
+
+	/**
+	 * Detect if a registration function needs the env parameter
+	 * Reads the entity file and checks the function signature
+	 */
+	private async functionNeedsEnv(
+		cwd: string,
+		name: string,
+		functionName: string,
+		config: RegistrationConfig,
+	): Promise<boolean> {
+		try {
+			const entityPath = join(
+				cwd,
+				"src",
+				config.entityTypePlural,
+				`${name}.ts`,
+			);
+
+			if (!existsSync(entityPath)) {
+				return false; // File doesn't exist, assume no env needed
+			}
+
+			const entityContent = await readFile(entityPath, "utf-8");
+
+			// Look for the function declaration
+			// Pattern: export function functionName(server: McpServer, env?: Env)
+			// OR: export function functionName(server: McpServer, env: Env)
+			const functionPattern = new RegExp(
+				`export\\s+function\\s+${functionName}\\s*\\([^)]*env[^)]*\\)`,
+				"i",
+			);
+
+			return functionPattern.test(entityContent);
+		} catch (error) {
+			// If we can't read the file, assume no env needed
+			return false;
+		}
 	}
 }

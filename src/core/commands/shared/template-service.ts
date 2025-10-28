@@ -11,6 +11,24 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 /**
+ * Binding context for template generation
+ */
+export interface BindingContext {
+	/** Whether the project has any bindings configured */
+	hasBindings: boolean;
+	/** Compact binding summary (e.g., "KV: MY_CACHE | D1: USER_DB") */
+	bindingSummary?: string;
+	/** Array of binding examples with imports and usage */
+	bindingExamples?: Array<{
+		type: string;
+		bindingName: string;
+		helperClass: string;
+		importStatement: string;
+		usageExample: string;
+	}>;
+}
+
+/**
  * Configuration for template generation
  */
 export interface TemplateConfig {
@@ -22,6 +40,8 @@ export interface TemplateConfig {
 	capitalizedName: string;
 	/** Description of the entity */
 	description: string;
+	/** Binding context (optional - only for tools that may use bindings) */
+	bindingContext?: BindingContext;
 }
 
 /**
@@ -100,6 +120,7 @@ export class TemplateService {
 	 */
 	generateToolFile(config: TemplateConfig): string {
 		const template = this.loadTemplate("entities/tool.hbs");
+		// Pass full config including bindingContext
 		return template(config);
 	}
 

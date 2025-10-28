@@ -19,9 +19,12 @@ const {{capitalizedName}}ParamsSchema = z.object({
 });
 
 /**
- * Register {{name}} tool with the MCP server
+ * Register {{name}} tool with the MCP server{{#if bindingContext.hasBindings}}
+ *
+ * @param server - MCP server instance
+ * @param env - Environment bindings (optional, for accessing KV/D1/R2){{/if}}
  */
-export function register{{capitalizedName}}Tool(server: McpServer): void {
+export function register{{capitalizedName}}Tool(server: McpServer{{#if bindingContext.hasBindings}}, env?: Env{{/if}}): void {
 	server.tool(
 		"{{name}}",
 		"{{description}}",
@@ -29,6 +32,17 @@ export function register{{capitalizedName}}Tool(server: McpServer): void {
 		async (params) => {
 			// TODO: Implement your tool logic here
 			// You can access params like: params.message, params.count, etc.
+{{#if bindingContext.hasBindings}}
+
+			// Available Cloudflare bindings: {{bindingContext.bindingSummary}}
+			//
+			// Access bindings using helper classes:
+{{#each bindingContext.bindingExamples}}
+			// {{this.type}} binding: {{this.bindingName}}
+			// {{this.importStatement}}
+			// {{this.usageExample}}
+			//
+{{/each}}{{/if}}
 
 			// Example: Return a simple response
 			return {

@@ -105,7 +105,64 @@ mcp-server-kit new server --name my-project --output $(git rev-parse --show-topl
 
 ## Recent Features & Improvements
 
-### 1. Auto-run cf-typegen After npm install
+### 1. Smart Binding Detection for Tool Scaffolding
+
+**What Changed**: Tool scaffolding now automatically detects Cloudflare bindings (KV, D1, R2) and generates context-aware templates.
+
+**Impact**:
+- ✅ Tools with bindings get `env` parameter automatically
+- ✅ Commented examples show actual binding names from project
+- ✅ Helper class import examples included
+- ✅ No env clutter for tools that don't need bindings
+- ✅ Registration calls auto-include `this.env` when needed
+
+**How It Works**:
+- BindingDetectionService parses wrangler.jsonc at scaffolding time
+- Detects KV, D1, and R2 bindings configured in project
+- Generates tool template with conditional sections
+- RegistrationService detects env parameter in function signature
+- Auto-adds `this.env` to registration calls when needed
+
+**Example - Project WITH Bindings**:
+```typescript
+// Generated tool automatically includes:
+export function registerMyTool(server: McpServer, env?: Env): void {
+  server.tool("my-tool", "Description", schema, async (params) => {
+    // Available Cloudflare bindings: R2: MY_BUCKET | KV: MY_CACHE
+    //
+    // Access bindings using helper classes:
+    // r2 binding: MY_BUCKET
+    // import { MyBucketR2 } from "../utils/bindings/r2-my-bucket.js";
+    // const bucket = new MyBucketR2(env.MY_BUCKET);
+    // await bucket.putText('files/readme.txt', 'Hello World');
+
+    // Your tool logic here...
+  });
+}
+
+// Registration in src/index.ts automatically includes env:
+registerMyTool(this.server, this.env);
+```
+
+**Example - Project WITHOUT Bindings**:
+```typescript
+// Clean template without env clutter:
+export function registerMyTool(server: McpServer): void {
+  server.tool("my-tool", "Description", schema, async (params) => {
+    // Your tool logic here...
+  });
+}
+
+// Registration in src/index.ts:
+registerMyTool(this.server);
+```
+
+**For Agents**:
+- No action needed - binding detection is automatic
+- Tool templates will show relevant bindings for the project
+- Developers can immediately see how to access KV/D1/R2 in their tools
+
+### 2. Auto-run cf-typegen After npm install
 
 **What Changed**: cf-typegen now runs automatically after `npm install` completes.
 
