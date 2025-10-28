@@ -419,7 +419,7 @@ export class {{HELPER_CLASS_NAME}} {
 		return {
 			objects: result.objects,
 			truncated: result.truncated,
-			cursor: result.cursor,
+			...(result.truncated ? { cursor: result.cursor } : {}),
 			delimitedPrefixes: result.delimitedPrefixes,
 		};
 	}
@@ -477,13 +477,14 @@ export class {{HELPER_CLASS_NAME}} {
 	 * You must upload at least 1 part and can upload up to 10,000 parts.
 	 *
 	 * @param key - The object key (path)
-	 * @param options - HTTP metadata for the final object
+	 * @param options - Upload options (HTTP metadata, custom metadata)
 	 * @returns Multipart upload object with uploadPart() and complete() methods
 	 *
 	 * @example
 	 * ```typescript
 	 * const upload = await {{CAMEL_NAME}}.createMultipartUpload('large-file.zip', {
-	 *   httpMetadata: { contentType: 'application/zip' }
+	 *   httpMetadata: { contentType: 'application/zip' },
+	 *   customMetadata: { uploadedBy: 'user-123' }
 	 * });
 	 *
 	 * // Upload parts
@@ -496,7 +497,7 @@ export class {{HELPER_CLASS_NAME}} {
 	 */
 	async createMultipartUpload(
 		key: string,
-		options?: R2HttpMetadata,
+		options?: R2PutOptions,
 	): Promise<R2MultipartUpload> {
 		return await this.bucket.createMultipartUpload(key, options);
 	}
