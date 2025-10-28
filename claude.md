@@ -70,7 +70,11 @@ npm publish
 git push && git push --tags
 ```
 
-**Authentication**: Uses GitHub CLI token (`gh auth token`). Ensure scopes include `read:packages` and `write:packages`.
+**Authentication**:
+- Uses npmjs.org account with 2FA enabled
+- First publish requires: `npm publish --access public`
+- Subsequent publishes: `npm publish` (access setting is remembered)
+- Login: `npm login` (requires username, password, 2FA code)
 
 ---
 

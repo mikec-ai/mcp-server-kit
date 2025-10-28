@@ -1,117 +1,32 @@
-# Package Sharing Guide
+# Package Publishing Guide
 
-## Package Published! ✅
+## Package Published to npmjs.org! ✅
 
-Your package `@MikeC-A6/mcp-server-kit` version 1.0.0 is now published to GitHub Packages as a **private package**.
+Your package `@MikeC-A6/mcp-server-kit` is published to npmjs.org as a **public package**.
 
 - **Package Name**: `@MikeC-A6/mcp-server-kit`
-- **Registry**: GitHub Packages (npm.pkg.github.com)
-- **Visibility**: Private (restricted access)
+- **Registry**: npmjs.org (public npm registry)
+- **Visibility**: Public (anyone can install)
 - **Repository**: https://github.com/MikeC-A6/mcp-server-kit
+- **npm Page**: https://www.npmjs.com/package/@MikeC-A6/mcp-server-kit
 
 ---
 
-## Your Setup
+## Installation
 
-### Option 1: Use GitHub CLI (Recommended)
+### For Users
 
-The best approach is to use your existing `gh` CLI authentication:
-
-**First time setup:**
-```bash
-# Add package scopes to your gh token
-./scripts/setup-gh-auth.sh
-```
-
-**That's it!** The publish script will automatically use `gh auth token`.
-
-### Option 2: Use .env file (Fallback)
-
-If you prefer a separate token, it's stored in `.env` (gitignored).
-
-**Files created:**
-- ✅ `scripts/setup-gh-auth.sh` - Setup gh CLI auth
-- ✅ `scripts/publish.sh` - Publish script (uses gh or .env)
-- ✅ `.env` - Fallback token storage (gitignored)
-- ✅ `.env.example` - Template for others
-- ✅ `~/.npmrc` - npm registry configuration
-
-**To publish updates:**
-```bash
-./scripts/publish.sh patch
-```
-
-The script automatically tries `gh auth token` first, then falls back to `.env`.
-
----
-
-## Viewing Your Package
-
-Visit: https://github.com/MikeC-A6/mcp-server-kit/packages
-
-Or check the "Packages" section in your repository sidebar.
-
----
-
-## Sharing with Collaborators
-
-Since you chose the **repository collaborators model**, anyone with repository access can install the package.
-
-### Add a Collaborator (GitHub CLI)
+Anyone can install your package globally or as a project dependency:
 
 ```bash
-# Add someone as a collaborator with write access
-gh repo add-collaborator MikeC-A6/mcp-server-kit USERNAME --permission write
-
-# Add with read-only access (can install package but not push code)
-gh repo add-collaborator MikeC-A6/mcp-server-kit USERNAME --permission read
-```
-
-### Add a Collaborator (GitHub Web UI)
-
-1. Go to: https://github.com/MikeC-A6/mcp-server-kit/settings/access
-2. Click "Add people"
-3. Enter their GitHub username
-4. Select permission level (Read, Write, or Admin)
-5. Click "Add [username] to this repository"
-
-That's it! Once added, they can install the package.
-
----
-
-## Installation Instructions for Collaborators
-
-**Super simple - just one command!**
-
-Send collaborators this one-liner:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/MikeC-A6/mcp-server-kit/master/scripts/install-collaborator-setup.sh | bash
-```
-
-Or if they've cloned the repo:
-
-```bash
-./scripts/install-collaborator-setup.sh
-```
-
-**That's it!** The script:
-- ✅ Installs/configures GitHub CLI
-- ✅ Adds package permissions
-- ✅ Configures npm automatically
-- ✅ Sets up their shell (zsh/bash)
-- ✅ Works forever - no token management needed
-
-### After Setup
-
-Just open a new terminal and run:
-
-```bash
-# Install in a project
-npm install @MikeC-A6/mcp-server-kit
-
-# Or install globally
+# Install globally
 npm install -g @MikeC-A6/mcp-server-kit
+
+# Or use as a project dependency
+npm install --save-dev @MikeC-A6/mcp-server-kit
+
+# Or use with npx (no installation required)
+npx @MikeC-A6/mcp-server-kit new server --name my-server
 ```
 
 ### Verify Installation
@@ -120,30 +35,8 @@ npm install -g @MikeC-A6/mcp-server-kit
 # Check CLI works
 mcp-server-kit --version
 
-# Should show: 1.0.0
+# Should show: 1.0.8
 ```
-
-### Manual Setup (Advanced)
-
-<details>
-<summary>Click if you prefer manual setup instead of the script</summary>
-
-1. Install GitHub CLI: `brew install gh`
-2. Authenticate: `gh auth login`
-3. Add package scopes: `gh auth refresh -h github.com -s read:packages`
-4. Configure npm:
-   ```bash
-   echo "//npm.pkg.github.com/:_authToken=\${NODE_AUTH_TOKEN}" >> ~/.npmrc
-   echo "@MikeC-A6:registry=https://npm.pkg.github.com/" >> ~/.npmrc
-   echo "always-auth=true" >> ~/.npmrc
-   ```
-5. Add to shell config (~/.zshrc or ~/.bashrc):
-   ```bash
-   echo 'export NODE_AUTH_TOKEN=$(gh auth token 2>/dev/null)' >> ~/.zshrc
-   ```
-6. Reload: `source ~/.zshrc`
-
-</details>
 
 ---
 
@@ -160,6 +53,9 @@ mcp-server-kit add tool weather --description "Get weather data"
 
 # Validate
 mcp-server-kit validate
+
+# List tools
+mcp-server-kit list tools
 ```
 
 ### As a Library
@@ -180,26 +76,56 @@ import { validateProject } from '@MikeC-A6/mcp-server-kit/validation';
 
 ---
 
-## Publishing Updates
+## Publishing Updates (For Maintainers)
 
-Authentication is handled automatically via GitHub CLI (`gh auth token`).
+### First-Time Setup
+
+1. **Create npmjs.org account** at https://www.npmjs.com/signup
+   - Username should match your scope: `MikeC-A6`
+   - Verify your email address
+
+2. **Enable Two-Factor Authentication** (required for publishing)
+   - Go to https://www.npmjs.com/settings/YOUR_USERNAME/tfa
+   - Enable 2FA using authenticator app or SMS
+
+3. **Login to npm from CLI**
+   ```bash
+   npm login
+   # Enter username, password, and 2FA code when prompted
+   ```
+
+4. **Verify authentication**
+   ```bash
+   npm whoami
+   # Should show: MikeC-A6
+   ```
 
 ### Publishing a New Version
 
 ```bash
 # 1. Bump version and create git tag
-npm version patch  # For bug fixes (1.0.0 -> 1.0.1)
-npm version minor  # For new features (1.0.0 -> 1.1.0)
-npm version major  # For breaking changes (1.0.0 -> 2.0.0)
+npm version patch  # For bug fixes (1.0.8 -> 1.0.9)
+npm version minor  # For new features (1.0.8 -> 1.1.0)
+npm version major  # For breaking changes (1.0.8 -> 2.0.0)
 
-# 2. Publish to GitHub Packages (runs build and tests automatically)
+# 2. Publish to npmjs.org (runs build and tests automatically)
 npm publish
 
-# 3. Push changes and tags
+# 3. Push changes and tags to GitHub
 git push && git push --tags
 ```
 
 **Note**: The `prepublishOnly` script automatically runs `npm run build && npm run test:all` before publishing, ensuring only tested code is published.
+
+### First Publish Only
+
+If this is your first time publishing the package to npmjs.org:
+
+```bash
+npm publish --access public
+```
+
+The `--access public` flag is only needed once for scoped packages. Subsequent publishes will remember the access setting.
 
 ---
 
@@ -212,84 +138,155 @@ npm view @MikeC-A6/mcp-server-kit
 # List published versions
 npm view @MikeC-A6/mcp-server-kit versions
 
-# Check who can access
-gh repo view MikeC-A6/mcp-server-kit --json collaborators
+# Check download stats
+npm view @MikeC-A6/mcp-server-kit downloads
+
+# View on npmjs.org
+open https://www.npmjs.com/package/@MikeC-A6/mcp-server-kit
 ```
 
 ---
 
-## Managing Access
+## Package Metadata
 
-### List Current Collaborators
+### npm Badges
 
-```bash
-gh api repos/MikeC-A6/mcp-server-kit/collaborators --jq '.[].login'
+Add these to your README.md to show package status:
+
+```markdown
+[![npm version](https://img.shields.io/npm/v/@MikeC-A6/mcp-server-kit.svg)](https://www.npmjs.com/package/@MikeC-A6/mcp-server-kit)
+[![npm downloads](https://img.shields.io/npm/dm/@MikeC-A6/mcp-server-kit.svg)](https://www.npmjs.com/package/@MikeC-A6/mcp-server-kit)
 ```
 
-### Remove Access
+### Package Keywords
 
-```bash
-# Remove a collaborator
-gh api -X DELETE repos/MikeC-A6/mcp-server-kit/collaborators/USERNAME
-```
-
-### Change Permission Level
-
-```bash
-# Update permission (read, write, admin)
-gh repo add-collaborator MikeC-A6/mcp-server-kit USERNAME --permission read
-```
+Your package is discoverable via these keywords on npmjs.org:
+- mcp
+- model-context-protocol
+- scaffolding
+- testing
+- cloudflare-workers
+- vercel
+- cli
+- ai
+- ai-agents
+- claude
+- anthropic
+- typescript
 
 ---
 
 ## Troubleshooting
 
-### "401 Unauthorized" when installing
+### "401 Unauthorized" when publishing
 
 **Solution**:
-- Verify `NODE_AUTH_TOKEN` is set: `echo $NODE_AUTH_TOKEN`
-- Check token has `read:packages` scope
-- Ensure user is a repository collaborator
+- Run `npm login` to authenticate
+- Verify you're logged in: `npm whoami`
+- Check 2FA is enabled on your npm account
+- Try publishing again
 
-### "404 Not Found"
-
-**Solution**:
-- Verify exact package name: `@MikeC-A6/mcp-server-kit`
-- Check user has repository access
-- Ensure `.npmrc` is configured correctly
-
-### "Permission denied"
+### "403 Forbidden" error
 
 **Solution**:
-- User needs to be added as a collaborator
-- Check repository visibility is set to private
-- Verify user's token hasn't expired
+- Verify the scope `@MikeC-A6` matches your npm username
+- Ensure you have publishing rights to this scope
+- For first publish, use `npm publish --access public`
+
+### "You must verify your email"
+
+**Solution**:
+- Check your email for verification link from npmjs.org
+- Click the verification link
+- Try publishing again
+
+### Package name already exists
+
+**Solution**:
+- Scoped packages (`@username/package-name`) are unique to your account
+- Ensure you're logged in as the correct user: `npm whoami`
+- If someone else owns the scope, you'll need to choose a different username/scope
+
+---
+
+## Managing Package Access
+
+### Transfer Ownership
+
+To transfer the package to another npm user:
+
+```bash
+npm owner add USERNAME @MikeC-A6/mcp-server-kit
+npm owner rm YOUR_USERNAME @MikeC-A6/mcp-server-kit
+```
+
+### Add Collaborators
+
+To allow others to publish updates:
+
+```bash
+npm owner add USERNAME @MikeC-A6/mcp-server-kit
+```
+
+### Remove Collaborators
+
+```bash
+npm owner rm USERNAME @MikeC-A6/mcp-server-kit
+```
+
+### View Current Owners
+
+```bash
+npm owner ls @MikeC-A6/mcp-server-kit
+```
+
+---
+
+## Unpublishing (Use with Caution)
+
+**Warning**: Unpublishing is permanent and can break projects that depend on your package.
+
+```bash
+# Unpublish a specific version (within 72 hours of publish)
+npm unpublish @MikeC-A6/mcp-server-kit@1.0.8
+
+# Unpublish entire package (within 72 hours)
+npm unpublish @MikeC-A6/mcp-server-kit --force
+```
+
+**Best Practice**: Instead of unpublishing, publish a new version with fixes. Use `npm deprecate` to warn users about problematic versions:
+
+```bash
+npm deprecate @MikeC-A6/mcp-server-kit@1.0.8 "Bug in this version, please upgrade to 1.0.9"
+```
 
 ---
 
 ## Quick Reference
 
 ```bash
-# Add collaborator
-gh repo add-collaborator MikeC-A6/mcp-server-kit USERNAME --permission read
+# First-time setup
+npm login
+npm publish --access public
 
-# Publish update
+# Regular publishing workflow
 npm version patch && npm publish && git push --tags
 
-# Install package
-npm install @MikeC-A6/mcp-server-kit
+# Check status
+npm view @MikeC-A6/mcp-server-kit
+npm whoami
 
-# View on GitHub
-open https://github.com/MikeC-A6/mcp-server-kit/packages
+# View on web
+open https://www.npmjs.com/package/@MikeC-A6/mcp-server-kit
 ```
 
 ---
 
 ## Next Steps
 
-1. ✅ Package published successfully
-2. Add collaborators who need access
-3. Send them the installation instructions above
-4. They can now install and use the package!
+1. ✅ Package published to npmjs.org
+2. Add npm badges to README.md (see "Package Metadata" section above)
+3. Share the package: `npm install @MikeC-A6/mcp-server-kit`
+4. Monitor downloads and issues on npmjs.org
 
-The package will remain private and only accessible to repository collaborators.
+The package is now publicly available for anyone to install and use!
