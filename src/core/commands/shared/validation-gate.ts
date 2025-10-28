@@ -10,10 +10,10 @@ import { promisify } from "node:util";
 import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { getWranglerConfigPath } from "./config-updater.js";
+import { getWranglerConfigPath } from "./config/wrangler-utils.js";
 import { AnchorService, AUTH_ANCHORS } from "./anchor-service.js";
 import { restoreFromBackup } from "./backup-restore.js";
-import type { AuthProvider } from "./config-updater.js";
+import type { AuthProvider } from "./config/auth-config-updater.js";
 
 const execAsync = promisify(exec);
 

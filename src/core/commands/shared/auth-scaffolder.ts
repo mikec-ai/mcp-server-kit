@@ -42,8 +42,8 @@ import {
 	updateWranglerConfig,
 	updateVercelConfig,
 	updateEnvExample,
-	getWranglerConfigPath,
-} from "./config-updater.js";
+} from "./config/auth-config-updater.js";
+import { getWranglerConfigPath } from "./config/wrangler-utils.js";
 import { ValidationGate } from "./validation-gate.js";
 
 export class AuthScaffolder {

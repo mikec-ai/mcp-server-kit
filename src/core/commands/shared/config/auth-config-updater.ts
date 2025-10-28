@@ -1,18 +1,21 @@
 /**
- * Configuration Updater
+ * Auth Configuration Updater
  *
  * Updates platform-specific config files to add authentication environment
  * variables. Handles wrangler.toml/wrangler.jsonc (Cloudflare) and vercel.json (Vercel).
  *
  * Uses TomlMerger for structured TOML operations (no regex).
- * JSONC handling already robust using strip-json-comments.
  */
 
 import { readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import stripJsonComments from "strip-json-comments";
-import { TomlMerger } from "./toml-merger.js";
+import { TomlMerger } from "../toml-merger.js";
+import {
+	getWranglerConfigPath,
+	parseJSONC,
+	formatJSON,
+} from "./wrangler-utils.js";
 
 export type AuthProvider = "stytch" | "auth0" | "workos";
 export type Platform = "cloudflare" | "vercel";
@@ -34,36 +37,6 @@ export function getRequiredEnvVars(provider: AuthProvider): string[] {
 		case "workos":
 			return ["WORKOS_API_KEY", "WORKOS_CLIENT_ID"];
 	}
-}
-
-/**
- * Detect which wrangler config file exists
- * Prioritizes: wrangler.jsonc > wrangler.json > wrangler.toml
- */
-export function getWranglerConfigPath(cwd: string): string | null {
-	const configFiles = ["wrangler.jsonc", "wrangler.json", "wrangler.toml"];
-	for (const file of configFiles) {
-		const path = join(cwd, file);
-		if (existsSync(path)) {
-			return path;
-		}
-	}
-	return null;
-}
-
-/**
- * Parse JSONC (JSON with comments)
- */
-function parseJSONC(content: string): any {
-	const stripped = stripJsonComments(content);
-	return JSON.parse(stripped);
-}
-
-/**
- * Format JSON with proper indentation (tabs)
- */
-function formatJSON(obj: any): string {
-	return JSON.stringify(obj, null, "\t");
 }
 
 /**

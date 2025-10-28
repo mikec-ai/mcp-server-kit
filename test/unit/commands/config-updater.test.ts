@@ -1,5 +1,5 @@
 /**
- * Configuration Updater Tests
+ * Auth Configuration Updater Tests
  *
  * Tests for updating platform-specific configuration files with auth env vars.
  */
@@ -16,7 +16,7 @@ import {
 	removeWranglerAuthConfig,
 	removeVercelAuthConfig,
 	removeEnvExampleAuthVars,
-} from "../../../src/core/commands/shared/config-updater.js";
+} from "../../../src/core/commands/shared/config/auth-config-updater.js";
 
 describe("Configuration Updater", () => {
 	const testDir = "/tmp/config-updater-test";
@@ -758,6 +758,238 @@ main = "src/index.ts"
 
 			result = await readFile(envPath, "utf-8");
 			expect(result).not.toContain("STYTCH_PROJECT_ID");
+		});
+	});
+
+	describe("Cloudflare Binding Methods", () => {
+		describe("addKVBinding", () => {
+			it("should add KV binding to wrangler.jsonc", async () => {
+				const wranglerPath = join(testDir, "wrangler.jsonc");
+				await writeFile(
+					wranglerPath,
+					`{
+	"name": "test-project",
+	"main": "src/index.ts",
+	// <mcp-bindings:kv>
+	// KV namespace bindings managed by mcp-server-kit
+	// </mcp-bindings:kv>
+	"observability": {
+		"enabled": true
+	}
+}`,
+				);
+
+				const { addKVBinding } = await import(
+					"../../../src/core/commands/shared/config/binding-config-updater.js"
+				);
+				const modified = await addKVBinding(testDir, "MY_CACHE");
+
+				expect(modified).toBe(true);
+
+				const result = await readFile(wranglerPath, "utf-8");
+				expect(result).toContain("kv_namespaces");
+				expect(result).toContain('"binding": "MY_CACHE"');
+				expect(result).toContain("TODO: Run 'wrangler kv namespace create MY_CACHE'");
+			});
+
+			it("should add KV binding with ID when provided", async () => {
+				const wranglerPath = join(testDir, "wrangler.jsonc");
+				await writeFile(
+					wranglerPath,
+					`{
+	"name": "test-project",
+	// <mcp-bindings:kv>
+	// KV namespace bindings managed by mcp-server-kit
+	// </mcp-bindings:kv>
+}`,
+				);
+
+				const { addKVBinding } = await import(
+					"../../../src/core/commands/shared/config/binding-config-updater.js"
+				);
+				const modified = await addKVBinding(testDir, "MY_CACHE", "abc123");
+
+				expect(modified).toBe(true);
+
+				const result = await readFile(wranglerPath, "utf-8");
+				expect(result).toContain('"id": "abc123"');
+				expect(result).not.toContain("TODO");
+			});
+
+			it("should fail if wrangler.jsonc not found", async () => {
+				const { addKVBinding } = await import(
+					"../../../src/core/commands/shared/config/binding-config-updater.js"
+				);
+
+				await expect(addKVBinding(testDir, "MY_CACHE")).rejects.toThrow(
+					/wrangler\.jsonc not found/,
+				);
+			});
+
+			it("should fail if KV anchor is missing", async () => {
+				const wranglerPath = join(testDir, "wrangler.jsonc");
+				await writeFile(
+					wranglerPath,
+					JSON.stringify({ name: "test-project" }),
+				);
+
+				const { addKVBinding } = await import(
+					"../../../src/core/commands/shared/config/binding-config-updater.js"
+				);
+
+				await expect(addKVBinding(testDir, "MY_CACHE")).rejects.toThrow(
+					/Missing KV anchor block/,
+				);
+			});
+		});
+
+		describe("addD1Binding", () => {
+			it("should add D1 binding to wrangler.jsonc", async () => {
+				const wranglerPath = join(testDir, "wrangler.jsonc");
+				await writeFile(
+					wranglerPath,
+					`{
+	"name": "test-project",
+	"main": "src/index.ts",
+	// <mcp-bindings:d1>
+	// D1 database bindings managed by mcp-server-kit
+	// </mcp-bindings:d1>
+	"observability": {
+		"enabled": true
+	}
+}`,
+				);
+
+				const { addD1Binding } = await import(
+					"../../../src/core/commands/shared/config/binding-config-updater.js"
+				);
+				const modified = await addD1Binding(
+					testDir,
+					"MY_DB",
+					"my-database",
+				);
+
+				expect(modified).toBe(true);
+
+				const result = await readFile(wranglerPath, "utf-8");
+				expect(result).toContain("d1_databases");
+				expect(result).toContain('"binding": "MY_DB"');
+				expect(result).toContain('"database_name": "my-database"');
+				expect(result).toContain("TODO: Run 'wrangler d1 create my-database'");
+			});
+
+			it("should add D1 binding with ID when provided", async () => {
+				const wranglerPath = join(testDir, "wrangler.jsonc");
+				await writeFile(
+					wranglerPath,
+					`{
+	"name": "test-project",
+	// <mcp-bindings:d1>
+	// D1 database bindings managed by mcp-server-kit
+	// </mcp-bindings:d1>
+}`,
+				);
+
+				const { addD1Binding } = await import(
+					"../../../src/core/commands/shared/config/binding-config-updater.js"
+				);
+				const modified = await addD1Binding(
+					testDir,
+					"MY_DB",
+					"my-database",
+					"def456",
+				);
+
+				expect(modified).toBe(true);
+
+				const result = await readFile(wranglerPath, "utf-8");
+				expect(result).toContain('"database_id": "def456"');
+				expect(result).not.toContain("TODO");
+			});
+
+			it("should fail if wrangler.jsonc not found", async () => {
+				const { addD1Binding } = await import(
+					"../../../src/core/commands/shared/config/binding-config-updater.js"
+				);
+
+				await expect(
+					addD1Binding(testDir, "MY_DB", "my-database"),
+				).rejects.toThrow(/wrangler\.jsonc not found/);
+			});
+
+			it("should fail if D1 anchor is missing", async () => {
+				const wranglerPath = join(testDir, "wrangler.jsonc");
+				await writeFile(
+					wranglerPath,
+					JSON.stringify({ name: "test-project" }),
+				);
+
+				const { addD1Binding } = await import(
+					"../../../src/core/commands/shared/config/binding-config-updater.js"
+				);
+
+				await expect(
+					addD1Binding(testDir, "MY_DB", "my-database"),
+				).rejects.toThrow(/Missing D1 anchor block/);
+			});
+		});
+
+		describe("addBindingImport", () => {
+			it("should add import to src/index.ts", async () => {
+				const srcDir = join(testDir, "src");
+				await mkdir(srcDir);
+
+				const indexPath = join(srcDir, "index.ts");
+				await writeFile(
+					indexPath,
+					`import { McpAgent } from "agents/mcp";
+// <mcp-bindings:imports>
+// Binding helper imports will be added here by add binding command
+// </mcp-bindings:imports>
+
+export class MCPServerAgent extends McpAgent<Env> {}
+`,
+				);
+
+				const { addBindingImport } = await import(
+					"../../../src/core/commands/shared/config/binding-config-updater.js"
+				);
+				const importStatement =
+					'import { MyCacheKV } from "./utils/bindings/kv-my-cache.js";';
+				const modified = await addBindingImport(testDir, importStatement);
+
+				expect(modified).toBe(true);
+
+				const result = await readFile(indexPath, "utf-8");
+				expect(result).toContain('import { MyCacheKV }');
+				expect(result).toContain('from "./utils/bindings/kv-my-cache.js"');
+			});
+
+			it("should fail if src/index.ts not found", async () => {
+				const { addBindingImport } = await import(
+					"../../../src/core/commands/shared/config/binding-config-updater.js"
+				);
+
+				await expect(
+					addBindingImport(testDir, 'import { Test } from "./test.js";'),
+				).rejects.toThrow(/src\/index\.ts not found/);
+			});
+
+			it("should fail if import anchor is missing", async () => {
+				const srcDir = join(testDir, "src");
+				await mkdir(srcDir);
+
+				const indexPath = join(srcDir, "index.ts");
+				await writeFile(indexPath, "export default {};");
+
+				const { addBindingImport } = await import(
+					"../../../src/core/commands/shared/config/binding-config-updater.js"
+				);
+
+				await expect(
+					addBindingImport(testDir, 'import { Test } from "./test.js";'),
+				).rejects.toThrow(/Missing bindings import anchor/);
+			});
 		});
 	});
 });
