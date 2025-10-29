@@ -12,7 +12,7 @@
 1. **Start Claude Code in your terminal**
 2. **Paste this prompt**:
 
-~~~
+```
 I want you to scaffold a new MCP server project using the mcp-server-kit CLI. Follow these steps EXACTLY:
 
 1. Install the CLI globally:
@@ -33,7 +33,7 @@ I want you to scaffold a new MCP server project using the mcp-server-kit CLI. Fo
    - The next steps from the CLI output
 
 IMPORTANT: The mcp-server-kit CLI handles everything automatically - directory creation, file generation, and dependency installation. Do NOT create directories or files manually. Your job is to run the commands and explain what was created.
-~~~
+```
 
 3. **Claude Code will**:
    - Install mcp-server-kit globally
