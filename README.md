@@ -16,28 +16,23 @@
 I want you to scaffold a new MCP server project using the mcp-server-kit CLI. Follow these steps EXACTLY:
 
 1. Install the CLI globally:
-   ```
    npm install -g mcp-server-kit
-   ```
 
 2. Read the documentation: After installation, run this command to see the full README:
-   ```
    npm view mcp-server-kit readme
-   ```
+
    Read it carefully to understand all capabilities before proceeding.
 
 3. Use the CLI to scaffold the project:
-   ```
    mcp-server-kit new server --template cloudflare-remote --name <PROJECT_NAME>
-   ```
 
-   💡 **Replace `<PROJECT_NAME>`** with your desired name (e.g., `my-weather-server`, `slack-bot`, `github-integration`)
+   💡 Replace <PROJECT_NAME> with your desired name (e.g., my-weather-server, slack-bot, github-integration)
 
 4. After scaffolding completes, show me:
    - The generated project structure
    - The next steps from the CLI output
 
-⚠️ **IMPORTANT**: The mcp-server-kit CLI handles everything automatically - directory creation, file generation, and dependency installation. Do NOT create directories or files manually. Your job is to run the commands and explain what was created.
+⚠️ IMPORTANT: The mcp-server-kit CLI handles everything automatically - directory creation, file generation, and dependency installation. Do NOT create directories or files manually. Your job is to run the commands and explain what was created.
 ```
 
 3. **Claude Code will**:
