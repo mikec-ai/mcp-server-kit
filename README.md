@@ -9,18 +9,35 @@
 
 ### Quick Start
 
-1. **Open Claude Code** in your terminal
-2. **Paste this prompt** (customize the project name):
+1. **Start Claude Code in your terminal**
+2. **Paste this prompt**:
 
 ```
-I want you to scaffold a new MCP server project. Please:
-1. Run `npm install -g mcp-server-kit` to install the CLI tool globally
-2. After installation, read the README from the mcp-server-kit package to understand how it works
-3. Create a new directory called "my-weather-server" (you can change this name)
-4. Navigate into the directory and run the scaffold command using the cloudflare-remote template
-5. Show me the project structure and next steps
+I want you to scaffold a new MCP server project using the mcp-server-kit CLI. Follow these steps EXACTLY:
 
-Make sure to read the package README first so you understand the full capabilities.
+1. Install the CLI globally:
+   ```
+   npm install -g mcp-server-kit
+   ```
+
+2. Read the documentation: After installation, run this command to see the full README:
+   ```
+   npm view mcp-server-kit readme
+   ```
+   Read it carefully to understand all capabilities before proceeding.
+
+3. Use the CLI to scaffold the project:
+   ```
+   mcp-server-kit new server --template cloudflare-remote --name <PROJECT_NAME>
+   ```
+
+   💡 **Replace `<PROJECT_NAME>`** with your desired name (e.g., `my-weather-server`, `slack-bot`, `github-integration`)
+
+4. After scaffolding completes, show me:
+   - The generated project structure
+   - The next steps from the CLI output
+
+⚠️ **IMPORTANT**: The mcp-server-kit CLI handles everything automatically - directory creation, file generation, and dependency installation. Do NOT create directories or files manually. Your job is to run the commands and explain what was created.
 ```
 
 3. **Claude Code will**:
