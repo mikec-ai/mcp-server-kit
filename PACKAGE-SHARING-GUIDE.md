@@ -7,7 +7,7 @@ Your package `mcp-server-kit` is published to npmjs.org as a **public package**.
 - **Package Name**: `mcp-server-kit`
 - **Registry**: npmjs.org (public npm registry)
 - **Visibility**: Public (anyone can install)
-- **Repository**: https://github.com/MikeC-A6/mcp-server-kit
+- **Repository**: https://github.com/mikec-ai/mcp-server-kit
 - **npm Page**: https://www.npmjs.com/package/mcp-server-kit
 
 ---

@@ -7,12 +7,12 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/MikeC-A6/mcp-server-kit.git"
+		"url": "git+https://github.com/mikec-ai/mcp-server-kit.git"
 	},
 	"bugs": {
-		"url": "https://github.com/MikeC-A6/mcp-server-kit/issues"
+		"url": "https://github.com/mikec-ai/mcp-server-kit/issues"
 	},
-	"homepage": "https://github.com/MikeC-A6/mcp-server-kit#readme",
+	"homepage": "https://github.com/mikec-ai/mcp-server-kit#readme",
 	"keywords": [
 		"mcp",
 		"model-context-protocol",

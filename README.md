@@ -562,7 +562,7 @@ import type {
 ### Building from Source
 
 ```bash
-git clone https://github.com/MikeC-A6/mcp-server-kit.git
+git clone https://github.com/mikec-ai/mcp-server-kit.git
 cd mcp-server-kit
 npm install
 npm run build
@@ -596,7 +596,7 @@ We welcome contributions! Areas we'd love help with:
 - **New Templates** - Add support for Vercel, Deno, etc.
 - **Test Harness Features** - New assertion types, reporters
 - **Documentation** - Guides, examples, tutorials
-- **Bug Fixes** - See [issues](https://github.com/MikeC-A6/mcp-server-kit/issues)
+- **Bug Fixes** - See [issues](https://github.com/mikec-ai/mcp-server-kit/issues)
 
 ## License
 

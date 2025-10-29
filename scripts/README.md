@@ -8,7 +8,7 @@
 
 ```bash
 # From the web (recommended for collaborators)
-curl -fsSL https://raw.githubusercontent.com/MikeC-A6/mcp-server-kit/master/scripts/install-collaborator-setup.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mikec-ai/mcp-server-kit/master/scripts/install-collaborator-setup.sh | bash
 
 # Or if you've cloned the repo
 ./scripts/install-collaborator-setup.sh

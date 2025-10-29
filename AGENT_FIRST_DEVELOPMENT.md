@@ -216,5 +216,5 @@ The agent-first future is already here.
 
 ---
 
-**Project:** https://github.com/MikeC-A6/mcp-server-kit
+**Project:** https://github.com/mikec-ai/mcp-server-kit
 **Deployed Example:** https://bookmark-manager.brian-derfer.workers.dev/health

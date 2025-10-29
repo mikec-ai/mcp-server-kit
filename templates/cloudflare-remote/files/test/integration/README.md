@@ -213,7 +213,7 @@ Create separate YAML files for different scenarios:
 
 ## Additional Resources
 
-- **Full Harness Documentation**: See [mcp-server-kit harness README](https://github.com/MikeC-A6/mcp-server-kit/blob/master/src/harness/README.md)
+- **Full Harness Documentation**: See [mcp-server-kit harness README](https://github.com/mikec-ai/mcp-server-kit/blob/master/src/harness/README.md)
 - **Example Tests**: Check `specs/health.yaml` and `specs/echo.yaml`
 - **CLI Reference**: Run `npx mcp-server-kit --help`
 
