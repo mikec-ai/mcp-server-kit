@@ -5,7 +5,7 @@
 
 ## Using with Claude Code (Recommended)
 
-**Best experience**: Start from a Claude Code terminal for seamless project creation.
+**For the human user**: Start from a Claude Code terminal for the best experience with seamless project creation.
 
 ### Quick Start
 
