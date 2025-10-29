@@ -3,7 +3,43 @@
 [![npm version](https://img.shields.io/npm/v/mcp-server-kit.svg)](https://www.npmjs.com/package/mcp-server-kit)
 [![npm downloads](https://img.shields.io/npm/dm/mcp-server-kit.svg)](https://www.npmjs.com/package/mcp-server-kit)
 
-> **This is a command-line tool (CLI) for scaffolding MCP server projects. It is not a library to import into your code.** Install it with `npm install -g mcp-server-kit` or run commands with `npx mcp-server-kit`.
+## Using with Claude Code (Recommended)
+
+**Best experience**: Start from a Claude Code terminal for seamless project creation.
+
+### Quick Start
+
+1. **Open Claude Code** in your terminal
+2. **Paste this prompt** (customize the project name):
+
+```
+I want you to scaffold a new MCP server project. Please:
+1. Run `npm install -g mcp-server-kit` to install the CLI tool globally
+2. After installation, read the README from the mcp-server-kit package to understand how it works
+3. Create a new directory called "my-weather-server" (you can change this name)
+4. Navigate into the directory and run the scaffold command using the cloudflare-remote template
+5. Show me the project structure and next steps
+
+Make sure to read the package README first so you understand the full capabilities.
+```
+
+3. **Claude Code will**:
+   - Install mcp-server-kit globally
+   - Read the package documentation
+   - Create your project directory
+   - Scaffold the project
+   - Install dependencies
+   - Explain next steps
+
+### Why Claude Code?
+
+- **Integrated terminal** - Runs commands directly
+- **Context aware** - Understands full project structure
+- **Auto error handling** - Fixes issues automatically
+
+**Works with other AI agents too**, but Claude Code provides the smoothest experience with built-in terminal integration.
+
+---
 
 **Extensible scaffolding tool and test harness for Model Context Protocol (MCP) servers**
 
@@ -25,6 +61,8 @@ Create production-ready MCP servers in seconds with built-in testing infrastruct
 ## For AI Agents 🤖
 
 **This toolkit is specifically optimized for AI agent development.** It automates the mechanical tasks agents forget (file creation, registration, imports) while preserving flexibility for creative problem-solving.
+
+**Claude Code Users**: See [Using with Claude Code](#using-with-claude-code-recommended) for a streamlined setup experience.
 
 ### Agent Workflow
 
