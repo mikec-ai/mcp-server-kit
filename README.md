@@ -3,9 +3,9 @@
 [![npm version](https://img.shields.io/npm/v/mcp-server-kit.svg)](https://www.npmjs.com/package/mcp-server-kit)
 [![npm downloads](https://img.shields.io/npm/dm/mcp-server-kit.svg)](https://www.npmjs.com/package/mcp-server-kit)
 
-## Using with Claude Code (Recommended)
+## For Human Users 👤
 
-**For the human user**: Start from a Claude Code terminal for the best experience with seamless project creation.
+**Using with Claude Code (Recommended)**: Start from a Claude Code terminal for the best experience with seamless project creation.
 
 ### Quick Start
 
@@ -62,7 +62,7 @@ Create production-ready MCP servers in seconds with built-in testing infrastruct
 
 **This toolkit is specifically optimized for AI agent development.** It automates the mechanical tasks agents forget (file creation, registration, imports) while preserving flexibility for creative problem-solving.
 
-**Claude Code Users**: See [Using with Claude Code](#using-with-claude-code-recommended) for a streamlined setup experience.
+**Claude Code Users**: See [For Human Users](#for-human-users-) for a streamlined setup experience.
 
 ### Agent Workflow
 
