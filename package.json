@@ -1,6 +1,6 @@
 {
 	"name": "mcp-server-kit",
-	"version": "1.0.9",
+	"version": "1.0.10",
 	"description": "CLI tool for scaffolding and testing Model Context Protocol (MCP) servers",
 	"publishConfig": {
 		"access": "public"
